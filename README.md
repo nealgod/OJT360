@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">
@@ -64,3 +65,7 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+=======
+# OJT360
+Repository for our Capstone 2 titled OJT360: DEVELOPMENT OF AN END-TO-END WEB-BASED INTERNSHIP MONITORING AND MANAGEMENT SYSTEM WITH AUTOMATED DOCUMENTATION AND EVALUATION WORKFLOW
+>>>>>>> 03a575c639a0c03de5dfed6c5483114898fa5661
