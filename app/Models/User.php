@@ -1,0 +1,132 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
+
+class User extends Authenticatable implements MustVerifyEmail
+{
+    use HasApiTokens, HasFactory, Notifiable;
+
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+        'role',
+    ];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+    ];
+
+    // Role-specific profile relationships
+    public function studentProfile()
+    {
+        return $this->hasOne(StudentProfile::class);
+    }
+
+    public function coordinatorProfile()
+    {
+        return $this->hasOne(CoordinatorProfile::class);
+    }
+
+    public function supervisorProfile()
+    {
+        return $this->hasOne(SupervisorProfile::class);
+    }
+
+    // Notifications relationship
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class);
+    }
+
+    public function placementRequests()
+    {
+        return $this->hasMany(PlacementRequest::class, 'student_user_id');
+    }
+
+    // Role checking methods
+    public function isStudent()
+    {
+        return $this->role === 'intern';
+    }
+
+    public function isCoordinator()
+    {
+        return $this->role === 'coordinator';
+    }
+
+    public function isSupervisor()
+    {
+        return $this->role === 'supervisor';
+    }
+
+    public function isAdmin()
+    {
+        return $this->role === 'admin';
+    }
+
+    // Check if user has active OJT (for students)
+    public function hasActiveOJT()
+    {
+        return $this->studentProfile && $this->studentProfile->ojt_status === 'active';
+    }
+
+    // Get the appropriate profile based on role
+    public function getProfile()
+    {
+        return match($this->role) {
+            'intern' => $this->studentProfile,
+            'coordinator' => $this->coordinatorProfile,
+            'supervisor' => $this->supervisorProfile,
+            default => null
+        };
+    }
+
+    // Get required OJT hours for student's course
+    public function getRequiredHours() {
+        if (!$this->isStudent() || !$this->studentProfile) {
+            return 0;
+        }
+
+        // If coordinator has set custom hours, use that
+        if ($this->studentProfile->required_hours) {
+            return $this->studentProfile->required_hours;
+        }
+
+        // Otherwise use default from config
+        $departments = config('departments.departments');
+        $department = $this->studentProfile->department;
+        $course = $this->studentProfile->course;
+
+        if (isset($departments[$department]['courses'][$course])) {
+            return $departments[$department]['courses'][$course];
+        }
+
+        return 0;
+    }
+
+    // Get completed hours
+    public function getCompletedHours() {
+        if (!$this->isStudent() || !$this->studentProfile) {
+            return 0;
+        }
+
+        return $this->studentProfile->completed_hours ?? 0;
+    }
+
+    // Get remaining hours
+    public function getRemainingHours() {
+        return $this->getRequiredHours() - $this->getCompletedHours();
+    }
+}
