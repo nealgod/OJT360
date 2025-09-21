@@ -49,6 +49,14 @@ Route::middleware(['auth', 'force.password.change', 'profile.complete'])->group(
     Route::get('/placements', [App\Http\Controllers\PlacementRequestController::class, 'index'])->name('placements.index');
     Route::get('/placements/create', [App\Http\Controllers\PlacementRequestController::class, 'create'])->name('placements.create');
     Route::post('/placements', [App\Http\Controllers\PlacementRequestController::class, 'store'])->name('placements.store');
+
+    // Attendance & Reports (students)
+    Route::get('/attendance', [App\Http\Controllers\AttendanceController::class, 'index'])->name('attendance.index');
+    Route::post('/attendance/time-in', [App\Http\Controllers\AttendanceController::class, 'timeIn'])->name('attendance.timeIn');
+    Route::post('/attendance/time-out', [App\Http\Controllers\AttendanceController::class, 'timeOut'])->name('attendance.timeOut');
+    Route::get('/reports', [App\Http\Controllers\DailyReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/create', [App\Http\Controllers\DailyReportController::class, 'create'])->name('reports.create');
+    Route::post('/reports', [App\Http\Controllers\DailyReportController::class, 'store'])->name('reports.store');
 });
 
 // Admin routes

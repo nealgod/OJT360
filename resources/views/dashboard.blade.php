@@ -339,6 +339,7 @@
                                     </div>
                                 @else
                                     <!-- Pre-OJT Activities -->
+                                    @php($latestPlacement = Auth::user()->placementRequests()->latest()->first())
                                     <div class="space-y-4">
                                         <div class="flex items-start space-x-3">
                                             <div class="w-8 h-8 bg-ojt-success/10 rounded-full flex items-center justify-center flex-shrink-0">
@@ -372,11 +373,29 @@
                                                 </svg>
                                             </div>
                                             <div class="flex-1">
-                                                <p class="text-sm font-medium text-ojt-dark">OJT Placement Required</p>
-                                                <p class="text-xs text-gray-500">Apply to companies and get accepted to start OJT</p>
-                                                <div class="mt-2">
-                                                    <a href="{{ route('placements.create') }}" class="text-ojt-primary hover:text-maroon-700 underline">Notify acceptance</a>
-                                                </div>
+                                                @if(!$latestPlacement)
+                                                    <p class="text-sm font-medium text-ojt-dark">OJT Placement Required</p>
+                                                    <p class="text-xs text-gray-500">Apply to companies and get accepted to start OJT</p>
+                                                    <div class="mt-2">
+                                                        <a href="{{ route('placements.create') }}" class="text-ojt-primary hover:text-maroon-700 underline">Notify acceptance</a>
+                                                    </div>
+                                                @else
+                                                    <p class="text-sm font-medium text-ojt-dark">Placement {{ ucfirst($latestPlacement->status) }}</p>
+                                                    <p class="text-xs text-gray-500">
+                                                        @if($latestPlacement->status === 'pending')
+                                                            Your coordinator is reviewing your placement request.
+                                                        @elseif($latestPlacement->status === 'declined')
+                                                            Your last request was declined. You may submit another.
+                                                        @endif
+                                                    </p>
+                                                    <div class="mt-2 space-x-3">
+                                                        <a href="{{ route('placements.index') }}" class="text-ojt-primary hover:text-maroon-700 underline">View request</a>
+                                                        <a href="{{ route('notifications.index') }}" class="text-ojt-primary hover:text-maroon-700 underline">Messages</a>
+                                                        @if($latestPlacement->status === 'declined')
+                                                            <a href="{{ route('placements.create') }}" class="text-ojt-primary hover:text-maroon-700 underline">Submit new</a>
+                                                        @endif
+                                                    </div>
+                                                @endif
                                             </div>
                                         </div>
                                     </div>
@@ -413,18 +432,18 @@
                                 <div class="space-y-3">
                                     @if(Auth::user()->studentProfile && Auth::user()->studentProfile->ojt_status === 'active')
                                         <!-- Active OJT Actions -->
-                                        <button class="w-full bg-ojt-primary text-white py-3 px-4 rounded-lg font-medium hover:bg-maroon-700 transition-colors duration-200 flex items-center justify-center">
+                                        <a href="{{ route('attendance.index') }}" class="w-full bg-ojt-primary text-white py-3 px-4 rounded-lg font-medium hover:bg-maroon-700 transition-colors duration-200 flex items-center justify-center">
                                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                             </svg>
                                             Time In/Out
-                                        </button>
-                                        <button class="w-full bg-white border border-ojt-primary text-ojt-primary py-3 px-4 rounded-lg font-medium hover:bg-ojt-primary hover:text-white transition-colors duration-200 flex items-center justify-center">
+                                        </a>
+                                        <a href="{{ route('reports.index') }}" class="w-full bg-white border border-ojt-primary text-ojt-primary py-3 px-4 rounded-lg font-medium hover:bg-ojt-primary hover:text-white transition-colors duration-200 flex items-center justify-center">
                                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                             </svg>
                                             Submit Report
-                                        </button>
+                                        </a>
                                         <button class="w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center">
                                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />

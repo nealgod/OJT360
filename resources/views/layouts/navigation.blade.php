@@ -25,6 +25,12 @@
                         <x-nav-link :href="route('placements.index')" :active="request()->routeIs('placements.*')">
                             {{ __('Placements') }}
                         </x-nav-link>
+                        <x-nav-link :href="route('attendance.index')" :active="request()->routeIs('attendance.*')">
+                            {{ __('Attendance') }}
+                        </x-nav-link>
+                        <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
+                            {{ __('Reports') }}
+                        </x-nav-link>
                         <x-nav-link :href="route('notifications.index')" :active="request()->routeIs('notifications.*')">
                             {{ __('Messages') }}
                             @if(auth()->user()->notifications()->where('read', false)->count() > 0)
