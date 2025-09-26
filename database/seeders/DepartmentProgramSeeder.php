@@ -20,10 +20,14 @@ class DepartmentProgramSeeder extends Seeder
             );
 
             $courses = $data['courses'] ?? [];
-            foreach (array_keys($courses) as $programName) {
-                Program::firstOrCreate(
+            foreach ($courses as $programName => $requiredHours) {
+                // Ensure program exists and set/update required hours from config
+                Program::updateOrCreate(
                     ['department_id' => $department->id, 'name' => $programName],
-                    ['slug' => Str::slug($programName)]
+                    [
+                        'slug' => Str::slug($programName),
+                        'required_hours' => $requiredHours,
+                    ]
                 );
             }
         }

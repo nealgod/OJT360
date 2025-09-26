@@ -49,7 +49,18 @@
                        name="password" 
                        required 
                        autocomplete="current-password"
-                       class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ojt-primary focus:border-ojt-primary transition-colors duration-200 text-ojt-dark bg-white">
+                       class="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ojt-primary focus:border-ojt-primary transition-colors duration-200 text-ojt-dark bg-white">
+                <button type="button" aria-label="Toggle password visibility" 
+                        class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-ojt-primary"
+                        onclick="(function(btn){const input=document.getElementById('password');const eye=btn.querySelector('[data-eye]');const eyeOff=btn.querySelector('[data-eye-off]');const isPwd=input.getAttribute('type')==='password';input.setAttribute('type', isPwd?'text':'password');eye.classList.toggle('hidden', !isPwd);eyeOff.classList.toggle('hidden', isPwd);})(this)">
+                    <svg data-eye class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    <svg data-eye-off class="h-5 w-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.956 9.956 0 012.284-3.95M6.223 6.223A9.956 9.956 0 0112 5c4.477 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.178 5.021M15 12a3 3 0 00-4.95-2.121M3 3l18 18" />
+                    </svg>
+                </button>
             </div>
             <x-input-error :messages="$errors->get('password')" class="mt-2 text-ojt-danger text-sm" />
         </div>
@@ -88,14 +99,18 @@
             </div>
         </div>
 
-        <!-- Register Link -->
-        <div class="text-center">
+        <!-- Register and Home Buttons -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <a href="{{ route('register') }}" 
-               class="inline-flex items-center text-ojt-primary hover:text-ojt-secondary transition-colors duration-200 font-medium">
-                Create an account
+               class="w-full inline-flex items-center justify-center border-2 border-ojt-primary text-ojt-primary px-4 py-3 rounded-lg font-medium hover:bg-ojt-primary hover:text-white transition-colors duration-200">
+                Create Account
                 <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>
+            </a>
+            <a href="{{ url('/') }}" 
+               class="w-full inline-flex items-center justify-center bg-white border-2 border-gray-300 text-gray-700 px-4 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors duration-200">
+                Home
             </a>
         </div>
     </form>
