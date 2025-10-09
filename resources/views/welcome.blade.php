@@ -24,11 +24,8 @@
                                 Dashboard
                             </a>
                         @else
-                            <a href="{{ route('login') }}" class="text-ojt-primary hover:text-ojt-secondary transition-colors duration-200 font-medium">
+                            <a href="{{ route('login') }}" class="bg-ojt-primary text-white px-4 py-2 rounded-lg font-medium hover:bg-maroon-700 transition-colors duration-200">
                                 Sign In
-                            </a>
-                            <a href="{{ route('register') }}" class="bg-ojt-primary text-white px-4 py-2 rounded-lg font-medium hover:bg-maroon-700 transition-colors duration-200">
-                                Get Started
                             </a>
                         @endauth
                                 </div>
@@ -55,6 +52,9 @@
                                 Go to Dashboard
                             </a>
                         @else
+                            <a href="{{ route('login') }}" class="bg-gradient-to-r from-ojt-primary to-maroon-700 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:from-maroon-700 hover:to-ojt-primary transition-all duration-200 transform hover:scale-105">
+                                Sign In
+                            </a>
                             <a href="{{ route('register') }}" class="bg-gradient-to-r from-ojt-primary to-maroon-700 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:from-maroon-700 hover:to-ojt-primary transition-all duration-200 transform hover:scale-105">
                                 Create Account
                             </a>

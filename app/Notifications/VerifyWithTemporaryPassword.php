@@ -30,7 +30,7 @@ class VerifyWithTemporaryPassword extends Notification implements ShouldQueue
     {
         return URL::temporarySignedRoute(
             'verification.verify',
-            Carbon::now()->addMinutes(Config::get('auth.verification.expire', 60)),
+            Carbon::now()->addHours(24), // 24 hours for coordinators/supervisors
             [
                 'id' => $notifiable->getKey(),
                 'hash' => sha1($notifiable->getEmailForVerification()),

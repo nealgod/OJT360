@@ -72,11 +72,21 @@ class AdminController extends Controller
 
         // For coordinator/supervisor: send single email with verification link and temporary password
         if (in_array($user->role, ['coordinator', 'supervisor'])) {
-            $user->notify(new VerifyWithTemporaryPassword($temporaryPassword));
+            try {
+                $user->notify(new VerifyWithTemporaryPassword($temporaryPassword));
+            } catch (\Exception $e) {
+                // If email fails, just log the error and continue
+                \Log::error('Email sending failed: ' . $e->getMessage());
+                return redirect()->route('admin.users')->with('success', 'User created successfully. Email sending failed - please check email configuration. Temporary password: ' . $temporaryPassword);
+            }
         } else {
             // Fallback (students/admins): use default verification
             if (method_exists($user, 'sendEmailVerificationNotification')) {
-                $user->sendEmailVerificationNotification();
+                try {
+                    $user->sendEmailVerificationNotification();
+                } catch (\Exception $e) {
+                    \Log::error('Email sending failed: ' . $e->getMessage());
+                }
             }
         }
 
