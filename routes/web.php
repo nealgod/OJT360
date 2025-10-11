@@ -20,7 +20,7 @@ Route::get('/', function () {
 
 Route::get('/dashboard', function () {
     return view('dashboard');
-})->middleware(['auth', 'verified', 'profile.complete'])->name('dashboard');
+})->middleware(['auth', 'verified', 'profile.complete', 'force.password.change'])->name('dashboard');
 
 Route::middleware(['auth'])->group(function () {
     // Force first password change routes (accessible even when forced)

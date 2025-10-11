@@ -29,6 +29,17 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // For coordinators/supervisors, verify email on successful login
+        $user = Auth::user();
+        if (in_array($user->role, ['coordinator', 'supervisor']) && !$user->hasVerifiedEmail()) {
+            $user->markEmailAsVerified();
+        }
+
+        // Check if user must change password
+        if ($user->must_change_password) {
+            return redirect()->route('password.first-change');
+        }
+
         return redirect()->intended(RouteServiceProvider::HOME);
     }
 
@@ -37,7 +48,7 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
-        // Logout current session but preserve remember token
+        // Logout current session
         Auth::logout();
         
         // Invalidate current session

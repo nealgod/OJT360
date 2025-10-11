@@ -6,11 +6,10 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\SendTemporaryCredentials;
 use App\Notifications\VerifyWithTemporaryPassword;
 use App\Models\Department;
 use App\Models\CoordinatorProfile;
+use Illuminate\Support\Facades\Log;
 
 class AdminController extends Controller
 {
