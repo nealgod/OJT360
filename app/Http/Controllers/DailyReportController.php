@@ -24,10 +24,19 @@ class DailyReportController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'work_date' => ['required', 'date'],
-            'summary' => ['required', 'string', 'max:5000'],
+            'work_date' => ['required', 'date', 'before_or_equal:today'],
+            'summary' => ['required', 'string', 'min:50', 'max:5000'],
             'attachment' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf,doc,docx', 'max:6144'],
         ]);
+
+        // Check for duplicate report on the same date
+        $existingReport = DailyReport::where('student_user_id', Auth::id())
+            ->where('work_date', $request->date('work_date'))
+            ->first();
+
+        if ($existingReport) {
+            return back()->withErrors(['work_date' => 'You have already submitted a report for this date.']);
+        }
 
         $path = null;
         if ($request->hasFile('attachment')) {
@@ -41,7 +50,7 @@ class DailyReportController extends Controller
             'attachment_path' => $path,
         ]);
 
-        return redirect()->route('reports.index')->with('success', 'Daily report submitted.');
+        return redirect()->route('reports.index')->with('success', 'Daily report submitted successfully!');
     }
 }
 

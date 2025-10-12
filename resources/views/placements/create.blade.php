@@ -5,7 +5,7 @@
 
     <div class="py-6 sm:py-12">
         <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-8">
                 <h1 class="text-2xl font-bold text-ojt-dark mb-6">I’ve been accepted</h1>
 
                 <form method="POST" action="{{ route('placements.store') }}" enctype="multipart/form-data" class="space-y-6">
@@ -45,6 +45,19 @@
                             <x-input-label for="contact_person" :value="__('Contact Person (optional)')" />
                             <x-text-input id="contact_person" name="contact_person" type="text" class="mt-1 block w-full" :value="old('contact_person')" />
                             <x-input-error class="mt-2" :messages="$errors->get('contact_person')" />
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div>
+                            <x-input-label for="supervisor_name" :value="__('Supervisor Name (optional)')" />
+                            <x-text-input id="supervisor_name" name="supervisor_name" type="text" class="mt-1 block w-full" :value="old('supervisor_name')" />
+                            <x-input-error class="mt-2" :messages="$errors->get('supervisor_name')" />
+                        </div>
+                        <div>
+                            <x-input-label for="supervisor_email" :value="__('Supervisor Email (optional)')" />
+                            <x-text-input id="supervisor_email" name="supervisor_email" type="email" class="mt-1 block w-full" :value="old('supervisor_email')" />
+                            <x-input-error class="mt-2" :messages="$errors->get('supervisor_email')" />
                         </div>
                     </div>
 

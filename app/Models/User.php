@@ -57,6 +57,16 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(PlacementRequest::class, 'student_user_id');
     }
 
+    public function attendanceLogs()
+    {
+        return $this->hasMany(AttendanceLog::class, 'student_user_id');
+    }
+
+    public function dailyReports()
+    {
+        return $this->hasMany(DailyReport::class, 'student_user_id');
+    }
+
     // Role checking methods
     public function isStudent()
     {

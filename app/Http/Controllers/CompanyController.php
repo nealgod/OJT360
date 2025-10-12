@@ -41,13 +41,6 @@ class CompanyController extends Controller
         return view('companies.index', compact('companies'));
     }
 
-    /**
-     * Display the specified company.
-     */
-    public function show(Company $company)
-    {
-        return view('companies.show', compact('company'));
-    }
 
     /**
      * Show create form for coordinators.

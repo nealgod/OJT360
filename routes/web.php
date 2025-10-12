@@ -37,7 +37,6 @@ Route::middleware(['auth', 'force.password.change', 'profile.complete'])->group(
     
     // Company routes
     Route::get('/companies', [App\Http\Controllers\CompanyController::class, 'index'])->name('companies.index');
-    Route::get('/companies/{company}', [App\Http\Controllers\CompanyController::class, 'show'])->name('companies.show');
     
     // Notification routes
     Route::get('/notifications', [App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');

@@ -5,17 +5,17 @@
 
     <div class="py-6 sm:py-12">
         <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6 mb-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                     <div>
                         <h3 class="font-semibold text-ojt-dark mb-2">Time In (Camera)</h3>
                         <div class="aspect-video bg-black rounded-lg overflow-hidden relative">
                             <video id="videoIn" autoplay playsinline class="w-full h-full object-cover"></video>
                             <canvas id="canvasIn" class="hidden"></canvas>
                         </div>
-                        <div class="flex flex-wrap gap-3 mt-3">
-                            <button id="openCamIn" class="bg-gray-100 text-gray-800 px-4 py-2 rounded-lg">Open Camera</button>
-                            <button id="captureIn" class="bg-ojt-primary text-white px-4 py-2 rounded-lg">Capture & Time In</button>
+                        <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-3">
+                            <button id="openCamIn" class="bg-gray-100 text-gray-800 px-4 py-2 rounded-lg text-sm sm:text-base">Open Camera</button>
+                            <button id="captureIn" class="bg-ojt-primary text-white px-4 py-2 rounded-lg text-sm sm:text-base">Capture & Time In</button>
                         </div>
                     </div>
                     <div>
@@ -24,14 +24,29 @@
                             <video id="videoOut" autoplay playsinline class="w-full h-full object-cover"></video>
                             <canvas id="canvasOut" class="hidden"></canvas>
                         </div>
-                        <div class="flex flex-wrap gap-3 mt-3">
-                            <button id="openCamOut" class="bg-gray-100 text-gray-800 px-4 py-2 rounded-lg">Open Camera</button>
-                            <button id="captureOut" class="bg-ojt-dark text-white px-4 py-2 rounded-lg">Capture & Time Out</button>
+                        <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-3">
+                            <button id="openCamOut" class="bg-gray-100 text-gray-800 px-4 py-2 rounded-lg text-sm sm:text-base">Open Camera</button>
+                            <button id="captureOut" class="bg-ojt-dark text-white px-4 py-2 rounded-lg text-sm sm:text-base">Capture & Time Out</button>
                         </div>
                     </div>
                 </div>
 
-                <p class="text-xs text-gray-500 mt-4">Tip: If camera does not open, check browser permissions and try switching to your device browser (Safari/Chrome).</p>
+                <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div class="flex items-start">
+                        <svg class="w-5 h-5 text-blue-600 mt-0.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div>
+                            <p class="text-sm font-medium text-blue-800">Camera Tips:</p>
+                            <ul class="text-xs text-blue-700 mt-1 space-y-1">
+                                <li>• Allow camera permissions when prompted</li>
+                                <li>• Use a well-lit environment for better photos</li>
+                                <li>• Hold device steady when capturing</li>
+                                <li>• Photos are automatically resized and compressed</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <script>
@@ -43,7 +58,21 @@
 
                     async function startCamera(videoEl) {
                         try {
-                            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+                            // Try back camera first, then any camera
+                            let stream;
+                            try {
+                                stream = await navigator.mediaDevices.getUserMedia({ 
+                                    video: { facingMode: 'environment' }, 
+                                    audio: false 
+                                });
+                            } catch (e) {
+                                console.log('Back camera failed, trying any camera...');
+                                stream = await navigator.mediaDevices.getUserMedia({ 
+                                    video: true, 
+                                    audio: false 
+                                });
+                            }
+                            
                             videoEl.srcObject = stream;
                             if (!videoEl.readyState || videoEl.readyState < 2) {
                                 await new Promise(res => videoEl.onloadedmetadata = res);
@@ -51,9 +80,40 @@
                             return stream;
                         } catch (e) {
                             console.warn('Camera error', e);
-                            alert('Unable to access camera. You can use photo upload instead.');
+                            showError('Camera access denied. Please allow camera permissions and refresh the page.');
                             throw e;
                         }
+                    }
+
+                    function showError(message) {
+                        // Create a more user-friendly error display
+                        const errorDiv = document.createElement('div');
+                        errorDiv.className = 'fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded z-50 max-w-sm';
+                        errorDiv.innerHTML = `
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span class="text-sm">${message}</span>
+                            </div>
+                        `;
+                        document.body.appendChild(errorDiv);
+                        setTimeout(() => errorDiv.remove(), 5000);
+                    }
+
+                    function showSuccess(message) {
+                        const successDiv = document.createElement('div');
+                        successDiv.className = 'fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded z-50 max-w-sm';
+                        successDiv.innerHTML = `
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span class="text-sm">${message}</span>
+                            </div>
+                        `;
+                        document.body.appendChild(successDiv);
+                        setTimeout(() => successDiv.remove(), 3000);
                     }
 
                     function captureFrame(videoEl, canvasEl) {
@@ -113,12 +173,23 @@
                     });
                     document.getElementById('captureIn').addEventListener('click', async (e) => {
                         e.preventDefault();
+                        const button = e.target;
+                        const originalText = button.textContent;
+                        
                         try {
+                            button.textContent = 'Capturing...';
+                            button.disabled = true;
+                            
                             if (!videoIn.srcObject) streamIn = await startCamera(videoIn);
                             const blob = await captureFrame(videoIn, canvasIn);
                             await submitWithPhoto(routes.in, 'photo_in', blob);
+                            showSuccess('Time in successful!');
                         } catch (err) {
-                            alert('Failed to time in via camera. Please allow camera permission and try again.');
+                            console.error('Time in error:', err);
+                            showError('Failed to time in. Please try again.');
+                        } finally {
+                            button.textContent = originalText;
+                            button.disabled = false;
                         }
                     });
 
@@ -132,12 +203,23 @@
                     });
                     document.getElementById('captureOut').addEventListener('click', async (e) => {
                         e.preventDefault();
+                        const button = e.target;
+                        const originalText = button.textContent;
+                        
                         try {
+                            button.textContent = 'Capturing...';
+                            button.disabled = true;
+                            
                             if (!videoOut.srcObject) streamOut = await startCamera(videoOut);
                             const blob = await captureFrame(videoOut, canvasOut);
                             await submitWithPhoto(routes.out, 'photo_out', blob);
+                            showSuccess('Time out successful!');
                         } catch (err) {
-                            alert('Failed to time out via camera. Please allow camera permission and try again.');
+                            console.error('Time out error:', err);
+                            showError('Failed to time out. Please try again.');
+                        } finally {
+                            button.textContent = originalText;
+                            button.disabled = false;
                         }
                     });
                 })();

@@ -83,14 +83,6 @@
                                 </div>
                             </div>
 
-                            <!-- Action Button -->
-                            <a href="{{ route('companies.show', $company) }}" 
-                               class="inline-flex items-center px-4 py-2 bg-ojt-primary text-white text-sm font-medium rounded-lg hover:bg-maroon-700 transition-colors duration-200">
-                                View Details
-                                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                </svg>
-                            </a>
                             @if(Auth::user()->isCoordinator() && $company->coordinator_id === Auth::id())
                                 <a href="{{ route('coord.companies.edit', $company) }}" 
                                    class="ml-3 inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors duration-200">

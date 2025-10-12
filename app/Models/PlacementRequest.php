@@ -15,6 +15,8 @@ class PlacementRequest extends Model
         'status',
         'start_date',
         'contact_person',
+        'supervisor_name',
+        'supervisor_email',
         'note',
         'proof_path',
         'decided_by',

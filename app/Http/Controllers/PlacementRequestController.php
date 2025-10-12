@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class PlacementRequestController extends Controller
 {
@@ -37,6 +38,8 @@ class PlacementRequestController extends Controller
             'external_company_address' => ['nullable', 'string', 'max:255'],
             'start_date' => ['nullable', 'date'],
             'contact_person' => ['nullable', 'string', 'max:255'],
+            'supervisor_name' => ['nullable', 'string', 'max:255'],
+            'supervisor_email' => ['nullable', 'email', 'max:255'],
             'note' => ['nullable', 'string', 'max:2000'],
             'proof' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
         ]);
@@ -55,9 +58,35 @@ class PlacementRequestController extends Controller
             'external_company_address' => $request->string('external_company_address'),
             'start_date' => $request->date('start_date'),
             'contact_person' => $request->string('contact_person'),
+            'supervisor_name' => $request->string('supervisor_name'),
+            'supervisor_email' => $request->string('supervisor_email'),
             'note' => $request->string('note'),
             'proof_path' => $path,
         ]);
+
+        // Handle supervisor assignment if provided
+        if ($request->filled('supervisor_email')) {
+            $supervisor = User::firstOrCreate(
+                ['email' => $request->supervisor_email],
+                [
+                    'name' => $request->supervisor_name ?? 'Supervisor',
+                    'role' => 'supervisor',
+                    'password' => bcrypt(Str::random(12)), // Temporary password
+                    'email_verified_at' => now(),
+                ]
+            );
+
+            // Create supervisor profile if it doesn't exist
+            if (!$supervisor->supervisorProfile) {
+                $supervisor->supervisorProfile()->create([
+                    'company_id' => $companyId,
+                    'employee_id' => 'SUP-' . $supervisor->id,
+                ]);
+            }
+
+            // Assign supervisor to student profile
+            $user->studentProfile()->update(['supervisor_id' => $supervisor->id]);
+        }
 
         // Notify coordinator (reuse existing Notification model)
         $coordinator = User::where('role', 'coordinator')

@@ -74,7 +74,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-gray-600 text-sm font-medium">Reports Submitted</p>
-                                <p class="text-2xl font-bold text-ojt-dark">0</p>
+                                <p class="text-2xl font-bold text-ojt-dark">{{ Auth::user()->dailyReports()->count() }}</p>
                             </div>
                             <div class="w-12 h-12 bg-ojt-success/10 rounded-lg flex items-center justify-center">
                                 <svg class="w-6 h-6 text-ojt-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -84,21 +84,93 @@
                         </div>
                     </div>
 
-                    <!-- Hours Remaining -->
+                    <!-- Progress Percentage -->
                     <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-                        <div class="flex items-center justify-between">
+                        <div class="flex items-center justify-between mb-3">
                             <div>
-                                <p class="text-gray-600 text-sm font-medium">Hours Remaining</p>
-                                <p class="text-2xl font-bold text-ojt-dark">{{ Auth::user()->getRemainingHours() }}</p>
+                                <p class="text-gray-600 text-sm font-medium">Progress</p>
+                                <p class="text-2xl font-bold text-ojt-dark">
+                                    @php
+                                        $completed = Auth::user()->getCompletedHours();
+                                        $required = Auth::user()->getRequiredHours();
+                                        $percentage = $required > 0 ? round(($completed / $required) * 100, 1) : 0;
+                                    @endphp
+                                    {{ $percentage }}%
+                                </p>
                             </div>
                             <div class="w-12 h-12 bg-ojt-warning/10 rounded-lg flex items-center justify-center">
                                 <svg class="w-6 h-6 text-ojt-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                 </svg>
                             </div>
                         </div>
+                        <!-- Progress Bar -->
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-gradient-to-r from-ojt-primary to-ojt-accent h-2 rounded-full transition-all duration-300" 
+                                 style="width: {{ $percentage }}%"></div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">{{ $completed }} / {{ $required }} hours</p>
                     </div>
                 </div>
+
+                <!-- Today's Attendance Status -->
+                @if(Auth::user()->studentProfile && Auth::user()->studentProfile->ojt_status === 'active')
+                    @php
+                        $todayAttendance = Auth::user()->attendanceLogs()->where('work_date', today())->first();
+                    @endphp
+                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-8">
+                        <h3 class="text-lg font-semibold text-ojt-dark mb-4">Today's Attendance</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="text-center p-4 rounded-lg {{ $todayAttendance && $todayAttendance->time_in ? 'bg-green-50 border border-green-200' : 'bg-yellow-50 border border-yellow-200' }}">
+                                <div class="w-8 h-8 mx-auto mb-2 {{ $todayAttendance && $todayAttendance->time_in ? 'text-green-600' : 'text-yellow-600' }}">
+                                    @if($todayAttendance && $todayAttendance->time_in)
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    @else
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    @endif
+                                </div>
+                                <p class="text-sm font-medium {{ $todayAttendance && $todayAttendance->time_in ? 'text-green-800' : 'text-yellow-800' }}">Time In</p>
+                                <p class="text-lg font-bold {{ $todayAttendance && $todayAttendance->time_in ? 'text-green-900' : 'text-yellow-900' }}">
+                                    {{ $todayAttendance && $todayAttendance->time_in ? $todayAttendance->time_in : 'Not recorded' }}
+                                </p>
+                            </div>
+                            
+                            <div class="text-center p-4 rounded-lg {{ $todayAttendance && $todayAttendance->time_out ? 'bg-green-50 border border-green-200' : 'bg-gray-50 border border-gray-200' }}">
+                                <div class="w-8 h-8 mx-auto mb-2 {{ $todayAttendance && $todayAttendance->time_out ? 'text-green-600' : 'text-gray-400' }}">
+                                    @if($todayAttendance && $todayAttendance->time_out)
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    @else
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    @endif
+                                </div>
+                                <p class="text-sm font-medium {{ $todayAttendance && $todayAttendance->time_out ? 'text-green-800' : 'text-gray-600' }}">Time Out</p>
+                                <p class="text-lg font-bold {{ $todayAttendance && $todayAttendance->time_out ? 'text-green-900' : 'text-gray-500' }}">
+                                    {{ $todayAttendance && $todayAttendance->time_out ? $todayAttendance->time_out : 'Not recorded' }}
+                                </p>
+                            </div>
+                            
+                            <div class="text-center p-4 rounded-lg bg-blue-50 border border-blue-200">
+                                <div class="w-8 h-8 mx-auto mb-2 text-blue-600">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <p class="text-sm font-medium text-blue-800">Hours Today</p>
+                                <p class="text-lg font-bold text-blue-900">
+                                    {{ $todayAttendance && $todayAttendance->minutes_worked ? round($todayAttendance->minutes_worked / 60, 1) : '0' }}h
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                @endif
             @elseif(Auth::user()->isCoordinator())
                 <!-- Coordinator Dashboard Stats -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -303,39 +375,53 @@
                                 @if(Auth::user()->studentProfile && Auth::user()->studentProfile->ojt_status === 'active')
                                     <!-- Active OJT Activities -->
                                     <div class="space-y-4">
-                                        <div class="flex items-start space-x-3">
-                                            <div class="w-8 h-8 bg-ojt-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                                                <svg class="w-4 h-4 text-ojt-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
+                                        @php
+                                            $recentAttendance = Auth::user()->attendanceLogs()->latest()->first();
+                                            $recentReport = Auth::user()->dailyReports()->latest()->first();
+                                            $todayAttendance = Auth::user()->attendanceLogs()->where('work_date', today())->first();
+                                        @endphp
+                                        
+                                        @if($recentAttendance)
+                                            <div class="flex items-start space-x-3">
+                                                <div class="w-8 h-8 bg-ojt-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                                                    <svg class="w-4 h-4 text-ojt-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                </div>
+                                                <div class="flex-1">
+                                                    <p class="text-sm font-medium text-ojt-dark">Last Time In: {{ $recentAttendance->time_in ?? 'Not recorded' }}</p>
+                                                    <p class="text-xs text-gray-500">{{ $recentAttendance->work_date->format('M d, Y') }}</p>
+                                                </div>
                                             </div>
-                                            <div class="flex-1">
-                                                <p class="text-sm font-medium text-ojt-dark">OJT Started</p>
-                                                <p class="text-xs text-gray-500">Your OJT internship is now active</p>
+                                        @endif
+
+                                        @if($recentReport)
+                                            <div class="flex items-start space-x-3">
+                                                <div class="w-8 h-8 bg-ojt-success/10 rounded-full flex items-center justify-center flex-shrink-0">
+                                                    <svg class="w-4 h-4 text-ojt-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                    </svg>
+                                                </div>
+                                                <div class="flex-1">
+                                                    <p class="text-sm font-medium text-ojt-dark">Last Daily Report Submitted</p>
+                                                    <p class="text-xs text-gray-500">{{ $recentReport->work_date->format('M d, Y') }}</p>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div class="flex items-start space-x-3">
-                                            <div class="w-8 h-8 bg-ojt-success/10 rounded-full flex items-center justify-center flex-shrink-0">
-                                                <svg class="w-4 h-4 text-ojt-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
+                                        @endif
+
+                                        @if(!$todayAttendance)
+                                            <div class="flex items-start space-x-3">
+                                                <div class="w-8 h-8 bg-ojt-warning/10 rounded-full flex items-center justify-center flex-shrink-0">
+                                                    <svg class="w-4 h-4 text-ojt-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                                    </svg>
+                                                </div>
+                                                <div class="flex-1">
+                                                    <p class="text-sm font-medium text-ojt-dark">Time-in required today</p>
+                                                    <p class="text-xs text-gray-500">Don't forget to time in for your OJT today</p>
+                                                </div>
                                             </div>
-                                            <div class="flex-1">
-                                                <p class="text-sm font-medium text-ojt-dark">Profile Completed</p>
-                                                <p class="text-xs text-gray-500">Your profile has been set up</p>
-                                            </div>
-                                        </div>
-                                        <div class="flex items-start space-x-3">
-                                            <div class="w-8 h-8 bg-ojt-warning/10 rounded-full flex items-center justify-center flex-shrink-0">
-                                                <svg class="w-4 h-4 text-ojt-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                                </svg>
-                                            </div>
-                                            <div class="flex-1">
-                                                <p class="text-sm font-medium text-ojt-dark">Time-in/out required</p>
-                                                <p class="text-xs text-gray-500">Use the Time In/Out feature to track your hours</p>
-                                            </div>
-                                        </div>
+                                        @endif
                                     </div>
                                 @else
                                     <!-- Pre-OJT Activities -->
@@ -438,18 +524,18 @@
                                             </svg>
                                             Time In/Out
                                         </a>
-                                        <a href="{{ route('reports.index') }}" class="w-full bg-white border border-ojt-primary text-ojt-primary py-3 px-4 rounded-lg font-medium hover:bg-ojt-primary hover:text-white transition-colors duration-200 flex items-center justify-center">
+                                        <a href="{{ route('reports.create') }}" class="w-full bg-white border border-ojt-primary text-ojt-primary py-3 px-4 rounded-lg font-medium hover:bg-ojt-primary hover:text-white transition-colors duration-200 flex items-center justify-center">
                                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                             </svg>
                                             Submit Report
                                         </a>
-                                        <button class="w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center">
+                                        <a href="{{ route('reports.index') }}" class="w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center">
                                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                             </svg>
-                                            View Documents
-                                        </button>
+                                            View Reports
+                                        </a>
                                     @else
                                         <!-- Pre-OJT Actions -->
                                         <div class="text-center py-4">
