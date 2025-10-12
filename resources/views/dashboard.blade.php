@@ -172,6 +172,32 @@
                     </div>
                 @endif
             @elseif(Auth::user()->isCoordinator())
+                @php
+                    $coordinator = Auth::user();
+                    $department = $coordinator->coordinatorProfile?->department;
+                    $program = $coordinator->coordinatorProfile?->program;
+                    
+                    // Real data calculations
+                    $managedStudents = \App\Models\User::where('role', 'student')
+                        ->whereHas('studentProfile', function($query) use ($department) {
+                            $query->where('department', $department);
+                        })->count();
+                    
+                    $pendingPlacements = \App\Models\PlacementRequest::whereHas('student', function($query) use ($department) {
+                        $query->whereHas('studentProfile', function($q) use ($department) {
+                            $q->where('department', $department);
+                        });
+                    })->where('status', 'pending')->count();
+                    
+                    $approvedPlacements = \App\Models\PlacementRequest::whereHas('student', function($query) use ($department) {
+                        $query->whereHas('studentProfile', function($q) use ($department) {
+                            $q->where('department', $department);
+                        });
+                    })->where('status', 'approved')->count();
+                    
+                    $activeCompanies = \App\Models\Company::where('department', $department)
+                        ->where('status', 'active')->count();
+                @endphp
                 <!-- Coordinator Dashboard Stats -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <!-- Managed Students -->
@@ -179,7 +205,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-ojt-accent/80 text-sm font-medium">Managed Students</p>
-                                <p class="text-2xl font-bold">25</p>
+                                <p class="text-2xl font-bold">{{ $managedStudents }}</p>
                             </div>
                             <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -194,7 +220,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-gray-600 text-sm font-medium">Pending Reviews</p>
-                                <p class="text-2xl font-bold text-ojt-dark">8</p>
+                                <p class="text-2xl font-bold text-ojt-dark">{{ $pendingPlacements }}</p>
                             </div>
                             <div class="w-12 h-12 bg-ojt-warning/10 rounded-lg flex items-center justify-center">
                                 <svg class="w-6 h-6 text-ojt-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -204,12 +230,12 @@
                         </div>
                     </div>
 
-                    <!-- Completed Evaluations -->
+                    <!-- Approved Placements -->
                     <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-gray-600 text-sm font-medium">Completed Evaluations</p>
-                                <p class="text-2xl font-bold text-ojt-dark">42</p>
+                                <p class="text-gray-600 text-sm font-medium">Approved Placements</p>
+                                <p class="text-2xl font-bold text-ojt-dark">{{ $approvedPlacements }}</p>
                             </div>
                             <div class="w-12 h-12 bg-ojt-success/10 rounded-lg flex items-center justify-center">
                                 <svg class="w-6 h-6 text-ojt-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -224,7 +250,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-gray-600 text-sm font-medium">Active Companies</p>
-                                <p class="text-2xl font-bold text-ojt-dark">12</p>
+                                <p class="text-2xl font-bold text-ojt-dark">{{ $activeCompanies }}</p>
                             </div>
                             <div class="w-12 h-12 bg-ojt-accent/10 rounded-lg flex items-center justify-center">
                                 <svg class="w-6 h-6 text-ojt-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -558,24 +584,24 @@
                             @elseif(Auth::user()->isCoordinator())
                                 <!-- Coordinator Quick Actions -->
                                 <div class="space-y-3">
-                                    <button class="w-full bg-ojt-primary text-white py-3 px-4 rounded-lg font-medium hover:bg-maroon-700 transition-colors duration-200 flex items-center justify-center">
-                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                                        </svg>
-                                        Manage Students
-                                    </button>
-                                    <button class="w-full bg-white border border-ojt-primary text-ojt-primary py-3 px-4 rounded-lg font-medium hover:bg-ojt-primary hover:text-white transition-colors duration-200 flex items-center justify-center">
+                                    <a href="{{ route('coord.placements.inbox') }}" class="w-full bg-ojt-primary text-white py-3 px-4 rounded-lg font-medium hover:bg-maroon-700 transition-colors duration-200 flex items-center justify-center">
                                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                         </svg>
-                                        Review Submissions
-                                    </button>
-                                    <button class="w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center">
+                                        Review Placements
+                                    </a>
+                                    <a href="{{ route('companies.index') }}" class="w-full bg-white border border-ojt-primary text-ojt-primary py-3 px-4 rounded-lg font-medium hover:bg-ojt-primary hover:text-white transition-colors duration-200 flex items-center justify-center">
                                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                                         </svg>
-                                        Generate Reports
-                                    </button>
+                                        Manage Companies
+                                    </a>
+                                    <a href="{{ route('coord.supervisors.index') }}" class="w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center">
+                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                                        </svg>
+                                        Manage Supervisors
+                                    </a>
                                 </div>
                             @elseif(Auth::user()->isSupervisor())
                                 <!-- Supervisor Quick Actions -->

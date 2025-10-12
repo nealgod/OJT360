@@ -84,4 +84,9 @@ Route::middleware(['auth', 'verified', 'force.password.change', 'profile.complet
     Route::post('/coord/companies/{company}', [App\Http\Controllers\CompanyController::class, 'update'])->name('coord.companies.update');
     Route::patch('/coord/companies/{company}/toggle-status', [App\Http\Controllers\CompanyController::class, 'toggleStatus'])->name('coord.companies.toggle-status');
     Route::delete('/coord/companies/{company}', [App\Http\Controllers\CompanyController::class, 'destroy'])->name('coord.companies.destroy');
+
+    // Coordinator manage supervisors
+    Route::get('/coord/supervisors', [App\Http\Controllers\CoordinatorSupervisorController::class, 'index'])->name('coord.supervisors.index');
+    Route::get('/coord/supervisors/create', [App\Http\Controllers\CoordinatorSupervisorController::class, 'create'])->name('coord.supervisors.create');
+    Route::post('/coord/supervisors', [App\Http\Controllers\CoordinatorSupervisorController::class, 'store'])->name('coord.supervisors.store');
 });

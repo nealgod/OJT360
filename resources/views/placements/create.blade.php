@@ -48,18 +48,6 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <div>
-                            <x-input-label for="supervisor_name" :value="__('Supervisor Name')" />
-                            <x-text-input id="supervisor_name" name="supervisor_name" type="text" class="mt-1 block w-full" :value="old('supervisor_name')" required />
-                            <x-input-error class="mt-2" :messages="$errors->get('supervisor_name')" />
-                        </div>
-                        <div>
-                            <x-input-label for="supervisor_email" :value="__('Supervisor Email')" />
-                            <x-text-input id="supervisor_email" name="supervisor_email" type="email" class="mt-1 block w-full" :value="old('supervisor_email')" required />
-                            <x-input-error class="mt-2" :messages="$errors->get('supervisor_email')" />
-                        </div>
-                    </div>
 
                     <div>
                         <x-input-label for="note" :value="__('Notes (optional)')" />

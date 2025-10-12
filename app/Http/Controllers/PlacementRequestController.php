@@ -43,19 +43,20 @@ class PlacementRequestController extends Controller
             'external_company_address' => ['nullable', 'string', 'max:255'],
             'start_date' => ['required', 'date'],
             'contact_person' => ['required', 'string', 'max:255'],
-            'supervisor_name' => ['required', 'string', 'max:255'],
-            'supervisor_email' => ['required', 'email', 'max:255'],
             'note' => ['nullable', 'string', 'max:2000'],
             'proof' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
         ]);
 
         // Custom validation: Either company_id or external_company_name must be provided
-        if (!$request->filled('company_id') && !$request->filled('external_company_name')) {
+        $hasCompany = $request->input('company_id') && $request->input('company_id') !== '';
+        $hasExternalCompany = $request->filled('external_company_name');
+        
+        if (!$hasCompany && !$hasExternalCompany) {
             return back()->withErrors(['company_id' => 'Please either select a company or enter an external company name.'])->withInput();
         }
 
         // If external company is selected, external company name and address are required
-        if (!$request->filled('company_id')) {
+        if (!$hasCompany) {
             if (!$request->filled('external_company_name')) {
                 return back()->withErrors(['external_company_name' => 'External company name is required when no company is selected.'])->withInput();
             }
@@ -69,7 +70,7 @@ class PlacementRequestController extends Controller
             $path = $request->file('proof')->store('placement-proofs', 'public');
         }
 
-        $companyId = $request->filled('company_id') ? (int) $request->input('company_id') : null;
+        $companyId = $hasCompany ? (int) $request->input('company_id') : null;
 
         $placement = PlacementRequest::create([
             'student_user_id' => Auth::id(),
@@ -78,35 +79,11 @@ class PlacementRequestController extends Controller
             'external_company_address' => $request->string('external_company_address'),
             'start_date' => $request->date('start_date'),
             'contact_person' => $request->string('contact_person'),
-            'supervisor_name' => $request->string('supervisor_name'),
-            'supervisor_email' => $request->string('supervisor_email'),
             'note' => $request->string('note'),
             'proof_path' => $path,
         ]);
 
-        // Handle supervisor assignment if provided
-        if ($request->filled('supervisor_email')) {
-            $supervisor = User::firstOrCreate(
-                ['email' => $request->supervisor_email],
-                [
-                    'name' => $request->supervisor_name ?? 'Supervisor',
-                    'role' => 'supervisor',
-                    'password' => bcrypt(Str::random(12)), // Temporary password
-                    'email_verified_at' => now(),
-                ]
-            );
-
-            // Create supervisor profile if it doesn't exist
-            if (!$supervisor->supervisorProfile) {
-                $supervisor->supervisorProfile()->create([
-                    'company_id' => $companyId,
-                    'employee_id' => 'SUP-' . $supervisor->id,
-                ]);
-            }
-
-            // Assign supervisor to student profile
-            $user->studentProfile()->update(['supervisor_id' => $supervisor->id]);
-        }
+        // Supervisor assignment will be done manually by coordinator later
 
         // Notify coordinator (reuse existing Notification model)
         $coordinator = User::where('role', 'coordinator')
@@ -142,6 +119,7 @@ class PlacementRequestController extends Controller
                 $q->where('department', $user->coordinatorProfile?->department);
             })
             ->where('status', 'pending')
+            ->whereNull('dismissed_at')
             ->latest()
             ->paginate(10);
         return view('placements.inbox', compact('requests'));
@@ -162,8 +140,36 @@ class PlacementRequestController extends Controller
             'decided_at' => now(),
         ]);
 
-        // Assign to student profile and activate OJT
+        // Auto-void all other pending placement requests for this student
         $student = $placementRequest->student;
+        $voidedCount = PlacementRequest::where('student_user_id', $student->id)
+            ->where('id', '!=', $placementRequest->id)
+            ->where('status', 'pending')
+            ->count();
+            
+        PlacementRequest::where('student_user_id', $student->id)
+            ->where('id', '!=', $placementRequest->id)
+            ->where('status', 'pending')
+            ->update([
+                'status' => 'voided',
+                'decided_by' => Auth::id(),
+                'decided_at' => now(),
+            ]);
+
+        // Notify student about voided requests if any
+        if ($voidedCount > 0) {
+            \App\Models\Notification::create([
+                'user_id' => $student->id,
+                'type' => 'placement_voided',
+                'title' => 'Other Placement Requests Voided',
+                'message' => "Your other {$voidedCount} pending placement request(s) have been automatically voided since one was approved.",
+                'data' => [
+                    'voided_count' => $voidedCount,
+                ],
+            ]);
+        }
+
+        // Assign to student profile and activate OJT
         if ($student && $student->studentProfile) {
             $student->studentProfile->update([
                 'assigned_company_id' => $placementRequest->company_id,

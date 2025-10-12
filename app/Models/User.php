@@ -67,6 +67,12 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(DailyReport::class, 'student_user_id');
     }
 
+    // For supervisors: get all students they supervise
+    public function studentProfiles()
+    {
+        return $this->hasMany(StudentProfile::class, 'supervisor_id');
+    }
+
     // Role checking methods
     public function isStudent()
     {

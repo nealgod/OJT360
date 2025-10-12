@@ -13,15 +13,18 @@
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                 <div class="divide-y divide-gray-100">
                     @forelse($requests as $req)
-                        <div class="p-4 sm:p-6 flex items-center justify-between {{ $req->status === 'declined' ? 'bg-red-50 border-l-4 border-red-400' : '' }}">
+                        <div class="p-4 sm:p-6 flex items-center justify-between {{ $req->status === 'declined' ? 'bg-red-50 border-l-4 border-red-400' : ($req->status === 'voided' ? 'bg-gray-50 border-l-4 border-gray-400' : '') }}">
                             <div class="flex-1">
                                 <p class="text-ojt-dark font-medium">{{ $req->company?->name ?? ($req->external_company_name ?? 'External Company') }}</p>
                                 <p class="text-sm text-gray-500">
-                                    Status: <span class="font-medium capitalize {{ $req->status === 'declined' ? 'text-red-600' : ($req->status === 'approved' ? 'text-green-600' : 'text-yellow-600') }}">{{ $req->status }}</span>
+                                    Status: <span class="font-medium capitalize {{ $req->status === 'declined' ? 'text-red-600' : ($req->status === 'approved' ? 'text-green-600' : ($req->status === 'voided' ? 'text-gray-500' : 'text-yellow-600')) }}">{{ $req->status }}</span>
                                     @if($req->start_date) • Start: {{ $req->start_date->format('M d, Y') }} @endif
                                 </p>
                                 @if($req->status === 'declined' && $req->decline_reason)
                                     <p class="text-sm text-red-600 mt-1">Reason: {{ $req->decline_reason }}</p>
+                                @endif
+                                @if($req->status === 'voided')
+                                    <p class="text-sm text-gray-500 mt-1">Automatically voided when another placement was approved</p>
                                 @endif
                             </div>
                             <div class="flex items-center space-x-3">

@@ -20,6 +20,7 @@ class StudentProfile extends Model
         'required_hours',
         'completed_hours',
         'assigned_company_id',
+        'supervisor_id',
     ];
 
     protected $casts = [
@@ -36,6 +37,12 @@ class StudentProfile extends Model
     public function company()
     {
         return $this->belongsTo(Company::class, 'assigned_company_id');
+    }
+
+    // Relationship with Supervisor
+    public function supervisor()
+    {
+        return $this->belongsTo(User::class, 'supervisor_id');
     }
 
     // Relationship with Coordinator (through department)
