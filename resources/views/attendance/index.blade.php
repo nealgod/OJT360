@@ -66,7 +66,7 @@
                                     audio: false 
                                 });
                             } catch (e) {
-                                console.log('Back camera failed, trying any camera...');
+                                // Back camera failed, trying any camera
                                 stream = await navigator.mediaDevices.getUserMedia({ 
                                     video: true, 
                                     audio: false 

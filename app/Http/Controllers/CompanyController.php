@@ -22,18 +22,18 @@ class CompanyController extends Controller
                 ->orderBy('name')
                 ->get();
         } elseif ($user->isCoordinator()) {
-            // Coordinators see all active companies in their department, plus those they own
+            // Coordinators see ALL companies in their department (active and inactive)
             $coordDept = $user->coordinatorProfile?->department;
-            $companies = Company::where('status', 'active')
-                ->where(function($q) use ($user, $coordDept) {
+            $companies = Company::where(function($q) use ($user, $coordDept) {
                     $q->where('coordinator_id', $user->id)
                       ->orWhere('department', $coordDept);
                 })
+                ->orderBy('status', 'desc') // Active first, then inactive
                 ->orderBy('name')
                 ->get();
         } else {
-            // Admin and supervisors see all companies
-            $companies = Company::where('status', 'active')
+            // Admin and supervisors see all companies (active and inactive)
+            $companies = Company::orderBy('status', 'desc') // Active first, then inactive
                 ->orderBy('name')
                 ->get();
         }
@@ -91,7 +91,13 @@ class CompanyController extends Controller
     public function edit(Company $company)
     {
         $user = auth()->user();
-        abort_unless($user && ($user->isAdmin() || ($user->isCoordinator() && $company->coordinator_id === $user->id)), 403);
+        $coordDept = $user->coordinatorProfile?->department;
+        
+        abort_unless($user && (
+            $user->isAdmin() || 
+            ($user->isCoordinator() && $company->coordinator_id === $user->id) ||
+            ($user->isCoordinator() && $company->department === $coordDept)
+        ), 403);
 
         $department = $company->department;
         return view('companies.edit', compact('company', 'department'));
@@ -103,7 +109,13 @@ class CompanyController extends Controller
     public function update(Request $request, Company $company)
     {
         $user = auth()->user();
-        abort_unless($user && ($user->isAdmin() || ($user->isCoordinator() && $company->coordinator_id === $user->id)), 403);
+        $coordDept = $user->coordinatorProfile?->department;
+        
+        abort_unless($user && (
+            $user->isAdmin() || 
+            ($user->isCoordinator() && $company->coordinator_id === $user->id) ||
+            ($user->isCoordinator() && $company->department === $coordDept)
+        ), 403);
 
         $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:companies,name,' . $company->id],
@@ -128,12 +140,40 @@ class CompanyController extends Controller
     }
 
     /**
+     * Toggle company status (active/inactive).
+     */
+    public function toggleStatus(Company $company)
+    {
+        $user = auth()->user();
+        $coordDept = $user->coordinatorProfile?->department;
+        
+        abort_unless($user && (
+            $user->isAdmin() || 
+            ($user->isCoordinator() && $company->coordinator_id === $user->id) ||
+            ($user->isCoordinator() && $company->department === $coordDept)
+        ), 403);
+
+        $company->update([
+            'status' => $company->status === 'active' ? 'inactive' : 'active'
+        ]);
+
+        $status = $company->status === 'active' ? 'activated' : 'deactivated';
+        return redirect()->route('companies.index')->with('success', "Company {$status} successfully.");
+    }
+
+    /**
      * Delete company.
      */
     public function destroy(Company $company)
     {
         $user = auth()->user();
-        abort_unless($user && ($user->isAdmin() || ($user->isCoordinator() && $company->coordinator_id === $user->id)), 403);
+        $coordDept = $user->coordinatorProfile?->department;
+        
+        abort_unless($user && (
+            $user->isAdmin() || 
+            ($user->isCoordinator() && $company->coordinator_id === $user->id) ||
+            ($user->isCoordinator() && $company->department === $coordDept)
+        ), 403);
 
         $company->delete();
 

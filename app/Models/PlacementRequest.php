@@ -12,6 +12,8 @@ class PlacementRequest extends Model
     protected $fillable = [
         'student_user_id',
         'company_id',
+        'external_company_name',
+        'external_company_address',
         'status',
         'start_date',
         'contact_person',
@@ -21,11 +23,13 @@ class PlacementRequest extends Model
         'proof_path',
         'decided_by',
         'decided_at',
+        'dismissed_at',
     ];
 
     protected $casts = [
         'start_date' => 'date',
         'decided_at' => 'datetime',
+        'dismissed_at' => 'datetime',
     ];
 
     public function student()

@@ -40,17 +40,24 @@
             <!-- Companies Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="companiesGrid">
                 @forelse($companies as $company)
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200 {{ $company->status === 'inactive' ? 'opacity-75' : '' }}">
                         <div class="p-6">
                             <!-- Company Logo/Icon -->
-                            <div class="w-16 h-16 bg-ojt-primary rounded-lg flex items-center justify-center mb-4">
+                            <div class="w-16 h-16 {{ $company->status === 'inactive' ? 'bg-gray-400' : 'bg-ojt-primary' }} rounded-lg flex items-center justify-center mb-4">
                                 <span class="text-white text-xl font-bold">
                                     {{ substr($company->name, 0, 1) }}
                                 </span>
                             </div>
 
                             <!-- Company Info -->
-                            <h3 class="text-lg font-semibold text-ojt-dark mb-2">{{ $company->name }}</h3>
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="text-lg font-semibold text-ojt-dark">{{ $company->name }}</h3>
+                                @if(Auth::user()->isCoordinator())
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $company->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                        {{ ucfirst($company->status) }}
+                                    </span>
+                                @endif
+                            </div>
                             
                             <div class="space-y-2 text-sm text-gray-600 mb-4">
                                 <div class="flex items-start">
@@ -83,16 +90,32 @@
                                 </div>
                             </div>
 
-                            @if(Auth::user()->isCoordinator() && $company->coordinator_id === Auth::id())
-                                <a href="{{ route('coord.companies.edit', $company) }}" 
-                                   class="ml-3 inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors duration-200">
-                                    Edit
-                                </a>
-                                <form method="POST" action="{{ route('coord.companies.destroy', $company) }}" class="inline-block ml-2" onsubmit="return confirm('Delete this company?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button class="inline-flex items-center px-4 py-2 bg-white border border-red-300 text-red-700 text-sm font-medium rounded-lg hover:bg-red-50 transition-colors duration-200">Delete</button>
-                                </form>
+                            @if(Auth::user()->isCoordinator() && ($company->coordinator_id === Auth::id() || $company->department === Auth::user()->coordinatorProfile?->department))
+                                <div class="flex flex-wrap gap-2">
+                                    <!-- Status Toggle -->
+                                    <form method="POST" action="{{ route('coord.companies.toggle-status', $company) }}" class="inline-block">
+                                        @csrf
+                                        @method('PATCH')
+                                        <button type="submit" 
+                                                class="inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 {{ $company->status === 'active' ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-green-100 text-green-700 hover:bg-green-200' }}"
+                                                onclick="return confirm('{{ $company->status === 'active' ? 'Deactivate' : 'Activate' }} this company?')">
+                                            {{ $company->status === 'active' ? 'Deactivate' : 'Activate' }}
+                                        </button>
+                                    </form>
+                                    
+                                    <!-- Edit Button -->
+                                    <a href="{{ route('coord.companies.edit', $company) }}" 
+                                       class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                                        Edit
+                                    </a>
+                                    
+                                    <!-- Delete Button -->
+                                    <form method="POST" action="{{ route('coord.companies.destroy', $company) }}" class="inline-block" onsubmit="return confirm('Delete this company?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button class="inline-flex items-center px-3 py-2 bg-white border border-red-300 text-red-700 text-sm font-medium rounded-lg hover:bg-red-50 transition-colors duration-200">Delete</button>
+                                    </form>
+                                </div>
                             @endif
                         </div>
                     </div>

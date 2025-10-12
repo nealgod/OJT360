@@ -14,7 +14,11 @@ class PlacementRequestController extends Controller
 {
     public function index()
     {
-        $requests = Auth::user()->placementRequests()->with('company')->latest()->paginate(10);
+        $requests = Auth::user()->placementRequests()
+            ->whereNull('dismissed_at')
+            ->with('company')
+            ->latest()
+            ->paginate(10);
         return view('placements.index', compact('requests'));
     }
 
@@ -23,6 +27,7 @@ class PlacementRequestController extends Controller
         $user = Auth::user();
         $department = $user->studentProfile?->department;
         $companies = Company::query()
+            ->where('status', 'active')
             ->when($department, fn($q) => $q->where('department', $department))
             ->orderBy('name')
             ->get(['id','name','department']);
@@ -34,15 +39,30 @@ class PlacementRequestController extends Controller
         $user = Auth::user();
         $request->validate([
             'company_id' => ['nullable', 'exists:companies,id'],
-            'external_company_name' => ['required_without:company_id', 'nullable', 'string', 'max:255'],
+            'external_company_name' => ['nullable', 'string', 'max:255'],
             'external_company_address' => ['nullable', 'string', 'max:255'],
-            'start_date' => ['nullable', 'date'],
-            'contact_person' => ['nullable', 'string', 'max:255'],
-            'supervisor_name' => ['nullable', 'string', 'max:255'],
-            'supervisor_email' => ['nullable', 'email', 'max:255'],
+            'start_date' => ['required', 'date'],
+            'contact_person' => ['required', 'string', 'max:255'],
+            'supervisor_name' => ['required', 'string', 'max:255'],
+            'supervisor_email' => ['required', 'email', 'max:255'],
             'note' => ['nullable', 'string', 'max:2000'],
             'proof' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
         ]);
+
+        // Custom validation: Either company_id or external_company_name must be provided
+        if (!$request->filled('company_id') && !$request->filled('external_company_name')) {
+            return back()->withErrors(['company_id' => 'Please either select a company or enter an external company name.'])->withInput();
+        }
+
+        // If external company is selected, external company name and address are required
+        if (!$request->filled('company_id')) {
+            if (!$request->filled('external_company_name')) {
+                return back()->withErrors(['external_company_name' => 'External company name is required when no company is selected.'])->withInput();
+            }
+            if (!$request->filled('external_company_address')) {
+                return back()->withErrors(['external_company_address' => 'External company address is required when no company is selected.'])->withInput();
+            }
+        }
 
         $path = null;
         if ($request->hasFile('proof')) {
@@ -192,6 +212,16 @@ class PlacementRequestController extends Controller
         ]);
 
         return back()->with('success', 'Placement declined.');
+    }
+
+    public function dismiss(PlacementRequest $placementRequest)
+    {
+        // Only the student who owns the request can dismiss it
+        abort_unless($placementRequest->student_user_id === Auth::id(), 403);
+        
+        $placementRequest->update(['dismissed_at' => now()]);
+        
+        return response()->json(['success' => true]);
     }
 
     private function authorizeAction(PlacementRequest $placementRequest): void

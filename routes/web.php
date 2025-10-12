@@ -48,6 +48,7 @@ Route::middleware(['auth', 'force.password.change', 'profile.complete'])->group(
     Route::get('/placements', [App\Http\Controllers\PlacementRequestController::class, 'index'])->name('placements.index');
     Route::get('/placements/create', [App\Http\Controllers\PlacementRequestController::class, 'create'])->name('placements.create');
     Route::post('/placements', [App\Http\Controllers\PlacementRequestController::class, 'store'])->name('placements.store');
+    Route::post('/placements/{placementRequest}/dismiss', [App\Http\Controllers\PlacementRequestController::class, 'dismiss'])->name('placements.dismiss');
 
     // Attendance & Reports (students)
     Route::get('/attendance', [App\Http\Controllers\AttendanceController::class, 'index'])->name('attendance.index');
@@ -81,5 +82,6 @@ Route::middleware(['auth', 'verified', 'force.password.change', 'profile.complet
     Route::post('/coord/companies', [App\Http\Controllers\CompanyController::class, 'store'])->name('coord.companies.store');
     Route::get('/coord/companies/{company}/edit', [App\Http\Controllers\CompanyController::class, 'edit'])->name('coord.companies.edit');
     Route::post('/coord/companies/{company}', [App\Http\Controllers\CompanyController::class, 'update'])->name('coord.companies.update');
+    Route::patch('/coord/companies/{company}/toggle-status', [App\Http\Controllers\CompanyController::class, 'toggleStatus'])->name('coord.companies.toggle-status');
     Route::delete('/coord/companies/{company}', [App\Http\Controllers\CompanyController::class, 'destroy'])->name('coord.companies.destroy');
 });
