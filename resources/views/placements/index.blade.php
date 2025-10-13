@@ -13,30 +13,36 @@
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                 <div class="divide-y divide-gray-100">
                     @forelse($requests as $req)
-                        <div class="p-4 sm:p-6 flex items-center justify-between {{ $req->status === 'declined' ? 'bg-red-50 border-l-4 border-red-400' : ($req->status === 'voided' ? 'bg-gray-50 border-l-4 border-gray-400' : '') }}">
-                            <div class="flex-1">
-                                <p class="text-ojt-dark font-medium">{{ $req->company?->name ?? ($req->external_company_name ?? 'External Company') }}</p>
-                                <p class="text-sm text-gray-500">
-                                    Status: <span class="font-medium capitalize {{ $req->status === 'declined' ? 'text-red-600' : ($req->status === 'approved' ? 'text-green-600' : ($req->status === 'voided' ? 'text-gray-500' : 'text-yellow-600')) }}">{{ $req->status }}</span>
-                                    @if($req->start_date) • Start: {{ $req->start_date->format('M d, Y') }} @endif
-                                </p>
-                                @if($req->status === 'declined' && $req->decline_reason)
-                                    <p class="text-sm text-red-600 mt-1">Reason: {{ $req->decline_reason }}</p>
-                                @endif
-                                @if($req->status === 'voided')
-                                    <p class="text-sm text-gray-500 mt-1">Automatically voided when another placement was approved</p>
-                                @endif
+                        <div class="p-4 sm:p-6 {{ $req->status === 'declined' ? 'bg-red-50 border-l-4 border-red-400' : ($req->status === 'voided' ? 'bg-gray-50 border-l-4 border-gray-400' : ($req->status === 'approved' ? 'bg-green-50 border-l-4 border-green-400' : '')) }}">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex-1">
+                                    <p class="text-ojt-dark font-medium text-lg">{{ $req->company?->name ?? ($req->external_company_name ?? 'External Company') }}</p>
+                                    <p class="text-sm text-gray-500">
+                                        Status: <span class="font-medium capitalize {{ $req->status === 'declined' ? 'text-red-600' : ($req->status === 'approved' ? 'text-green-600' : ($req->status === 'voided' ? 'text-gray-500' : 'text-yellow-600')) }}">{{ $req->status }}</span>
+                                        @if($req->start_date) • Start: {{ $req->start_date->format('M d, Y') }} @endif
+                                    </p>
+                                    @if($req->status === 'declined' && $req->decline_reason)
+                                        <p class="text-sm text-red-600 mt-1">Reason: {{ $req->decline_reason }}</p>
+                                    @endif
+                                    @if($req->status === 'voided')
+                                        <p class="text-sm text-gray-500 mt-1">Automatically voided when another placement was approved</p>
+                                    @endif
+                                    @if($req->status === 'approved')
+                                        <p class="text-sm text-green-600 mt-1">✅ Your placement has been approved! You can now start your OJT.</p>
+                                    @endif
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <div class="text-sm text-gray-500">{{ $req->created_at->diffForHumans() }}</div>
+                                    @if($req->status === 'declined')
+                                        <button onclick="dismissRequest({{ $req->id }})" class="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-100 transition-colors">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                            </svg>
+                                        </button>
+                                    @endif
+                                </div>
                             </div>
-                            <div class="flex items-center space-x-3">
-                                <div class="text-sm text-gray-500">{{ $req->created_at->diffForHumans() }}</div>
-                                @if($req->status === 'declined')
-                                    <button onclick="dismissRequest({{ $req->id }})" class="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-100 transition-colors">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                        </svg>
-                                    </button>
-                                @endif
-                            </div>
+                            
                         </div>
                     @empty
                         <div class="p-8 text-center text-gray-500">No placement requests yet.</div>

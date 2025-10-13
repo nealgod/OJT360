@@ -23,8 +23,8 @@ class AttendanceLog extends Model
 
     protected $casts = [
         'work_date' => 'date',
-        'time_in' => 'datetime',
-        'time_out' => 'datetime',
+        'time_in' => 'string',
+        'time_out' => 'string',
     ];
 
     public function student()
@@ -32,9 +32,27 @@ class AttendanceLog extends Model
         return $this->belongsTo(User::class, 'student_user_id');
     }
 
-    public function company()
+    // Helper methods for time formatting
+    public function getTimeInFormattedAttribute()
     {
-        return $this->belongsTo(Company::class);
+        if (!$this->time_in) return '—';
+        try {
+            return \Carbon\Carbon::createFromFormat('H:i:s', $this->time_in)->format('g:i A');
+        } catch (\Exception $e) {
+            // Fallback if time format is different
+            return $this->time_in;
+        }
+    }
+
+    public function getTimeOutFormattedAttribute()
+    {
+        if (!$this->time_out) return '—';
+        try {
+            return \Carbon\Carbon::createFromFormat('H:i:s', $this->time_out)->format('g:i A');
+        } catch (\Exception $e) {
+            // Fallback if time format is different
+            return $this->time_out;
+        }
     }
 }
 

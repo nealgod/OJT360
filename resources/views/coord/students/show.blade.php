@@ -107,9 +107,9 @@
                                             <div class="flex items-center justify-between text-sm">
                                                 <span class="text-gray-600">{{ $attendance->work_date?->format('M d, Y') ?? 'N/A' }}</span>
                                                 <span class="text-gray-900">
-                                                    {{ $attendance->time_in?->format('H:i') ?? 'No time-in' }}
+                                                    {{ $attendance->time_in_formatted ?? 'No time-in' }}
                                                     @if($attendance->time_out)
-                                                        - {{ $attendance->time_out->format('H:i') }}
+                                                        - {{ $attendance->time_out_formatted }}
                                                     @endif
                                                 </span>
                                             </div>

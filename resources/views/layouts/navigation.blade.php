@@ -22,20 +22,24 @@
                         <x-nav-link :href="route('companies.index')" :active="request()->routeIs('companies.*')">
                             {{ __('Companies') }}
                         </x-nav-link>
-                        <x-nav-link :href="route('placements.index')" :active="request()->routeIs('placements.*')">
-                            {{ __('Placements') }}
-                        </x-nav-link>
-                        <x-nav-link :href="route('attendance.index')" :active="request()->routeIs('attendance.*')">
-                            {{ __('Attendance') }}
-                        </x-nav-link>
-                        <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
-                            {{ __('Reports') }}
-                        </x-nav-link>
-                        <x-nav-link :href="route('notifications.index')" :active="request()->routeIs('notifications.*')">
+                        @if(!Auth::user()->hasActiveOJT())
+                            <x-nav-link :href="route('placements.index')" :active="request()->routeIs('placements.*')">
+                                {{ __('Placements') }}
+                            </x-nav-link>
+                        @endif
+                        @if(Auth::user()->hasActiveOJT())
+                            <x-nav-link :href="route('attendance.index')" :active="request()->routeIs('attendance.*')">
+                                {{ __('Attendance') }}
+                            </x-nav-link>
+                            <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
+                                {{ __('Reports') }}
+                            </x-nav-link>
+                        @endif
+                        <x-nav-link :href="route('messages.index')" :active="request()->routeIs('messages.*')">
                             {{ __('Messages') }}
-                            @if(auth()->user()->notifications()->where('read', false)->count() > 0)
+                            @if(auth()->user()->unreadMessages()->count() > 0)
                                 <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                    {{ auth()->user()->notifications()->where('read', false)->count() }}
+                                    {{ auth()->user()->unreadMessages()->count() }}
                                 </span>
                             @endif
                         </x-nav-link>
@@ -125,17 +129,44 @@
             </x-responsive-nav-link>
             
             @if(Auth::user()->isStudent())
-                <x-responsive-nav-link href="#" :active="false">
+                <x-responsive-nav-link :href="route('companies.index')" :active="request()->routeIs('companies.*')">
                     <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
                     {{ __('Companies') }}
                 </x-responsive-nav-link>
-                <x-responsive-nav-link href="#" :active="false">
+                @if(!Auth::user()->hasActiveOJT())
+                    <x-responsive-nav-link :href="route('placements.index')" :active="request()->routeIs('placements.*')">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        {{ __('Placements') }}
+                    </x-responsive-nav-link>
+                @endif
+                @if(Auth::user()->hasActiveOJT())
+                    <x-responsive-nav-link :href="route('attendance.index')" :active="request()->routeIs('attendance.*')">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        {{ __('Attendance') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        {{ __('Reports') }}
+                    </x-responsive-nav-link>
+                @endif
+                <x-responsive-nav-link :href="route('messages.index')" :active="request()->routeIs('messages.*')">
                     <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                     </svg>
-                    {{ __('Reports') }}
+                    {{ __('Messages') }}
+                    @if(auth()->user()->unreadMessages()->count() > 0)
+                        <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            {{ auth()->user()->unreadMessages()->count() }}
+                        </span>
+                    @endif
                 </x-responsive-nav-link>
             @elseif(Auth::user()->isCoordinator())
                 <x-responsive-nav-link href="#" :active="false">

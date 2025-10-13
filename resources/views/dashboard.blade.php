@@ -23,11 +23,13 @@
                     @if(Auth::user()->studentProfile && Auth::user()->studentProfile->ojt_status === 'active')
                         <p class="text-gray-600">Here's what's happening with your OJT internship today.</p>
                     @else
-                        <p class="text-gray-600">Complete your OJT placement to start using the system features.</p>
+                        <p class="text-gray-600">Browse approved companies and apply for your OJT placement.</p>
                         <div class="mt-3">
                             <a href="{{ route('companies.index') }}" class="text-ojt-primary hover:text-maroon-700 underline">Browse companies</a>
-                            <span class="mx-2">•</span>
-                            <a href="{{ route('placements.create') }}" class="text-ojt-primary hover:text-maroon-700 underline">Notify acceptance</a>
+                            @if(!Auth::user()->placementRequests()->where('status', 'approved')->exists())
+                                <span class="mx-2">•</span>
+                                <a href="{{ route('placements.create') }}" class="text-ojt-primary hover:text-maroon-700 underline">Notify acceptance</a>
+                            @endif
                         </div>
                     @endif
                 @else
@@ -135,7 +137,7 @@
                                 </div>
                                 <p class="text-sm font-medium {{ $todayAttendance && $todayAttendance->time_in ? 'text-green-800' : 'text-yellow-800' }}">Time In</p>
                                 <p class="text-lg font-bold {{ $todayAttendance && $todayAttendance->time_in ? 'text-green-900' : 'text-yellow-900' }}">
-                                    {{ $todayAttendance && $todayAttendance->time_in ? $todayAttendance->time_in : 'Not recorded' }}
+                                    {{ $todayAttendance && $todayAttendance->time_in ? $todayAttendance->time_in_formatted : 'Not recorded' }}
                                 </p>
                             </div>
                             
@@ -153,7 +155,7 @@
                                 </div>
                                 <p class="text-sm font-medium {{ $todayAttendance && $todayAttendance->time_out ? 'text-green-800' : 'text-gray-600' }}">Time Out</p>
                                 <p class="text-lg font-bold {{ $todayAttendance && $todayAttendance->time_out ? 'text-green-900' : 'text-gray-500' }}">
-                                    {{ $todayAttendance && $todayAttendance->time_out ? $todayAttendance->time_out : 'Not recorded' }}
+                                    {{ $todayAttendance && $todayAttendance->time_out ? $todayAttendance->time_out_formatted : 'Not recorded' }}
                                 </p>
                             </div>
                             
@@ -415,7 +417,7 @@
                                                     </svg>
                                                 </div>
                                                 <div class="flex-1">
-                                                    <p class="text-sm font-medium text-ojt-dark">Last Time In: {{ $recentAttendance->time_in ?? 'Not recorded' }}</p>
+                                                    <p class="text-sm font-medium text-ojt-dark">Last Time In: {{ $recentAttendance->time_in_formatted ?? 'Not recorded' }}</p>
                                                     <p class="text-xs text-gray-500">{{ $recentAttendance->work_date->format('M d, Y') }}</p>
                                                 </div>
                                             </div>
@@ -431,6 +433,24 @@
                                                 <div class="flex-1">
                                                     <p class="text-sm font-medium text-ojt-dark">Last Daily Report Submitted</p>
                                                     <p class="text-xs text-gray-500">{{ $recentReport->work_date->format('M d, Y') }}</p>
+                                                </div>
+                                            </div>
+                                        @endif
+
+                                        @php($recentMessage = Auth::user()->receivedMessages()->latest()->first())
+                                        @if($recentMessage)
+                                            <div class="flex items-start space-x-3">
+                                                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                                    </svg>
+                                                </div>
+                                                <div class="flex-1">
+                                                    <p class="text-sm font-medium text-ojt-dark">Latest Message from {{ $recentMessage->sender->name }}</p>
+                                                    <p class="text-xs text-gray-500">{{ Str::limit($recentMessage->subject, 50) }}</p>
+                                                    <div class="mt-1">
+                                                        <a href="{{ route('messages.show', $recentMessage) }}" class="text-xs text-blue-600 hover:text-blue-800 underline">View message</a>
+                                                    </div>
                                                 </div>
                                             </div>
                                         @endif
@@ -490,6 +510,13 @@
                                                     <p class="text-xs text-gray-500">Apply to companies and get accepted to start OJT</p>
                                                     <div class="mt-2">
                                                         <a href="{{ route('placements.create') }}" class="text-ojt-primary hover:text-maroon-700 underline">Notify acceptance</a>
+                                                    </div>
+                                                @elseif($latestPlacement->status === 'approved')
+                                                    <p class="text-sm font-medium text-ojt-dark">Placement Approved ✅</p>
+                                                    <p class="text-xs text-gray-500">Your OJT placement has been approved. You can now start your internship.</p>
+                                                    <div class="mt-2 space-x-3">
+                                                        <a href="{{ route('placements.index') }}" class="text-ojt-primary hover:text-maroon-700 underline">View details</a>
+                                                        <a href="{{ route('notifications.index') }}" class="text-ojt-primary hover:text-maroon-700 underline">Messages</a>
                                                     </div>
                                                 @else
                                                     <p class="text-sm font-medium text-ojt-dark">Placement {{ ucfirst($latestPlacement->status) }}</p>
@@ -571,12 +598,12 @@
                                                 </svg>
                                             </div>
                                             <h4 class="text-sm font-medium text-gray-900 mb-1">OJT Not Started</h4>
-                                            <p class="text-xs text-gray-500 mb-3">Complete your OJT placement to access features</p>
+                                            <p class="text-xs text-gray-500 mb-3">Browse companies and apply for your OJT placement</p>
                                             <div class="text-xs text-gray-400 mb-4">
                                                 <p>1. Browse companies</p>
                                                 <p>2. Apply physically</p>
                                                 <p>3. Get accepted</p>
-                                                <p>4. Start OJT</p>
+                                                <p>4. Notify acceptance</p>
                                             </div>
                                         </div>
                                     @endif

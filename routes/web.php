@@ -44,6 +44,15 @@ Route::middleware(['auth', 'force.password.change', 'profile.complete'])->group(
     Route::post('/notifications', [App\Http\Controllers\NotificationController::class, 'store'])->name('notifications.store');
     Route::patch('/notifications/{notification}/read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.read');
 
+    // Messaging routes
+    Route::get('/messages', [App\Http\Controllers\MessageController::class, 'index'])->name('messages.index');
+    Route::get('/messages/create', [App\Http\Controllers\MessageController::class, 'create'])->name('messages.create');
+    Route::post('/messages', [App\Http\Controllers\MessageController::class, 'store'])->name('messages.store');
+    Route::get('/messages/{message}', [App\Http\Controllers\MessageController::class, 'show'])->name('messages.show');
+    Route::patch('/messages/{message}/read', [App\Http\Controllers\MessageController::class, 'markAsRead'])->name('messages.read');
+    Route::patch('/messages/{message}/unread', [App\Http\Controllers\MessageController::class, 'markAsUnread'])->name('messages.unread');
+    Route::delete('/messages/{message}', [App\Http\Controllers\MessageController::class, 'destroy'])->name('messages.destroy');
+
     // Placement requests (students)
     Route::get('/placements', [App\Http\Controllers\PlacementRequestController::class, 'index'])->name('placements.index');
     Route::get('/placements/create', [App\Http\Controllers\PlacementRequestController::class, 'create'])->name('placements.create');

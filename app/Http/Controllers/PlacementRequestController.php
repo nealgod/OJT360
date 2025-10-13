@@ -109,6 +109,21 @@ class PlacementRequestController extends Controller
                     'external_company_name' => $placement->external_company_name,
                 ],
             ]);
+
+            // Also create a message from student to coordinator
+            \App\Models\Message::create([
+                'sender_id' => $user->id,
+                'recipient_id' => $coordinator->id,
+                'subject' => 'New Placement Request - ' . ($placement->company?->name ?? $placement->external_company_name),
+                'message' => "Hello " . $coordinator->name . ",\n\nI have submitted a placement request for " . ($placement->company?->name ?? $placement->external_company_name) . " starting on " . $placement->start_date->format('M d, Y') . ".\n\n" . 
+                           "Company Details:\n" .
+                           ($placement->company_id ? "• Company: " . $placement->company->name . "\n" : "• External Company: " . $placement->external_company_name . "\n") .
+                           "• Contact Person: " . $placement->contact_person . "\n" .
+                           ($placement->supervisor_name ? "• Supervisor: " . $placement->supervisor_name . "\n" : "") .
+                           ($placement->supervisor_email ? "• Supervisor Email: " . $placement->supervisor_email . "\n" : "") .
+                           ($placement->note ? "• Additional Notes: " . $placement->note . "\n" : "") .
+                           "\nPlease review and approve my placement request. Thank you!",
+            ]);
         }
 
         return redirect()->route('placements.index')->with('success', 'Placement request submitted. Your coordinator will review it.');
@@ -231,6 +246,14 @@ class PlacementRequestController extends Controller
             ],
         ]);
 
+        // Also create a message from coordinator to student
+        \App\Models\Message::create([
+            'sender_id' => Auth::id(),
+            'recipient_id' => $student->id,
+            'subject' => 'Placement Request Approved - ' . ($placementRequest->company?->name ?? $placementRequest->external_company_name),
+            'message' => "Congratulations! Your placement request has been approved. You can now start your OJT at " . ($placementRequest->company?->name ?? $placementRequest->external_company_name) . " starting " . $placementRequest->start_date->format('M d, Y') . ". Please ensure you complete all required hours and submit your daily reports.",
+        ]);
+
         return back()->with('success', 'Placement approved and OJT activated.');
     }
 
@@ -258,6 +281,14 @@ class PlacementRequestController extends Controller
             'data' => [
                 'placement_request_id' => $placementRequest->id,
             ],
+        ]);
+
+        // Also create a message from coordinator to student
+        \App\Models\Message::create([
+            'sender_id' => Auth::id(),
+            'recipient_id' => $placementRequest->student_user_id,
+            'subject' => 'Placement Request Declined - ' . ($placementRequest->company?->name ?? $placementRequest->external_company_name),
+            'message' => "Your placement request has been declined. Reason: " . $request->reason . "\n\nYou may submit a new placement request with a different company or address the concerns mentioned above. Please feel free to contact me if you have any questions.",
         ]);
 
         return back()->with('success', 'Placement declined.');
