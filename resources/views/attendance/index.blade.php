@@ -573,7 +573,7 @@
                                 <p class="text-ojt-dark font-medium">{{ $log->work_date->format('M d, Y') }}</p>
                                 <p class="text-sm text-gray-500">
                                     In: {{ $log->time_in_formatted }} • Out: {{ $log->time_out_formatted }} • 
-                                    <span class="font-medium">{{ round($log->minutes_worked/60, 2) }} hrs</span>
+                                    <span class="font-medium">{{ $log->hours_worked_formatted }} hrs</span>
                                 </p>
                             </div>
                             <div class="text-xs">

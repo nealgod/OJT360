@@ -61,7 +61,11 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-gray-600 text-sm font-medium">Completed Hours</p>
-                                <p class="text-2xl font-bold text-ojt-dark">{{ Auth::user()->getCompletedHours() }}</p>
+                                @php
+                                    $completedMinutes = Auth::user()->attendanceLogs()->sum('minutes_worked');
+                                    $completedHours = round(($completedMinutes ?? 0) / 60, 1);
+                                @endphp
+                                <p class="text-2xl font-bold text-ojt-dark">{{ $completedHours }}</p>
                             </div>
                             <div class="w-12 h-12 bg-ojt-accent/10 rounded-lg flex items-center justify-center">
                                 <svg class="w-6 h-6 text-ojt-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -93,9 +97,8 @@
                                 <p class="text-gray-600 text-sm font-medium">Progress</p>
                                 <p class="text-2xl font-bold text-ojt-dark">
                                     @php
-                                        $completed = Auth::user()->getCompletedHours();
                                         $required = Auth::user()->getRequiredHours();
-                                        $percentage = $required > 0 ? round(($completed / $required) * 100, 1) : 0;
+                                        $percentage = $required > 0 ? round(($completedHours / $required) * 100, 1) : 0;
                                     @endphp
                                     {{ $percentage }}%
                                 </p>
@@ -111,7 +114,7 @@
                             <div class="bg-gradient-to-r from-ojt-primary to-ojt-accent h-2 rounded-full transition-all duration-300" 
                                  style="width: {{ $percentage }}%"></div>
                         </div>
-                        <p class="text-xs text-gray-500 mt-2">{{ $completed }} / {{ $required }} hours</p>
+                        <p class="text-xs text-gray-500 mt-2">{{ $completedHours }} / {{ $required }} hours</p>
                     </div>
                 </div>
 

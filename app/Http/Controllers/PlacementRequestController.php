@@ -41,7 +41,9 @@ class PlacementRequestController extends Controller
             'company_id' => ['nullable', 'exists:companies,id'],
             'external_company_name' => ['nullable', 'string', 'max:255'],
             'external_company_address' => ['nullable', 'string', 'max:255'],
+            'position_title' => ['nullable', 'string', 'max:255'],
             'start_date' => ['required', 'date'],
+            'break_minutes' => ['nullable', 'integer', 'min:0', 'max:240'],
             'contact_person' => ['required', 'string', 'max:255'],
             'supervisor_name' => ['nullable', 'string', 'max:255'],
             'supervisor_email' => ['nullable', 'email', 'max:255'],
@@ -74,12 +76,16 @@ class PlacementRequestController extends Controller
 
         $companyId = $hasCompany ? (int) $request->input('company_id') : null;
 
+        // Removed working days & shift times in minimal configuration
+
         $placement = PlacementRequest::create([
             'student_user_id' => Auth::id(),
             'company_id' => $companyId,
             'external_company_name' => $request->string('external_company_name'),
             'external_company_address' => $request->string('external_company_address'),
+            'position_title' => $request->string('position_title'),
             'start_date' => $request->date('start_date'),
+            'break_minutes' => $request->input('break_minutes', 60),
             'contact_person' => $request->string('contact_person'),
             'supervisor_name' => $request->string('supervisor_name'),
             'supervisor_email' => $request->string('supervisor_email'),
@@ -136,6 +142,10 @@ class PlacementRequestController extends Controller
         $query = PlacementRequest::with(['student','company'])
             ->whereHas('student.studentProfile', function($q) use ($user) {
                 $q->where('department', $user->coordinatorProfile?->department);
+                $programName = optional($user->coordinatorProfile?->program)->name;
+                if (!empty($programName)) {
+                    $q->where('course', $programName);
+                }
             })
             ->where('placement_requests.status', 'pending')
             ->whereNull('placement_requests.dismissed_at');
@@ -188,12 +198,16 @@ class PlacementRequestController extends Controller
         $this->authorizeAction($placementRequest);
 
         $request->validate([
-            'start_date' => ['required', 'date', 'after_or_equal:today'],
+            'start_date' => ['required', 'date'],
+            'break_minutes' => ['nullable', 'integer', 'min:0', 'max:240'],
         ]);
+
+        // Removed working days & shift times in minimal configuration
 
         $placementRequest->update([
             'status' => 'approved',
             'start_date' => $request->date('start_date'),
+            'break_minutes' => $request->input('break_minutes', $placementRequest->break_minutes),
             'decided_by' => Auth::id(),
             'decided_at' => now(),
         ]);
@@ -308,7 +322,13 @@ class PlacementRequestController extends Controller
     {
         $user = Auth::user();
         abort_unless($user && $user->isCoordinator(), 403);
-        abort_unless($user->coordinatorProfile && $user->coordinatorProfile->department === ($placementRequest->student->studentProfile?->department), 403);
+        $studentProfile = $placementRequest->student->studentProfile;
+        $coordinatorProfile = $user->coordinatorProfile;
+        abort_unless($coordinatorProfile && $studentProfile, 403);
+        $sameDepartment = $coordinatorProfile->department === $studentProfile->department;
+        $coordinatorProgramName = optional($coordinatorProfile->program)->name;
+        $sameProgram = empty($coordinatorProgramName) ? true : ($coordinatorProgramName === $studentProfile->course);
+        abort_unless($sameDepartment && $sameProgram, 403);
     }
 }
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AttendanceLog;
+use App\Models\PlacementRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -58,7 +59,7 @@ class AttendanceController extends Controller
 
             $path = $request->file('photo_in')->store('attendance-photos', 'public');
             $log->update([
-                'time_in' => now()->format('H:i:s'), // Store in 24-hour format for database
+                'time_in' => now()->setTimezone('Asia/Manila')->format('H:i:s'), // Store in 24-hour format for database
                 'photo_in_path' => $path,
                 'status' => 'approved',
                 'lat_in' => $request->input('lat_in'),
@@ -122,15 +123,25 @@ class AttendanceController extends Controller
 
             // Parse the stored time_in string and convert to today's date
             try {
-                $timeIn = $log->work_date->setTimeFromTimeString($log->time_in);
+                $timeIn = $log->work_date->setTimeFromTimeString($log->time_in)->setTimezone('Asia/Manila');
             } catch (\Exception $e) {
                 // Fallback for old format or invalid time
-                $timeIn = $log->work_date->setTime(8, 0, 0); // Default to 8 AM if parsing fails
+                $timeIn = $log->work_date->setTime(8, 0, 0)->setTimezone('Asia/Manila'); // Default to 8 AM if parsing fails
             }
             
-            $timeOut = now();
-            $minutes = max(0, $timeIn->diffInMinutes($timeOut));
-            $minutes = min($minutes, 8 * 60); // cap at 8 hours for the day
+            $timeOut = now()->setTimezone('Asia/Manila');
+            $totalMinutes = max(0, $timeIn->diffInMinutes($timeOut));
+
+            // Load approved placement schedule (if available)
+            $placement = PlacementRequest::where('student_user_id', $user->id)
+                ->where('status', 'approved')
+                ->orderByDesc('decided_at')
+                ->first();
+
+            $scheduledBreakMinutes = (int)($placement->break_minutes ?? 0);
+
+            // Compute productive minutes = total - scheduled break (never below zero)
+            $minutes = max(0, $totalMinutes - $scheduledBreakMinutes);
 
             $log->update([
                 'time_out' => $timeOut->format('H:i:s'), // Store in 24-hour format for database

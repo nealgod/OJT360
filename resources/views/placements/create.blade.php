@@ -35,12 +35,29 @@
                         </div>
                     </div>
 
+                    <!-- Position/Role (always visible) -->
+                    <div class="sm:col-span-2">
+                        <x-input-label for="position_title" :value="__('Position / Role (optional)')" />
+                        <x-text-input id="position_title" name="position_title" type="text" class="mt-1 block w-full" :value="old('position_title')" placeholder="Enter position or leave blank" />
+                        <x-input-error class="mt-2" :messages="$errors->get('position_title')" />
+                    </div>
+
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <div>
                             <x-input-label for="start_date" :value="__('Start Date')" />
                             <x-text-input id="start_date" name="start_date" type="date" class="mt-1 block w-full" :value="old('start_date')" required />
                             <x-input-error class="mt-2" :messages="$errors->get('start_date')" />
                         </div>
+                        <div>
+                            <x-input-label for="break_minutes" :value="__('Break Time (minutes)')" />
+                            <x-text-input id="break_minutes" name="break_minutes" type="number" min="0" max="240" class="mt-1 block w-full" :value="old('break_minutes', 60)" />
+                            <x-input-error class="mt-2" :messages="$errors->get('break_minutes')" />
+                        </div>
+                    </div>
+
+                    
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <div>
                             <x-input-label for="contact_person" :value="__('Company Contact Person')" />
                             <x-text-input id="contact_person" name="contact_person" type="text" class="mt-1 block w-full" :value="old('contact_person')" required />

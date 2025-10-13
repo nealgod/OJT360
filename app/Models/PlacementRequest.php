@@ -14,8 +14,13 @@ class PlacementRequest extends Model
         'company_id',
         'external_company_name',
         'external_company_address',
+        'position_title',
         'status',
         'start_date',
+        'shift_start',
+        'shift_end',
+        'break_minutes',
+        'working_days',
         'contact_person',
         'supervisor_name',
         'supervisor_email',
@@ -28,6 +33,7 @@ class PlacementRequest extends Model
 
     protected $casts = [
         'start_date' => 'date',
+        'working_days' => 'array',
         'decided_at' => 'datetime',
         'dismissed_at' => 'datetime',
     ];

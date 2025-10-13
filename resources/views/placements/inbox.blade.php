@@ -12,6 +12,20 @@
 
     <div class="py-6 sm:py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            @if(session('success'))
+                <div class="mb-4 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm">
+                    {{ session('success') }}
+                </div>
+            @endif
+            @if($errors->any())
+                <div class="mb-4 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm">
+                    <ul class="list-disc ml-5">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
             @if($requests->count() > 0)
                 <!-- Filter and Sort Options -->
                 <div class="mb-6 bg-white rounded-xl border border-gray-200 shadow-sm p-4">
@@ -105,6 +119,9 @@
                                                 <span class="font-medium text-ojt-dark">{{ $req->external_company_name }}</span>
                                             </div>
                                             <p class="text-sm text-gray-600 mt-1">{{ $req->external_company_address }}</p>
+                                            @if($req->position_title)
+                                                <p class="text-sm text-gray-600 mt-1"><span class="font-medium">Position:</span> {{ $req->position_title }}</p>
+                                            @endif
                                         @endif
                                     </div>
                                 </div>
@@ -214,25 +231,23 @@
                                         </h5>
                                         <form method="POST" action="{{ route('coord.placements.approve', $req) }}">
                                             @csrf
-                                            <div class="flex items-end gap-3">
-                                                <div class="flex-1 min-w-0">
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                <div>
                                                     <label for="start_date_{{ $req->id }}" class="block text-xs font-medium text-gray-700 mb-1">Start Date</label>
-                                                    <input type="date" 
-                                                           id="start_date_{{ $req->id }}"
-                                                           name="start_date" 
-                                                           min="{{ date('Y-m-d') }}"
-                                                           class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500" 
-                                                           required />
+                                                    <input type="date" id="start_date_{{ $req->id }}" name="start_date" min="{{ date('Y-m-d') }}" value="{{ $req->start_date ? $req->start_date->format('Y-m-d') : '' }}" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500" required />
                                                 </div>
-                                                <div class="flex-shrink-0">
-                                                    <button type="submit" 
-                                                            class="bg-green-600 text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-green-700 transition-colors duration-200 flex items-center whitespace-nowrap">
-                                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                        </svg>
-                                                        Approve
-                                                    </button>
+                                                <div>
+                                                    <label for="break_minutes_{{ $req->id }}" class="block text-xs font-medium text-gray-700 mb-1">Break Time (minutes)</label>
+                                                    <input type="number" id="break_minutes_{{ $req->id }}" name="break_minutes" min="0" max="240" value="{{ $req->break_minutes ?? 60 }}" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500" />
                                                 </div>
+                                            </div>
+                                            <div class="flex-shrink-0 mt-3">
+                                                <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-green-700 transition-colors duration-200 flex items-center whitespace-nowrap">
+                                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                    Approve
+                                                </button>
                                             </div>
                                         </form>
                                     </div>
