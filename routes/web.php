@@ -89,4 +89,10 @@ Route::middleware(['auth', 'verified', 'force.password.change', 'profile.complet
     Route::get('/coord/supervisors', [App\Http\Controllers\CoordinatorSupervisorController::class, 'index'])->name('coord.supervisors.index');
     Route::get('/coord/supervisors/create', [App\Http\Controllers\CoordinatorSupervisorController::class, 'create'])->name('coord.supervisors.create');
     Route::post('/coord/supervisors', [App\Http\Controllers\CoordinatorSupervisorController::class, 'store'])->name('coord.supervisors.store');
+
+    // Coordinator manage students
+    Route::get('/coord/students', [App\Http\Controllers\CoordinatorStudentController::class, 'index'])->name('coord.students.index');
+    Route::get('/coord/students/{student}', [App\Http\Controllers\CoordinatorStudentController::class, 'show'])->name('coord.students.show');
+    Route::post('/coord/students/{student}/update-company', [App\Http\Controllers\CoordinatorStudentController::class, 'updateCompany'])->name('coord.students.update-company');
+    Route::post('/coord/students/{student}/update-status', [App\Http\Controllers\CoordinatorStudentController::class, 'updateStatus'])->name('coord.students.update-status');
 });

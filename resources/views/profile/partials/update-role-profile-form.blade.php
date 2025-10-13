@@ -144,7 +144,7 @@
 
         <!-- Profile Image Upload -->
         <div>
-            <x-input-label for="profile_image" :value="__('Profile Picture')" />
+            <x-input-label for="profile_image" :value="__('Profile Picture (Optional)')" />
             <div class="mt-2 flex items-center space-x-4">
                 @if($profile && $profile->profile_image)
                     <img src="{{ Storage::url($profile->profile_image) }}" alt="Current profile" class="w-20 h-20 rounded-full object-cover border-2 border-ojt-primary">
@@ -155,7 +155,7 @@
                 @endif
                 <div class="flex-1">
                     <input id="profile_image" name="profile_image" type="file" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-ojt-primary file:text-white hover:file:bg-maroon-700" accept="image/*" />
-                    <p class="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 2MB</p>
+                    <p class="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 2MB. Leave empty to keep current image or use default avatar.</p>
                 </div>
             </div>
             <x-input-error class="mt-2" :messages="$errors->get('profile_image')" />

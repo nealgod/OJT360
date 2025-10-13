@@ -23,6 +23,8 @@ class AttendanceLog extends Model
 
     protected $casts = [
         'work_date' => 'date',
+        'time_in' => 'datetime',
+        'time_out' => 'datetime',
     ];
 
     public function student()

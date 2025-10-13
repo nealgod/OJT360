@@ -42,9 +42,29 @@
                             <x-input-error class="mt-2" :messages="$errors->get('start_date')" />
                         </div>
                         <div>
-                            <x-input-label for="contact_person" :value="__('Contact Person')" />
+                            <x-input-label for="contact_person" :value="__('Company Contact Person')" />
                             <x-text-input id="contact_person" name="contact_person" type="text" class="mt-1 block w-full" :value="old('contact_person')" required />
+                            <p class="mt-1 text-xs text-gray-500">Name of the person at the company who accepted your internship (HR, manager, etc.)</p>
                             <x-input-error class="mt-2" :messages="$errors->get('contact_person')" />
+                        </div>
+                    </div>
+
+                    <!-- Supervisor Information (Optional) -->
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Supervisor Information (Optional)</h3>
+                        <p class="text-sm text-gray-600 mb-4">If you know your supervisor's details, please provide them. If not, leave blank and your coordinator will contact you later for this information.</p>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div>
+                                <x-input-label for="supervisor_name" :value="__('Supervisor Name (if known)')" />
+                                <x-text-input id="supervisor_name" name="supervisor_name" type="text" class="mt-1 block w-full" :value="old('supervisor_name')" />
+                                <x-input-error class="mt-2" :messages="$errors->get('supervisor_name')" />
+                            </div>
+                            <div>
+                                <x-input-label for="supervisor_email" :value="__('Supervisor Email (if known)')" />
+                                <x-text-input id="supervisor_email" name="supervisor_email" type="email" class="mt-1 block w-full" :value="old('supervisor_email')" />
+                                <x-input-error class="mt-2" :messages="$errors->get('supervisor_email')" />
+                            </div>
                         </div>
                     </div>
 
@@ -56,9 +76,16 @@
                     </div>
 
                     <div>
-                        <x-input-label for="proof" :value="__('Upload Proof (optional: jpg, png, pdf)')" />
-                        <input id="proof" name="proof" type="file" class="mt-1 block w-full border-gray-300 focus:border-ojt-primary focus:ring-ojt-primary rounded-md shadow-sm" />
+                        <x-input-label for="proof" :value="__('Upload Proof of Acceptance (optional)')" />
+                        <div class="mt-1">
+                            <input id="proof" name="proof" type="file" 
+                                   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-ojt-primary file:text-white hover:file:bg-maroon-700 file:cursor-pointer border border-gray-300 rounded-md cursor-pointer" 
+                                   accept=".jpg,.jpeg,.png,.pdf" />
+                        </div>
                         <x-input-error class="mt-2" :messages="$errors->get('proof')" />
+                        <p class="mt-1 text-xs text-gray-500">
+                            Upload acceptance letter, email screenshot, or any proof of your internship acceptance. (JPG, PNG, PDF - Max 4MB)
+                        </p>
                     </div>
 
                     <div class="flex items-center gap-4">

@@ -21,22 +21,22 @@ class TestAccountsSeeder extends Seeder
                 'name' => 'Neal Gasal',
                 'email' => 'neal.gasal@evsu.edu.ph',
                 'student_id' => '2021-001',
-                'course' => 'Bachelor of Science in Information Technology',
-                'department' => 'Computer Studies',
+                'course' => 'Bachelor of Science in Information Technology (BSIT)',
+                'department' => 'Department of Computer Studies',
             ],
             [
                 'name' => 'John Doe',
                 'email' => 'gasalneal09123@gmail.com',
                 'student_id' => '2021-002',
-                'course' => 'Bachelor of Science in Computer Science',
-                'department' => 'Computer Studies',
+                'course' => 'Bachelor of Science in Information Technology (BSIT)',
+                'department' => 'Department of Computer Studies',
             ],
             [
                 'name' => 'Jane Smith',
                 'email' => 'smurfacc12345x1@gmail.com',
                 'student_id' => '2021-003',
-                'course' => 'Bachelor of Science in Information Technology',
-                'department' => 'Computer Studies',
+                'course' => 'Bachelor of Science in Information Technology (BSIT)',
+                'department' => 'Department of Computer Studies',
             ],
         ];
 
@@ -88,10 +88,17 @@ class TestAccountsSeeder extends Seeder
 
         // Create coordinator profile if it doesn't exist
         if (!$coordinator->coordinatorProfile) {
+            // Get the Department of Computer Studies
+            $department = \App\Models\Department::where('name', 'Department of Computer Studies')->first();
+            $program = \App\Models\Program::where('name', 'Bachelor of Science in Information Technology (BSIT)')->first();
+            
             $coordinator->coordinatorProfile()->create([
-                'department' => 'Computer Studies',
-                'program' => 'Information Technology',
+                'department_id' => $department ? $department->id : null,
+                'program_id' => $program ? $program->id : null,
+                'department' => 'Department of Computer Studies',
+                'program' => 'Bachelor of Science in Information Technology (BSIT)',
                 'employee_id' => 'COORD-001',
+                'status' => 'active',
             ]);
         }
 
@@ -104,7 +111,7 @@ class TestAccountsSeeder extends Seeder
                 'contact_person' => 'HR Manager',
                 'contact_email' => 'hr@techforge.com',
                 'contact_phone' => '09123456789',
-                'department' => 'Computer Studies',
+                'department' => 'Department of Computer Studies',
                 'status' => 'active',
             ]
         );

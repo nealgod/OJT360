@@ -43,6 +43,8 @@ class PlacementRequestController extends Controller
             'external_company_address' => ['nullable', 'string', 'max:255'],
             'start_date' => ['required', 'date'],
             'contact_person' => ['required', 'string', 'max:255'],
+            'supervisor_name' => ['nullable', 'string', 'max:255'],
+            'supervisor_email' => ['nullable', 'email', 'max:255'],
             'note' => ['nullable', 'string', 'max:2000'],
             'proof' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
         ]);
@@ -79,6 +81,8 @@ class PlacementRequestController extends Controller
             'external_company_address' => $request->string('external_company_address'),
             'start_date' => $request->date('start_date'),
             'contact_person' => $request->string('contact_person'),
+            'supervisor_name' => $request->string('supervisor_name'),
+            'supervisor_email' => $request->string('supervisor_email'),
             'note' => $request->string('note'),
             'proof_path' => $path,
         ]);
@@ -111,18 +115,57 @@ class PlacementRequestController extends Controller
     }
 
     // Coordinator actions
-    public function inbox()
+    public function inbox(Request $request)
     {
         $user = Auth::user();
-        $requests = PlacementRequest::with(['student','company'])
+        $query = PlacementRequest::with(['student','company'])
             ->whereHas('student.studentProfile', function($q) use ($user) {
                 $q->where('department', $user->coordinatorProfile?->department);
             })
-            ->where('status', 'pending')
-            ->whereNull('dismissed_at')
-            ->latest()
-            ->paginate(10);
-        return view('placements.inbox', compact('requests'));
+            ->where('placement_requests.status', 'pending')
+            ->whereNull('placement_requests.dismissed_at');
+
+        // Apply filters
+        $filter = $request->get('filter', 'all');
+        switch ($filter) {
+            case 'recent':
+                $query->where('placement_requests.created_at', '>=', now()->subDays(7));
+                break;
+            case 'company':
+                $query->whereNotNull('placement_requests.company_id');
+                break;
+            case 'external':
+                $query->whereNull('placement_requests.company_id');
+                break;
+        }
+
+        // Apply sorting
+        $sort = $request->get('sort', 'newest');
+        switch ($sort) {
+            case 'oldest':
+                $query->orderBy('placement_requests.created_at', 'asc');
+                break;
+            case 'name':
+                $query->join('users', 'placement_requests.student_user_id', '=', 'users.id')
+                      ->orderBy('users.name')
+                      ->select('placement_requests.*');
+                break;
+            case 'company':
+                $query->leftJoin('companies', 'placement_requests.company_id', '=', 'companies.id')
+                      ->orderBy('companies.name')
+                      ->select('placement_requests.*');
+                break;
+            default: // newest
+                $query->orderBy('placement_requests.created_at', 'desc');
+                break;
+        }
+
+        $requests = $query->paginate(10);
+        
+        // Add current filter/sort values for the view
+        $requests->appends($request->only(['filter', 'sort']));
+        
+        return view('placements.inbox', compact('requests', 'filter', 'sort'));
     }
 
     public function approve(PlacementRequest $placementRequest, Request $request)
@@ -130,7 +173,7 @@ class PlacementRequestController extends Controller
         $this->authorizeAction($placementRequest);
 
         $request->validate([
-            'start_date' => ['required', 'date'],
+            'start_date' => ['required', 'date', 'after_or_equal:today'],
         ]);
 
         $placementRequest->update([
