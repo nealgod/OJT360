@@ -83,6 +83,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(DailyReport::class, 'student_user_id');
     }
 
+    public function documentSubmissions()
+    {
+        return $this->hasMany(StudentDocumentSubmission::class, 'student_user_id');
+    }
+
     // For supervisors: get all students they supervise
     public function studentProfiles()
     {

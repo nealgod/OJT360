@@ -35,6 +35,9 @@
                                 {{ __('Reports') }}
                             </x-nav-link>
                         @endif
+                        <x-nav-link :href="route('documents.index')" :active="request()->routeIs('documents.*')">
+                            {{ __('Documents') }}
+                        </x-nav-link>
                         <x-nav-link :href="route('messages.index')" :active="request()->routeIs('messages.*')">
                             {{ __('Messages') }}
                             @if(auth()->user()->unreadMessages()->count() > 0)
@@ -49,6 +52,9 @@
                         </x-nav-link>
                         <x-nav-link :href="route('companies.index')" :active="request()->routeIs('companies.*')">
                             {{ __('Companies') }}
+                        </x-nav-link>
+                        <x-nav-link :href="route('coord.documents.index')" :active="request()->routeIs('coord.documents.*')">
+                            {{ __('Document Review') }}
                         </x-nav-link>
                     @elseif(Auth::user()->isSupervisor())
                         <x-nav-link href="#" :active="false">

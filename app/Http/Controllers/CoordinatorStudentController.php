@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Company;
+use App\Models\SupervisorAssignmentRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 
 class CoordinatorStudentController extends Controller
 {
@@ -102,10 +104,10 @@ class CoordinatorStudentController extends Controller
         $program = $coordinator->coordinatorProfile?->program;
         $programName = $program?->name;
         
-        // Ensure student belongs to coordinator's department AND program
+        // Ensure student belongs to coordinator's department AND (program if coordinator has one)
         if (!$student->studentProfile || 
             $student->studentProfile->department !== $department || 
-            $student->studentProfile->course !== $programName) {
+            (!empty($programName) && $student->studentProfile->course !== $programName)) {
             abort(403, 'Unauthorized access to student.');
         }
 
@@ -130,7 +132,27 @@ class CoordinatorStudentController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('coord.students.show', compact('student', 'availableCompanies'));
+        // Eligible supervisors for assigned company
+        $eligibleSupervisors = collect();
+        $studentCompanyId = $student->studentProfile?->assigned_company_id;
+        if ($studentCompanyId) {
+            $eligibleSupervisors = User::where('role', 'supervisor')
+                ->whereHas('supervisorProfile', function($q) use ($studentCompanyId) {
+                    $q->where('company_id', $studentCompanyId);
+                })
+                ->orderBy('name')
+                ->get(['id','name']);
+        }
+
+        // Latest proposal, guarded if table not yet migrated
+        $latestProposal = null;
+        if (Schema::hasTable('supervisor_assignment_requests')) {
+            $latestProposal = SupervisorAssignmentRequest::where('student_user_id', $student->id)
+                ->latest()
+                ->first();
+        }
+
+        return view('coord.students.show', compact('student', 'availableCompanies', 'eligibleSupervisors', 'latestProposal', 'studentCompanyId'));
     }
 
     public function updateCompany(Request $request, User $student)
@@ -183,5 +205,67 @@ class CoordinatorStudentController extends Controller
         ]);
 
         return back()->with('success', 'Student status updated successfully.');
+    }
+
+    public function assignSupervisor(Request $request, User $student)
+    {
+        $coordinator = Auth::user();
+        $department = $coordinator->coordinatorProfile?->department;
+        $program = $coordinator->coordinatorProfile?->program;
+        $programName = $program?->name;
+
+        if (!$student->studentProfile || 
+            $student->studentProfile->department !== $department || 
+            $student->studentProfile->course !== $programName) {
+            abort(403, 'Unauthorized access to student.');
+        }
+
+        $request->validate([
+            'supervisor_id' => ['required', 'exists:users,id'],
+        ]);
+
+        // Ensure supervisor belongs to same company
+        $supervisor = User::where('id', $request->supervisor_id)->where('role', 'supervisor')->firstOrFail();
+        $studentCompanyId = $student->studentProfile?->assigned_company_id;
+        $supervisorCompanyId = $supervisor->supervisorProfile?->company_id ?? null;
+        abort_unless($studentCompanyId && $supervisorCompanyId && $studentCompanyId === $supervisorCompanyId, 422);
+
+        $student->studentProfile->update([
+            'supervisor_id' => $supervisor->id,
+        ]);
+
+        // Notifications
+        \App\Models\Notification::create([
+            'user_id' => $student->id,
+            'type' => 'supervisor_assigned',
+            'title' => 'Supervisor Assigned',
+            'message' => 'Your coordinator assigned a supervisor to your OJT.',
+            'data' => [ 'supervisor_id' => $supervisor->id ],
+        ]);
+
+        \App\Models\Notification::create([
+            'user_id' => $supervisor->id,
+            'type' => 'student_assigned',
+            'title' => 'Student Assigned',
+            'message' => 'You have been assigned as supervisor for ' . $student->name . '.',
+            'data' => [ 'student_user_id' => $student->id ],
+        ]);
+
+        // Messages to student and supervisor (humanized)
+        \App\Models\Message::create([
+            'sender_id' => $coordinator->id,
+            'recipient_id' => $student->id,
+            'subject' => 'Your OJT Supervisor has been assigned',
+            'message' => 'Hi ' . $student->name . ",\n\nYour OJT supervisor has been assigned: " . $supervisor->name . " (" . $supervisor->email . ").\n\nIf you have questions, feel free to reply here.\n\n— " . $coordinator->name,
+        ]);
+
+        \App\Models\Message::create([
+            'sender_id' => $coordinator->id,
+            'recipient_id' => $supervisor->id,
+            'subject' => 'New student assignment: ' . $student->name,
+            'message' => 'Hi ' . $supervisor->name . ",\n\nYou have been assigned as supervisor for: " . $student->name . ".\nPlease coordinate their onboarding and evaluations.\n\n— " . $coordinator->name,
+        ]);
+
+        return back()->with('success', 'Supervisor assigned successfully.');
     }
 }

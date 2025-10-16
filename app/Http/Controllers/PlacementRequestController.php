@@ -100,6 +100,25 @@ class PlacementRequestController extends Controller
 
         // Supervisor assignment will be done manually by coordinator later
 
+        // Auto-create document submission for Letter of Acceptance if proof was uploaded
+        if ($path && \Illuminate\Support\Facades\Schema::hasTable('document_requirements') && \Illuminate\Support\Facades\Schema::hasTable('student_document_submissions')) {
+            $letterOfAcceptanceRequirement = \App\Models\DocumentRequirement::where('name', 'LIKE', '%Letter of Acceptance%')
+                ->where('type', 'pre_placement')
+                ->first();
+            
+            if ($letterOfAcceptanceRequirement) {
+                \App\Models\StudentDocumentSubmission::create([
+                    'student_user_id' => Auth::id(),
+                    'document_requirement_id' => $letterOfAcceptanceRequirement->id,
+                    'file_path' => $path,
+                    'original_filename' => $request->file('proof')->getClientOriginalName(),
+                    'file_size' => $request->file('proof')->getSize(),
+                    'mime_type' => $request->file('proof')->getMimeType(),
+                    'status' => 'submitted',
+                ]);
+            }
+        }
+
         // Notify coordinator (reuse existing Notification model)
         $coordinator = User::where('role', 'coordinator')
             ->whereHas('coordinatorProfile', function($q) use ($user) {
@@ -332,7 +351,78 @@ class PlacementRequestController extends Controller
             ->with('company')
             ->first();
 
-        return view('placements.my', compact('placement'));
+        // Check if student already has an assigned supervisor
+        $hasAssignedSupervisor = $user->studentProfile && $user->studentProfile->supervisor_id;
+        $assignedSupervisor = null;
+        
+        if ($hasAssignedSupervisor) {
+            $assignedSupervisor = $user->studentProfile->supervisor;
+        }
+
+        return view('placements.my', compact('placement', 'hasAssignedSupervisor', 'assignedSupervisor'));
+    }
+
+    public function proposeSupervisor(PlacementRequest $placementRequest, Request $request)
+    {
+        $user = Auth::user();
+        abort_unless($user && $user->id === $placementRequest->student_user_id, 403);
+        abort_unless($placementRequest->status === 'approved', 400);
+
+        $request->validate([
+            'proposed_name' => ['nullable', 'string', 'max:255'],
+            'proposed_email' => ['nullable', 'email', 'max:255'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        // Guard if table doesn't exist yet
+        $proposal = null;
+        if (\Illuminate\Support\Facades\Schema::hasTable('supervisor_assignment_requests')) {
+            $proposal = \App\Models\SupervisorAssignmentRequest::create([
+                'student_user_id' => $user->id,
+                'company_id' => $placementRequest->company_id ?? $placementRequest->student->studentProfile?->assigned_company_id,
+                'proposed_name' => (string) $request->input('proposed_name'),
+                'proposed_email' => (string) $request->input('proposed_email'),
+                'notes' => (string) $request->input('notes'),
+            ]);
+        }
+
+        // Notify coordinator
+        $coordinator = User::where('role', 'coordinator')
+            ->whereHas('coordinatorProfile', function($q) use ($user) {
+                $q->where('department', $user->studentProfile?->department);
+            })
+            ->first();
+
+        if ($coordinator) {
+            \App\Models\Notification::create([
+                'user_id' => $coordinator->id,
+                'type' => 'supervisor_proposal',
+                'title' => 'Supervisor Details Submitted',
+                'message' => $user->name . ' submitted supervisor details for their placement.',
+                'data' => [
+                    'proposal_id' => $proposal?->id,
+                    'student_user_id' => $user->id,
+                    'company_id' => $proposal->company_id ?? ($placementRequest->company_id ?? $placementRequest->student->studentProfile?->assigned_company_id),
+                ],
+            ]);
+
+            // Also send a message to the coordinator's inbox for easy tracking
+            $companyName = $placementRequest->company?->name ?? $placementRequest->external_company_name ?? 'the company';
+            \App\Models\Message::create([
+                'sender_id' => $user->id,
+                'recipient_id' => $coordinator->id,
+                'subject' => 'Supervisor details for my placement at ' . $companyName,
+                'message' => "Hi " . $coordinator->name . ",\n\n" .
+                    "I’d like to share my supervisor details for my approved OJT placement at " . $companyName . "." . "\n\n" .
+                    "Supervisor Name: " . ($request->input('proposed_name') ?: '—') . "\n" .
+                    "Supervisor Email: " . ($request->input('proposed_email') ?: '—') . "\n" .
+                    (trim((string)$request->input('notes')) !== '' ? ("Notes: " . trim((string)$request->input('notes')) . "\n\n") : "") .
+                    "Could you please create or assign this supervisor to my profile when you’re able?\n\n" .
+                    "Thank you,\n" . $user->name,
+            ]);
+        }
+
+        return back()->with('success', 'Supervisor details sent. Your coordinator will create or assign the supervisor for your company.');
     }
 
     private function authorizeAction(PlacementRequest $placementRequest): void

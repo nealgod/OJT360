@@ -241,25 +241,38 @@
                     $coordinator = Auth::user();
                     $department = $coordinator->coordinatorProfile?->department;
                     $program = $coordinator->coordinatorProfile?->program;
-                    
-                    // Real data calculations
-                    $managedStudents = \App\Models\User::where('role', 'student')
-                        ->whereHas('studentProfile', function($query) use ($department) {
+                    $programName = optional($program)->name;
+
+                    // Managed students (intern role), filtered by department and program when set
+                    $managedStudents = \App\Models\User::where('role', 'intern')
+                        ->whereHas('studentProfile', function($query) use ($department, $programName) {
                             $query->where('department', $department);
+                            if (!empty($programName)) {
+                                $query->where('course', $programName);
+                            }
                         })->count();
-                    
-                    $pendingPlacements = \App\Models\PlacementRequest::whereHas('student', function($query) use ($department) {
-                        $query->whereHas('studentProfile', function($q) use ($department) {
+
+                    // Pending placements scoped to coordinator's department and optional program
+                    $pendingPlacements = \App\Models\PlacementRequest::whereHas('student', function($query) use ($department, $programName) {
+                        $query->whereHas('studentProfile', function($q) use ($department, $programName) {
                             $q->where('department', $department);
+                            if (!empty($programName)) {
+                                $q->where('course', $programName);
+                            }
                         });
                     })->where('status', 'pending')->count();
-                    
-                    $approvedPlacements = \App\Models\PlacementRequest::whereHas('student', function($query) use ($department) {
-                        $query->whereHas('studentProfile', function($q) use ($department) {
+
+                    // Approved placements scoped similarly
+                    $approvedPlacements = \App\Models\PlacementRequest::whereHas('student', function($query) use ($department, $programName) {
+                        $query->whereHas('studentProfile', function($q) use ($department, $programName) {
                             $q->where('department', $department);
+                            if (!empty($programName)) {
+                                $q->where('course', $programName);
+                            }
                         });
                     })->where('status', 'approved')->count();
-                    
+
+                    // Active companies in department
                     $activeCompanies = \App\Models\Company::where('department', $department)
                         ->where('status', 'active')->count();
                 @endphp

@@ -117,8 +117,8 @@
 
                     <!-- Supervisor Information (Optional) -->
                     <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                        <h3 class="text-lg font-medium text-gray-900 mb-4">Supervisor Information (Optional)</h3>
-                        <p class="text-sm text-gray-600 mb-4">If you know your supervisor's details, please provide them. If not, leave blank and your coordinator will contact you later for this information.</p>
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Supervisor Information</h3>
+                        <p class="text-sm text-gray-600 mb-4">Provide your supervisor’s details if available. You can add or update this later from My Placement.</p>
                         
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div>

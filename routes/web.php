@@ -59,6 +59,7 @@ Route::middleware(['auth', 'force.password.change', 'profile.complete'])->group(
     Route::post('/placements', [App\Http\Controllers\PlacementRequestController::class, 'store'])->name('placements.store');
     Route::post('/placements/{placementRequest}/dismiss', [App\Http\Controllers\PlacementRequestController::class, 'dismiss'])->name('placements.dismiss');
     Route::get('/placements/my', [App\Http\Controllers\PlacementRequestController::class, 'myPlacement'])->name('placements.my');
+    Route::post('/placements/{placementRequest}/propose-supervisor', [App\Http\Controllers\PlacementRequestController::class, 'proposeSupervisor'])->name('placements.propose-supervisor');
 
     // Attendance & Reports (students)
     Route::middleware(['placement.started'])->group(function () {
@@ -72,6 +73,12 @@ Route::middleware(['auth', 'force.password.change', 'profile.complete'])->group(
     Route::get('/reports', [App\Http\Controllers\DailyReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/create', [App\Http\Controllers\DailyReportController::class, 'create'])->name('reports.create');
     Route::post('/reports', [App\Http\Controllers\DailyReportController::class, 'store'])->name('reports.store');
+    
+    // Document Requirements
+    Route::get('/documents', [App\Http\Controllers\DocumentController::class, 'index'])->name('documents.index');
+    Route::get('/documents/{requirement}', [App\Http\Controllers\DocumentController::class, 'show'])->name('documents.show');
+    Route::post('/documents/{requirement}/submit', [App\Http\Controllers\DocumentController::class, 'submit'])->name('documents.submit');
+    Route::get('/documents/submissions/{submission}/download', [App\Http\Controllers\DocumentController::class, 'download'])->name('documents.download');
 });
 
 // Admin routes
@@ -110,4 +117,9 @@ Route::middleware(['auth', 'verified', 'force.password.change', 'profile.complet
     Route::get('/coord/students/{student}', [App\Http\Controllers\CoordinatorStudentController::class, 'show'])->name('coord.students.show');
     Route::post('/coord/students/{student}/update-company', [App\Http\Controllers\CoordinatorStudentController::class, 'updateCompany'])->name('coord.students.update-company');
     Route::post('/coord/students/{student}/update-status', [App\Http\Controllers\CoordinatorStudentController::class, 'updateStatus'])->name('coord.students.update-status');
+    Route::post('/coord/students/{student}/assign-supervisor', [App\Http\Controllers\CoordinatorStudentController::class, 'assignSupervisor'])->name('coord.students.assign-supervisor');
+    
+    // Coordinator document review
+    Route::get('/coord/documents', [App\Http\Controllers\DocumentController::class, 'index'])->name('coord.documents.index');
+    Route::post('/coord/documents/submissions/{submission}/review', [App\Http\Controllers\DocumentController::class, 'review'])->name('coord.documents.review');
 });

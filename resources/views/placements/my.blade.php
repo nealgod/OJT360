@@ -2,8 +2,13 @@
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <h2 class="font-semibold text-xl text-ojt-dark leading-tight">My Placement</h2>
+            @php
+                $isApprovedActive = optional(Auth::user()->studentProfile)->ojt_status === 'active' || !is_null(optional($placement)->id);
+            @endphp
             <div class="flex items-center gap-2">
-                <a href="{{ route('placements.index') }}" class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors duration-200">View Requests</a>
+                @unless($isApprovedActive)
+                    <a href="{{ route('placements.index') }}" class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors duration-200">View Requests</a>
+                @endunless
                 <a href="{{ route('companies.index') }}" class="inline-flex items-center px-3 py-2 bg-ojt-primary text-white text-sm font-medium rounded-lg hover:bg-maroon-700 transition-colors duration-200">Browse Companies</a>
             </div>
         </div>
@@ -100,10 +105,19 @@
                     </div>
 
                     <div class="mt-6">
-                        <h4 class="text-sm font-medium text-gray-900 mb-2">Supervisor (if known)</h4>
+                        <h4 class="text-sm font-medium text-gray-900 mb-2">Supervisor</h4>
                         <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                            <p class="text-sm text-gray-600"><span class="font-medium">Name:</span> {{ $placement->supervisor_name ?? '—' }}</p>
-                            <p class="text-sm text-gray-600 mt-1"><span class="font-medium">Email:</span> {{ $placement->supervisor_email ?? '—' }}</p>
+                            @if($hasAssignedSupervisor && $assignedSupervisor)
+                                <p class="text-sm text-gray-600"><span class="font-medium">Name:</span> {{ $assignedSupervisor->name }}</p>
+                                <p class="text-sm text-gray-600 mt-1"><span class="font-medium">Email:</span> {{ $assignedSupervisor->email }}</p>
+                                <p class="text-xs text-green-600 mt-2">✓ Assigned by your coordinator</p>
+                            @else
+                                <p class="text-sm text-gray-600"><span class="font-medium">Name:</span> {{ $placement->supervisor_name ?? '—' }}</p>
+                                <p class="text-sm text-gray-600 mt-1"><span class="font-medium">Email:</span> {{ $placement->supervisor_email ?? '—' }}</p>
+                                @if($placement->supervisor_name || $placement->supervisor_email)
+                                    <p class="text-xs text-blue-600 mt-2">Pending coordinator assignment</p>
+                                @endif
+                            @endif
                         </div>
                     </div>
 
@@ -118,6 +132,34 @@
                         <div class="mt-6">
                             <h4 class="text-sm font-medium text-gray-900 mb-2">Proof Document</h4>
                             <a href="{{ Storage::url($placement->proof_path) }}" target="_blank" class="text-ojt-primary hover:text-maroon-700 text-sm underline">View uploaded proof</a>
+                        </div>
+                    @endif
+
+                    <!-- Supervisor details (company-locked) -->
+                    @if(!$hasAssignedSupervisor)
+                        <div class="mt-8">
+                            <button type="button" onclick="document.getElementById('supForm').classList.toggle('hidden')" class="inline-flex items-center px-4 py-2 bg-ojt-primary text-white text-sm font-medium rounded-lg hover:bg-maroon-700 transition-colors duration-200">
+                                Add/Update Supervisor Details
+                            </button>
+                            <p class="text-xs text-gray-500 mt-2">Your coordinator will finalize the assignment for your company.</p>
+                        <form id="supForm" method="POST" action="{{ route('placements.propose-supervisor', $placement) }}" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 hidden">
+                            @csrf
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Supervisor Name</label>
+                                <input type="text" name="proposed_name" value="{{ old('proposed_name', $placement->supervisor_name) }}" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-ojt-primary focus:border-ojt-primary" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Supervisor Email</label>
+                                <input type="email" name="proposed_email" value="{{ old('proposed_email', $placement->supervisor_email) }}" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-ojt-primary focus:border-ojt-primary" />
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                                <textarea name="notes" rows="3" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-ojt-primary focus:border-ojt-primary" placeholder="Optional context (e.g., department, availability)">{{ old('notes') }}</textarea>
+                            </div>
+                            <div class="md:col-span-2">
+                                <button type="submit" class="bg-ojt-primary text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-maroon-700 transition-colors">Send</button>
+                            </div>
+                        </form>
                         </div>
                     @endif
 

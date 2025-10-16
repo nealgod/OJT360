@@ -69,12 +69,13 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- Main Content -->
                 <div class="lg:col-span-2 space-y-8">
-                    <!-- OJT Progress -->
+                    <!-- OJT Progress (computed from attendance) -->
                     @if($student->studentProfile && $student->studentProfile->ojt_status === 'active')
                         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
                             <h3 class="text-lg font-semibold text-gray-900 mb-4">OJT Progress</h3>
                             @php
-                                $completed = $student->getCompletedHours();
+                                $completedMinutes = $student->attendanceLogs()->sum('minutes_worked');
+                                $completed = round(($completedMinutes ?? 0) / 60, 1);
                                 $required = $student->getRequiredHours();
                                 $percentage = $required > 0 ? round(($completed / $required) * 100, 1) : 0;
                             @endphp
@@ -137,40 +138,16 @@
 
                 <!-- Sidebar -->
                 <div class="space-y-6">
-                    <!-- Company Assignment -->
+                    <!-- Company & Supervisor Summary -->
                     <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Company Assignment</h3>
-                        <form method="POST" action="{{ route('coord.students.update-company', $student) }}">
-                            @csrf
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Assigned Company</label>
-                                    <select name="company_id" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-ojt-primary focus:border-ojt-primary">
-                                        <option value="">Not Assigned</option>
-                                        @foreach($availableCompanies as $company)
-                                            <option value="{{ $company->id }}" {{ $student->studentProfile?->assigned_company_id == $company->id ? 'selected' : '' }}>
-                                                {{ $company->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Required Hours</label>
-                                    <input type="number" 
-                                           name="required_hours" 
-                                           value="{{ $student->studentProfile?->required_hours ?? $student->getRequiredHours() }}"
-                                           min="1" 
-                                           max="1000"
-                                           class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-ojt-primary focus:border-ojt-primary">
-                                    <p class="text-xs text-gray-500 mt-1">Leave empty to use default for course</p>
-                                </div>
-                                
-                                <button type="submit" class="w-full bg-ojt-primary text-white py-2 px-4 rounded-md text-sm font-medium hover:bg-maroon-700 transition-colors duration-200">
-                                    Update Assignment
-                                </button>
-                            </div>
-                        </form>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Placement Summary</h3>
+                        <div class="space-y-2 text-sm text-gray-700">
+                            <p><span class="font-medium">Company:</span> {{ $student->studentProfile?->company?->name ?? 'Not assigned' }}</p>
+                            <p><span class="font-medium">Supervisor:</span> {{ $student->studentProfile?->supervisor?->name ?? 'Not assigned' }}</p>
+                            @if($student->studentProfile?->supervisor)
+                                <p class="text-xs text-gray-500">Email: {{ $student->studentProfile?->supervisor?->email }}</p>
+                            @endif
+                        </div>
                     </div>
 
                     <!-- Placement History -->
@@ -195,6 +172,66 @@
                                     </div>
                                 @endforeach
                             </div>
+
+                    <!-- Assign Supervisor (company-locked) -->
+                    @if(!$student->studentProfile?->supervisor)
+                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Assign Supervisor</h3>
+                        <!-- Current assignment -->
+                        <div class="mb-4">
+                            <p class="text-sm text-gray-700"><span class="font-medium">Current:</span></p>
+                            @if($student->studentProfile?->supervisor)
+                                <p class="text-sm text-gray-900">{{ $student->studentProfile->supervisor->name }}</p>
+                                <p class="text-xs text-gray-500">{{ $student->studentProfile->supervisor->email }}</p>
+                            @else
+                                <p class="text-sm text-gray-500">No supervisor assigned</p>
+                            @endif
+                        </div>
+
+                        <!-- Student-submitted details -->
+                        @if(isset($latestProposal) && $latestProposal)
+                            <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+                                <p class="text-sm text-amber-800"><span class="font-medium">Submitted by student:</span></p>
+                                <p class="text-sm text-amber-900">{{ $latestProposal->proposed_name ?? '—' }}</p>
+                                <p class="text-xs text-amber-700">{{ $latestProposal->proposed_email ?? '—' }}</p>
+                                <button type="button" onclick="document.getElementById('proposalNotes').classList.toggle('hidden')" class="mt-2 text-xs text-amber-800 underline">{{ $latestProposal->notes ? 'Show notes' : 'Show notes (empty)' }}</button>
+                                <div id="proposalNotes" class="hidden mt-2 text-xs text-amber-800">{{ $latestProposal->notes ?: 'No notes provided.' }}</div>
+                            </div>
+                        @endif
+
+                        <!-- Toggle assign form -->
+                        <button type="button" onclick="document.getElementById('assignSupForm').classList.toggle('hidden')" class="inline-flex items-center px-3 py-2 bg-ojt-primary text-white text-sm font-medium rounded-lg hover:bg-maroon-700 transition-colors">
+                            {{ $student->studentProfile?->supervisor ? 'Change Supervisor' : 'Assign Supervisor' }}
+                        </button>
+
+                        <form id="assignSupForm" method="POST" action="{{ route('coord.students.assign-supervisor', $student) }}" class="mt-4 hidden">
+                            @csrf
+                            <div class="grid grid-cols-1 gap-3">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Supervisor</label>
+                                    <select name="supervisor_id" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-ojt-primary focus:border-ojt-primary" {{ ($studentCompanyId ?? null) ? '' : 'disabled' }}>
+                                        @if(!($studentCompanyId ?? null))
+                                            <option value="">Assign a company first</option>
+                                        @else
+                                            @if(isset($eligibleSupervisors) && count($eligibleSupervisors) === 0)
+                                                <option value="">No supervisors for this company</option>
+                                            @else
+                                                @foreach($eligibleSupervisors as $sup)
+                                                    <option value="{{ $sup->id }}" {{ $student->studentProfile?->supervisor_id == $sup->id ? 'selected' : '' }}>{{ $sup->name }}</option>
+                                                @endforeach
+                                            @endif
+                                        @endif
+                                    </select>
+                                    <p class="text-xs text-gray-500 mt-1">Only supervisors attached to the student's company are listed.</p>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <button type="submit" class="bg-ojt-primary text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-maroon-700 transition-colors" {{ ($studentCompanyId ?? null) ? '' : 'disabled' }}>Save</button>
+                                    <a href="{{ route('coord.supervisors.create', ['company_id' => $studentCompanyId]) }}" class="text-sm text-ojt-primary hover:text-maroon-700 underline">Create New Supervisor</a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    @endif
                         </div>
                     @endif
                 </div>
