@@ -58,6 +58,7 @@ Route::middleware(['auth', 'force.password.change', 'profile.complete'])->group(
     Route::get('/placements/create', [App\Http\Controllers\PlacementRequestController::class, 'create'])->name('placements.create');
     Route::post('/placements', [App\Http\Controllers\PlacementRequestController::class, 'store'])->name('placements.store');
     Route::post('/placements/{placementRequest}/dismiss', [App\Http\Controllers\PlacementRequestController::class, 'dismiss'])->name('placements.dismiss');
+    Route::get('/placements/my', [App\Http\Controllers\PlacementRequestController::class, 'myPlacement'])->name('placements.my');
 
     // Attendance & Reports (students)
     Route::middleware(['placement.started'])->group(function () {

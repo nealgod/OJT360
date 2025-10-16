@@ -43,6 +43,10 @@ class PlacementRequestController extends Controller
             'external_company_address' => ['nullable', 'string', 'max:255'],
             'position_title' => ['nullable', 'string', 'max:255'],
             'start_date' => ['required', 'date'],
+            'shift_start' => ['nullable', 'date_format:H:i'],
+            'shift_end' => ['nullable', 'date_format:H:i'],
+            'working_days' => ['nullable', 'array'],
+            'working_days.*' => ['in:mon,tue,wed,thu,fri,sat,sun'],
             'break_minutes' => ['nullable', 'integer', 'min:0', 'max:240'],
             'contact_person' => ['required', 'string', 'max:255'],
             'supervisor_name' => ['nullable', 'string', 'max:255'],
@@ -76,8 +80,6 @@ class PlacementRequestController extends Controller
 
         $companyId = $hasCompany ? (int) $request->input('company_id') : null;
 
-        // Removed working days & shift times in minimal configuration
-
         $placement = PlacementRequest::create([
             'student_user_id' => Auth::id(),
             'company_id' => $companyId,
@@ -85,7 +87,10 @@ class PlacementRequestController extends Controller
             'external_company_address' => $request->string('external_company_address'),
             'position_title' => $request->string('position_title'),
             'start_date' => $request->date('start_date'),
+            'shift_start' => $request->input('shift_start'),
+            'shift_end' => $request->input('shift_end'),
             'break_minutes' => $request->input('break_minutes', 60),
+            'working_days' => $request->filled('working_days') ? array_values($request->input('working_days')) : null,
             'contact_person' => $request->string('contact_person'),
             'supervisor_name' => $request->string('supervisor_name'),
             'supervisor_email' => $request->string('supervisor_email'),
@@ -202,8 +207,6 @@ class PlacementRequestController extends Controller
             'break_minutes' => ['nullable', 'integer', 'min:0', 'max:240'],
         ]);
 
-        // Removed working days & shift times in minimal configuration
-
         $placementRequest->update([
             'status' => 'approved',
             'start_date' => $request->date('start_date'),
@@ -316,6 +319,20 @@ class PlacementRequestController extends Controller
         $placementRequest->update(['dismissed_at' => now()]);
         
         return response()->json(['success' => true]);
+    }
+
+    public function myPlacement()
+    {
+        $user = Auth::user();
+        abort_unless($user && $user->isStudent(), 403);
+
+        $placement = $user->placementRequests()
+            ->where('status', 'approved')
+            ->latest('decided_at')
+            ->with('company')
+            ->first();
+
+        return view('placements.my', compact('placement'));
     }
 
     private function authorizeAction(PlacementRequest $placementRequest): void

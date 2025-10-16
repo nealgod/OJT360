@@ -111,6 +111,9 @@
                                                 <span class="font-medium text-ojt-dark">{{ $req->company->name }}</span>
                                             </div>
                                             <p class="text-sm text-gray-600 mt-1">{{ $req->company->address }}</p>
+                                            @if($req->position_title)
+                                                <p class="text-sm text-gray-600 mt-1"><span class="font-medium">Position:</span> {{ $req->position_title }}</p>
+                                            @endif
                                         @else
                                             <div class="flex items-center space-x-2">
                                                 <svg class="w-4 h-4 text-ojt-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -138,6 +141,47 @@
                                             </div>
                                             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800">
                                                 {{ $req->start_date->format('M d, Y') }}
+                                            </span>
+                                        </div>
+                                    @endif
+
+                                    @if($req->shift_start || $req->shift_end)
+                                        <div class="flex items-center justify-between bg-amber-50 rounded-lg p-3 border border-amber-200">
+                                            <div class="flex items-center space-x-2">
+                                                <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                <span class="text-sm font-medium text-amber-800">Declared Shift</span>
+                                            </div>
+                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-amber-100 text-amber-800">
+                                                {{ $req->shift_start ? \Carbon\Carbon::parse($req->shift_start)->format('g:i A') : '—' }}
+                                                <span class="mx-1">–</span>
+                                                {{ $req->shift_end ? \Carbon\Carbon::parse($req->shift_end)->format('g:i A') : '—' }}
+                                            </span>
+                                        </div>
+                                    @endif
+
+                                    @if(!is_null($req->break_minutes))
+                                        <div class="flex items-center space-x-2">
+                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            <span class="text-sm text-gray-600">Break Time: <span class="font-medium">{{ $req->break_minutes }} min</span></span>
+                                        </div>
+                                    @endif
+
+                                    @if(is_array($req->working_days) && count($req->working_days) > 0)
+                                        <div class="flex items-center space-x-2">
+                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                            <span class="text-sm text-gray-600">Work Days:
+                                                <span class="font-medium">
+                                                    {{ collect($req->working_days)->map(function($d){
+                                                        $map = ['mon'=>'Mon','tue'=>'Tue','wed'=>'Wed','thu'=>'Thu','fri'=>'Fri','sat'=>'Sat','sun'=>'Sun'];
+                                                        return $map[$d] ?? $d;
+                                                    })->join(', ') }}
+                                                </span>
                                             </span>
                                         </div>
                                     @endif

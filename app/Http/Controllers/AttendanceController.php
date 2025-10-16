@@ -38,7 +38,7 @@ class AttendanceController extends Controller
             if (!$user->hasActiveOJT()) {
                 return back()->with('error', 'You must have an active OJT status to use attendance. Please contact your coordinator.');
             }
-            
+
             $today = now()->toDateString();
             
             // Check if already timed in today
@@ -77,7 +77,7 @@ class AttendanceController extends Controller
                 'lat_in' => $request->input('lat_in'),
                 'lng_in' => $request->input('lng_in'),
             ]);
-            
+
             
             // Check if this is an AJAX request
             if (request()->ajax()) {

@@ -27,6 +27,13 @@
                         Browse through all partner companies in the system.
                     @endif
                 </p>
+                @if(Auth::user()->isStudent())
+                    <div class="mt-4">
+                        <a href="{{ route('placements.my') }}" class="inline-flex items-center px-4 py-2 bg-ojt-primary text-white text-sm font-medium rounded-lg hover:bg-maroon-700 transition-colors duration-200">
+                            My Placement
+                        </a>
+                    </div>
+                @endif
                 @if(Auth::user()->isCoordinator())
                     <div class="mt-4">
                         <a href="{{ route('coord.companies.create') }}" class="inline-flex items-center px-4 py-2 bg-ojt-primary text-white text-sm font-medium rounded-lg hover:bg-maroon-700 transition-colors duration-200">

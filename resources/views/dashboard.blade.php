@@ -121,6 +121,12 @@
                 <!-- Today's Attendance Status -->
                 @if(Auth::user()->studentProfile && Auth::user()->studentProfile->ojt_status === 'active')
                     @php
+                        $approvedPlacement = Auth::user()->placementRequests()
+                            ->where('status', 'approved')
+                            ->latest('decided_at')
+                            ->first();
+                    @endphp
+                    @php
                         $todayAttendance = Auth::user()->attendanceLogs()->where('work_date', today())->first();
                     @endphp
                     <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-8">

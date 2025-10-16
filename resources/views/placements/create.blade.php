@@ -66,6 +66,55 @@
                         </div>
                     </div>
 
+                    <!-- Optional Schedule Fields -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div>
+                            <x-input-label for="shift_start" :value="__('Shift Start (optional)')" />
+                            <x-text-input id="shift_start" name="shift_start" type="time" class="mt-1 block w-full" :value="old('shift_start')" />
+                            <x-input-error class="mt-2" :messages="$errors->get('shift_start')" />
+                        </div>
+                        <div>
+                            <x-input-label for="shift_end" :value="__('Shift End (optional)')" />
+                            <x-text-input id="shift_end" name="shift_end" type="time" class="mt-1 block w-full" :value="old('shift_end')" />
+                            <x-input-error class="mt-2" :messages="$errors->get('shift_end')" />
+                        </div>
+                    </div>
+
+                    <div>
+                        <x-input-label :value="__('Work Days (optional)')" />
+                        <div class="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <label class="inline-flex items-center space-x-2">
+                                <input type="checkbox" name="working_days[]" value="mon" class="rounded border-gray-300 text-ojt-primary focus:ring-ojt-primary" {{ in_array('mon', old('working_days', [])) ? 'checked' : '' }}>
+                                <span>Mon</span>
+                            </label>
+                            <label class="inline-flex items-center space-x-2">
+                                <input type="checkbox" name="working_days[]" value="tue" class="rounded border-gray-300 text-ojt-primary focus:ring-ojt-primary" {{ in_array('tue', old('working_days', [])) ? 'checked' : '' }}>
+                                <span>Tue</span>
+                            </label>
+                            <label class="inline-flex items-center space-x-2">
+                                <input type="checkbox" name="working_days[]" value="wed" class="rounded border-gray-300 text-ojt-primary focus:ring-ojt-primary" {{ in_array('wed', old('working_days', [])) ? 'checked' : '' }}>
+                                <span>Wed</span>
+                            </label>
+                            <label class="inline-flex items-center space-x-2">
+                                <input type="checkbox" name="working_days[]" value="thu" class="rounded border-gray-300 text-ojt-primary focus:ring-ojt-primary" {{ in_array('thu', old('working_days', [])) ? 'checked' : '' }}>
+                                <span>Thu</span>
+                            </label>
+                            <label class="inline-flex items-center space-x-2">
+                                <input type="checkbox" name="working_days[]" value="fri" class="rounded border-gray-300 text-ojt-primary focus:ring-ojt-primary" {{ in_array('fri', old('working_days', [])) ? 'checked' : '' }}>
+                                <span>Fri</span>
+                            </label>
+                            <label class="inline-flex items-center space-x-2">
+                                <input type="checkbox" name="working_days[]" value="sat" class="rounded border-gray-300 text-ojt-primary focus:ring-ojt-primary" {{ in_array('sat', old('working_days', [])) ? 'checked' : '' }}>
+                                <span>Sat</span>
+                            </label>
+                            <label class="inline-flex items-center space-x-2">
+                                <input type="checkbox" name="working_days[]" value="sun" class="rounded border-gray-300 text-ojt-primary focus:ring-ojt-primary" {{ in_array('sun', old('working_days', [])) ? 'checked' : '' }}>
+                                <span>Sun</span>
+                            </label>
+                        </div>
+                        <x-input-error class="mt-2" :messages="$errors->get('working_days')" />
+                    </div>
+
                     <!-- Supervisor Information (Optional) -->
                     <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
                         <h3 class="text-lg font-medium text-gray-900 mb-4">Supervisor Information (Optional)</h3>
@@ -93,7 +142,7 @@
                     </div>
 
                     <div>
-                        <x-input-label for="proof" :value="__('Upload Proof of Acceptance (optional)')" />
+                        <x-input-label for="proof" :value="__('Upload Proof of Acceptance')" />
                         <div class="mt-1">
                             <input id="proof" name="proof" type="file" 
                                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-ojt-primary file:text-white hover:file:bg-maroon-700 file:cursor-pointer border border-gray-300 rounded-md cursor-pointer" 
