@@ -162,7 +162,7 @@
                     };
 
                     // Check today's attendance status
-                    const todayLog = @json($logs->first());
+                    const todayLog = @json($todayLog);
                     const hasTimedIn = todayLog && todayLog.time_in;
                     const hasTimedOut = todayLog && todayLog.time_out;
 

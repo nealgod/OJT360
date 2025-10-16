@@ -15,6 +15,7 @@ class EnsurePlacementStarted
     public function handle(Request $request, Closure $next)
     {
         $user = Auth::user();
+        
         if (!$user || !$user->isStudent()) {
             return $next($request);
         }
@@ -23,7 +24,6 @@ class EnsurePlacementStarted
         if (!$user->studentProfile || $user->studentProfile->ojt_status !== 'active') {
             return redirect()->back()->with('error', 'Your OJT placement is not active yet. Please wait for coordinator approval.');
         }
-
         return $next($request);
     }
 }

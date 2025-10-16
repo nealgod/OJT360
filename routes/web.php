@@ -64,6 +64,7 @@ Route::middleware(['auth', 'force.password.change', 'profile.complete'])->group(
         Route::get('/attendance', [App\Http\Controllers\AttendanceController::class, 'index'])->name('attendance.index');
         Route::post('/attendance/time-in', [App\Http\Controllers\AttendanceController::class, 'timeIn'])->name('attendance.timeIn');
         Route::post('/attendance/time-out', [App\Http\Controllers\AttendanceController::class, 'timeOut'])->name('attendance.timeOut');
+        Route::post('/attendance/recovery', [App\Http\Controllers\AttendanceController::class, 'recovery'])->name('attendance.recovery');
     });
     
     // (Removed enhanced/isolated attendance routes to keep original flow only)
