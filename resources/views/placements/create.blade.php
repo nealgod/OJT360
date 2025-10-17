@@ -37,8 +37,8 @@
 
                     <!-- Position/Role (always visible) -->
                     <div class="sm:col-span-2">
-                        <x-input-label for="position_title" :value="__('Position / Role (optional)')" />
-                        <x-text-input id="position_title" name="position_title" type="text" class="mt-1 block w-full" :value="old('position_title')" placeholder="Enter position or leave blank" />
+                        <x-input-label for="position_title" :value="__('Position / Role *')" />
+                        <x-text-input id="position_title" name="position_title" type="text" class="mt-1 block w-full" :value="old('position_title')" placeholder="Enter your position or role" required />
                         <x-input-error class="mt-2" :messages="$errors->get('position_title')" />
                     </div>
 
@@ -66,22 +66,24 @@
                         </div>
                     </div>
 
-                    <!-- Optional Schedule Fields -->
+                    <!-- Required Schedule Fields -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <div>
-                            <x-input-label for="shift_start" :value="__('Shift Start (optional)')" />
-                            <x-text-input id="shift_start" name="shift_start" type="time" class="mt-1 block w-full" :value="old('shift_start')" />
+                            <x-input-label for="shift_start" :value="__('Shift Start *')" />
+                            <x-text-input id="shift_start" name="shift_start" type="time" class="mt-1 block w-full" :value="old('shift_start')" required />
+                            <p class="mt-1 text-xs text-gray-500">Your expected start time for work</p>
                             <x-input-error class="mt-2" :messages="$errors->get('shift_start')" />
                         </div>
                         <div>
-                            <x-input-label for="shift_end" :value="__('Shift End (optional)')" />
-                            <x-text-input id="shift_end" name="shift_end" type="time" class="mt-1 block w-full" :value="old('shift_end')" />
+                            <x-input-label for="shift_end" :value="__('Shift End *')" />
+                            <x-text-input id="shift_end" name="shift_end" type="time" class="mt-1 block w-full" :value="old('shift_end')" required />
+                            <p class="mt-1 text-xs text-gray-500">Your expected end time for work</p>
                             <x-input-error class="mt-2" :messages="$errors->get('shift_end')" />
                         </div>
                     </div>
 
                     <div>
-                        <x-input-label :value="__('Work Days (optional)')" />
+                        <x-input-label :value="__('Work Days *')" />
                         <div class="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-3">
                             <label class="inline-flex items-center space-x-2">
                                 <input type="checkbox" name="working_days[]" value="mon" class="rounded border-gray-300 text-ojt-primary focus:ring-ojt-primary" {{ in_array('mon', old('working_days', [])) ? 'checked' : '' }}>
@@ -142,11 +144,11 @@
                     </div>
 
                     <div>
-                        <x-input-label for="proof" :value="__('Upload Proof of Acceptance')" />
+                        <x-input-label for="proof" :value="__('Upload Proof of Acceptance *')" />
                         <div class="mt-1">
                             <input id="proof" name="proof" type="file" 
                                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-ojt-primary file:text-white hover:file:bg-maroon-700 file:cursor-pointer border border-gray-300 rounded-md cursor-pointer" 
-                                   accept=".jpg,.jpeg,.png,.pdf" />
+                                   accept=".jpg,.jpeg,.png,.pdf" required />
                         </div>
                         <x-input-error class="mt-2" :messages="$errors->get('proof')" />
                         <p class="mt-1 text-xs text-gray-500">
@@ -155,7 +157,7 @@
                     </div>
 
                     <div class="flex items-center gap-4">
-                        <x-primary-button onclick="validateForm()">Submit</x-primary-button>
+                        <x-primary-button type="submit" onclick="return validateForm()">Submit</x-primary-button>
                         <a href="{{ route('placements.index') }}" class="text-gray-600 hover:text-ojt-primary">Cancel</a>
                     </div>
                 </form>
@@ -199,12 +201,46 @@
             const companySelect = document.getElementById('company_id');
             const externalNameField = document.getElementById('external_company_name');
             const externalFields = document.getElementById('external-company-fields');
+            const shiftStart = document.getElementById('shift_start');
+            const shiftEnd = document.getElementById('shift_end');
+            const workingDays = document.querySelectorAll('input[name="working_days[]"]:checked');
             
             // If no company is selected, external company name is required
             if (!companySelect.value && !externalNameField.value.trim()) {
                 alert('Please either select a company from the list or enter an external company name.');
                 externalFields.style.display = 'block';
                 externalNameField.focus();
+                return false;
+            }
+            
+            // Validate shift times
+            if (!shiftStart.value) {
+                alert('Please enter your shift start time.');
+                shiftStart.focus();
+                return false;
+            }
+            
+            if (!shiftEnd.value) {
+                alert('Please enter your shift end time.');
+                shiftEnd.focus();
+                return false;
+            }
+            
+            // Validate that shift end is after shift start
+            if (shiftStart.value && shiftEnd.value) {
+                const startTime = new Date('2000-01-01 ' + shiftStart.value);
+                const endTime = new Date('2000-01-01 ' + shiftEnd.value);
+                
+                if (endTime <= startTime) {
+                    alert('Shift end time must be after shift start time.');
+                    shiftEnd.focus();
+                    return false;
+                }
+            }
+            
+            // Validate working days
+            if (workingDays.length === 0) {
+                alert('Please select at least one working day.');
                 return false;
             }
             

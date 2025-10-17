@@ -275,14 +275,66 @@
                                         </h5>
                                         <form method="POST" action="{{ route('coord.placements.approve', $req) }}">
                                             @csrf
-                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                <div>
-                                                    <label for="start_date_{{ $req->id }}" class="block text-xs font-medium text-gray-700 mb-1">Start Date</label>
-                                                    <input type="date" id="start_date_{{ $req->id }}" name="start_date" min="{{ date('Y-m-d') }}" value="{{ $req->start_date ? $req->start_date->format('Y-m-d') : '' }}" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500" required />
+                                            <div class="space-y-3">
+                                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                    <div>
+                                                        <label for="start_date_{{ $req->id }}" class="block text-xs font-medium text-gray-700 mb-1">Start Date</label>
+                                                        <input type="date" id="start_date_{{ $req->id }}" name="start_date" min="{{ date('Y-m-d') }}" value="{{ $req->start_date ? $req->start_date->format('Y-m-d') : '' }}" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500" required />
+                                                    </div>
+                                                    <div>
+                                                        <label for="break_minutes_{{ $req->id }}" class="block text-xs font-medium text-gray-700 mb-1">Break Time (minutes)</label>
+                                                        <input type="number" id="break_minutes_{{ $req->id }}" name="break_minutes" min="0" max="240" value="{{ $req->break_minutes ?? 60 }}" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500" />
+                                                    </div>
                                                 </div>
+                                                
+                                                <!-- Shift Times -->
+                                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                    <div>
+                                                        <label for="shift_start_{{ $req->id }}" class="block text-xs font-medium text-gray-700 mb-1">Shift Start</label>
+                                                        <input type="time" id="shift_start_{{ $req->id }}" name="shift_start" value="{{ $req->shift_start ?? '08:00' }}" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500" required />
+                                                    </div>
+                                                    <div>
+                                                        <label for="shift_end_{{ $req->id }}" class="block text-xs font-medium text-gray-700 mb-1">Shift End</label>
+                                                        <input type="time" id="shift_end_{{ $req->id }}" name="shift_end" value="{{ $req->shift_end ?? '17:00' }}" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500" required />
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Working Days -->
                                                 <div>
-                                                    <label for="break_minutes_{{ $req->id }}" class="block text-xs font-medium text-gray-700 mb-1">Break Time (minutes)</label>
-                                                    <input type="number" id="break_minutes_{{ $req->id }}" name="break_minutes" min="0" max="240" value="{{ $req->break_minutes ?? 60 }}" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500" />
+                                                    <label class="block text-xs font-medium text-gray-700 mb-2">Working Days</label>
+                                                    <div class="grid grid-cols-4 gap-2">
+                                                        @php
+                                                            $workingDays = $req->working_days ?? ['mon', 'tue', 'wed', 'thu', 'fri'];
+                                                        @endphp
+                                                        <label class="flex items-center space-x-1">
+                                                            <input type="checkbox" name="working_days[]" value="mon" class="rounded border-gray-300 text-green-600 focus:ring-green-500" {{ in_array('mon', $workingDays) ? 'checked' : '' }}>
+                                                            <span class="text-xs">Mon</span>
+                                                        </label>
+                                                        <label class="flex items-center space-x-1">
+                                                            <input type="checkbox" name="working_days[]" value="tue" class="rounded border-gray-300 text-green-600 focus:ring-green-500" {{ in_array('tue', $workingDays) ? 'checked' : '' }}>
+                                                            <span class="text-xs">Tue</span>
+                                                        </label>
+                                                        <label class="flex items-center space-x-1">
+                                                            <input type="checkbox" name="working_days[]" value="wed" class="rounded border-gray-300 text-green-600 focus:ring-green-500" {{ in_array('wed', $workingDays) ? 'checked' : '' }}>
+                                                            <span class="text-xs">Wed</span>
+                                                        </label>
+                                                        <label class="flex items-center space-x-1">
+                                                            <input type="checkbox" name="working_days[]" value="thu" class="rounded border-gray-300 text-green-600 focus:ring-green-500" {{ in_array('thu', $workingDays) ? 'checked' : '' }}>
+                                                            <span class="text-xs">Thu</span>
+                                                        </label>
+                                                        <label class="flex items-center space-x-1">
+                                                            <input type="checkbox" name="working_days[]" value="fri" class="rounded border-gray-300 text-green-600 focus:ring-green-500" {{ in_array('fri', $workingDays) ? 'checked' : '' }}>
+                                                            <span class="text-xs">Fri</span>
+                                                        </label>
+                                                        <label class="flex items-center space-x-1">
+                                                            <input type="checkbox" name="working_days[]" value="sat" class="rounded border-gray-300 text-green-600 focus:ring-green-500" {{ in_array('sat', $workingDays) ? 'checked' : '' }}>
+                                                            <span class="text-xs">Sat</span>
+                                                        </label>
+                                                        <label class="flex items-center space-x-1">
+                                                            <input type="checkbox" name="working_days[]" value="sun" class="rounded border-gray-300 text-green-600 focus:ring-green-500" {{ in_array('sun', $workingDays) ? 'checked' : '' }}>
+                                                            <span class="text-xs">Sun</span>
+                                                        </label>
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div class="flex-shrink-0 mt-3">

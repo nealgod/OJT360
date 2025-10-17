@@ -41,18 +41,18 @@ class PlacementRequestController extends Controller
             'company_id' => ['nullable', 'exists:companies,id'],
             'external_company_name' => ['nullable', 'string', 'max:255'],
             'external_company_address' => ['nullable', 'string', 'max:255'],
-            'position_title' => ['nullable', 'string', 'max:255'],
+            'position_title' => ['required', 'string', 'max:255'],
             'start_date' => ['required', 'date'],
-            'shift_start' => ['nullable', 'date_format:H:i'],
-            'shift_end' => ['nullable', 'date_format:H:i'],
-            'working_days' => ['nullable', 'array'],
+            'shift_start' => ['required', 'date_format:H:i'],
+            'shift_end' => ['required', 'date_format:H:i'],
+            'working_days' => ['required', 'array', 'min:1'],
             'working_days.*' => ['in:mon,tue,wed,thu,fri,sat,sun'],
-            'break_minutes' => ['nullable', 'integer', 'min:0', 'max:240'],
+            'break_minutes' => ['required', 'integer', 'min:0', 'max:240'],
             'contact_person' => ['required', 'string', 'max:255'],
             'supervisor_name' => ['nullable', 'string', 'max:255'],
             'supervisor_email' => ['nullable', 'email', 'max:255'],
             'note' => ['nullable', 'string', 'max:2000'],
-            'proof' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
+            'proof' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
         ]);
 
         // Custom validation: Either company_id or external_company_name must be provided
@@ -100,22 +100,30 @@ class PlacementRequestController extends Controller
 
         // Supervisor assignment will be done manually by coordinator later
 
-        // Auto-create document submission for Letter of Acceptance if proof was uploaded
+        // Auto-create or update document submission for Letter of Acceptance if proof was uploaded
         if ($path && \Illuminate\Support\Facades\Schema::hasTable('document_requirements') && \Illuminate\Support\Facades\Schema::hasTable('student_document_submissions')) {
             $letterOfAcceptanceRequirement = \App\Models\DocumentRequirement::where('name', 'LIKE', '%Letter of Acceptance%')
                 ->where('type', 'pre_placement')
                 ->first();
             
             if ($letterOfAcceptanceRequirement) {
-                \App\Models\StudentDocumentSubmission::create([
-                    'student_user_id' => Auth::id(),
-                    'document_requirement_id' => $letterOfAcceptanceRequirement->id,
-                    'file_path' => $path,
-                    'original_filename' => $request->file('proof')->getClientOriginalName(),
-                    'file_size' => $request->file('proof')->getSize(),
-                    'mime_type' => $request->file('proof')->getMimeType(),
-                    'status' => 'submitted',
-                ]);
+                // Use updateOrCreate to handle existing submissions
+                \App\Models\StudentDocumentSubmission::updateOrCreate(
+                    [
+                        'student_user_id' => Auth::id(),
+                        'document_requirement_id' => $letterOfAcceptanceRequirement->id,
+                    ],
+                    [
+                        'file_path' => $path,
+                        'original_filename' => $request->file('proof')->getClientOriginalName(),
+                        'file_size' => $request->file('proof')->getSize(),
+                        'mime_type' => $request->file('proof')->getMimeType(),
+                        'status' => 'submitted',
+                        'feedback' => null, // Reset feedback when updating
+                        'reviewed_by' => null, // Reset review status
+                        'reviewed_at' => null,
+                    ]
+                );
             }
         }
 
@@ -223,12 +231,19 @@ class PlacementRequestController extends Controller
 
         $request->validate([
             'start_date' => ['required', 'date'],
+            'shift_start' => ['required', 'date_format:H:i'],
+            'shift_end' => ['required', 'date_format:H:i'],
+            'working_days' => ['required', 'array', 'min:1'],
+            'working_days.*' => ['in:mon,tue,wed,thu,fri,sat,sun'],
             'break_minutes' => ['nullable', 'integer', 'min:0', 'max:240'],
         ]);
 
         $placementRequest->update([
             'status' => 'approved',
             'start_date' => $request->date('start_date'),
+            'shift_start' => $request->input('shift_start'),
+            'shift_end' => $request->input('shift_end'),
+            'working_days' => $request->input('working_days'),
             'break_minutes' => $request->input('break_minutes', $placementRequest->break_minutes),
             'decided_by' => Auth::id(),
             'decided_at' => now(),

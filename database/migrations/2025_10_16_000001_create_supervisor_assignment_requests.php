@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('supervisor_assignment_requests', function (Blueprint $table) {
             $table->id();
             $table->foreignId('student_user_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
+            $table->foreignId('company_id')->nullable()->constrained('companies')->nullOnDelete();
             $table->string('proposed_name')->nullable();
             $table->string('proposed_email')->nullable();
             $table->text('notes')->nullable();

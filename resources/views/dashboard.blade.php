@@ -236,6 +236,24 @@
                         @endif
                     </div>
                 @endif
+
+                <!-- My Placement Button for Students with Approved Placement -->
+                @if(Auth::user()->isStudent() && Auth::user()->placementRequests()->where('status', 'approved')->exists())
+                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-8">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-lg font-semibold text-ojt-dark mb-2">My Placement</h3>
+                                <p class="text-gray-600 text-sm">View your approved placement details, supervisor information, and company details.</p>
+                            </div>
+                            <a href="{{ route('placements.my') }}" class="inline-flex items-center px-4 py-2 bg-ojt-primary text-white text-sm font-medium rounded-lg hover:bg-maroon-700 transition-colors">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                View Details
+                            </a>
+                        </div>
+                    </div>
+                @endif
             @elseif(Auth::user()->isCoordinator())
                 @php
                     $coordinator = Auth::user();
