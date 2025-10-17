@@ -23,7 +23,7 @@ return new class extends Migration
             $table->timestamps();
             
             // Prevent duplicate submissions for the same requirement
-            $table->unique(['student_user_id', 'document_requirement_id']);
+            $table->unique(['student_user_id', 'document_requirement_id'], 'student_doc_submissions_unique');
         });
     }
 

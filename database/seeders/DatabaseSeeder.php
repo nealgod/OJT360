@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             DepartmentProgramSeeder::class,
             AdminUserSeeder::class,
             CompanySeeder::class,
+            DocumentRequirementsSeeder::class,
             // TestAccountsSeeder::class, // Commented out for manual testing
         ]);
     }
