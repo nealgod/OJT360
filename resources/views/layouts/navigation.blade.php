@@ -35,9 +35,11 @@
                                 {{ __('Reports') }}
                             </x-nav-link>
                         @endif
-                        <x-nav-link :href="route('documents.index')" :active="request()->routeIs('documents.*')">
-                            {{ __('Documents') }}
-                        </x-nav-link>
+                        @if(Auth::user()->hasActiveOJT())
+                            <x-nav-link :href="route('documents.index')" :active="request()->routeIs('documents.*')">
+                                {{ __('Documents') }}
+                            </x-nav-link>
+                        @endif
                         <x-nav-link :href="route('messages.index')" :active="request()->routeIs('messages.*')">
                             {{ __('Messages') }}
                             @if(auth()->user()->unreadMessages()->count() > 0)

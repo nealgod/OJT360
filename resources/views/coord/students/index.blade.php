@@ -73,7 +73,7 @@
             <!-- Filters and Search -->
             <div class="mb-6 bg-white rounded-xl border border-gray-200 shadow-sm p-4">
                 <form method="GET" action="{{ route('coord.students.index') }}" class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <!-- Search -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
@@ -92,6 +92,16 @@
                                 <option value="pending" {{ $status == 'pending' ? 'selected' : '' }}>Pending</option>
                                 <option value="active" {{ $status == 'active' ? 'selected' : '' }}>Active</option>
                                 <option value="completed" {{ $status == 'completed' ? 'selected' : '' }}>Completed</option>
+                            </select>
+                        </div>
+
+                        <!-- Supervisor Filter (visible, non-draggable) -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Supervisor</label>
+                            <select name="supervisor" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-ojt-primary focus:border-ojt-primary">
+                                <option value="all" {{ ($supervisorFilter ?? 'all') == 'all' ? 'selected' : '' }}>All</option>
+                                <option value="assigned" {{ ($supervisorFilter ?? 'all') == 'assigned' ? 'selected' : '' }}>Assigned</option>
+                                <option value="pending" {{ ($supervisorFilter ?? 'all') == 'pending' ? 'selected' : '' }}>Pending</option>
                             </select>
                         </div>
 
@@ -128,6 +138,7 @@
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Program</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Supervisor</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
@@ -172,8 +183,27 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="text-sm text-gray-900">
-                                                {{ $student->studentProfile?->company?->name ?? 'Not Assigned' }}
+                                                @php
+                                                    $approvedPlacement = $student->placementRequests->first();
+                                                @endphp
+                                                @if($student->studentProfile?->company?->name)
+                                                    {{ $student->studentProfile->company->name }}
+                                                @elseif($approvedPlacement && $approvedPlacement->external_company_name)
+                                                    {{ $approvedPlacement->external_company_name }} <span class="text-xs text-gray-500">(External)</span>
+                                                @else
+                                                    Not Assigned
+                                                @endif
                                             </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            @if($student->studentProfile?->supervisor)
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Assigned</span>
+                                                    <span class="text-sm text-gray-700 truncate max-w-[10rem]" title="{{ $student->studentProfile->supervisor->name }}">{{ $student->studentProfile->supervisor->name }}</span>
+                                                </div>
+                                            @else
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Pending</span>
+                                            @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             @if($student->studentProfile && $student->studentProfile->ojt_status === 'active')

@@ -336,6 +336,22 @@
                                                         </label>
                                                     </div>
                                                 </div>
+                                                
+                                                <!-- Supervisor Information Display Only -->
+                                                @if($req->supervisor_name || $req->supervisor_email)
+                                                    <div class="border-t pt-3">
+                                                        <h4 class="text-sm font-medium text-gray-900 mb-3">Supervisor Information (Submitted by Student)</h4>
+                                                        <div class="bg-blue-50 rounded-lg p-3">
+                                                            <p class="text-sm text-blue-800">
+                                                                <strong>Name:</strong> {{ $req->supervisor_name ?? 'Not provided' }}<br>
+                                                                <strong>Email:</strong> {{ $req->supervisor_email ?? 'Not provided' }}
+                                                            </p>
+                                                            <p class="text-xs text-blue-600 mt-2">
+                                                                <em>Note: Supervisor assignment will be handled separately after placement approval.</em>
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                @endif
                                             </div>
                                             <div class="flex-shrink-0 mt-3">
                                                 <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-green-700 transition-colors duration-200 flex items-center whitespace-nowrap">
@@ -409,4 +425,5 @@
             @endif
         </div>
     </div>
+
 </x-app-layout>

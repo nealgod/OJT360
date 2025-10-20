@@ -142,7 +142,15 @@
                     <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Placement Summary</h3>
                         <div class="space-y-2 text-sm text-gray-700">
-                            <p><span class="font-medium">Company:</span> {{ $student->studentProfile?->company?->name ?? 'Not assigned' }}</p>
+                            <p><span class="font-medium">Company:</span> 
+                                @if($student->studentProfile?->company?->name)
+                                    {{ $student->studentProfile->company->name }}
+                                @elseif($externalCompanyName)
+                                    {{ $externalCompanyName }} <span class="text-xs text-gray-500">(External)</span>
+                                @else
+                                    Not assigned
+                                @endif
+                            </p>
                             <p><span class="font-medium">Supervisor:</span> {{ $student->studentProfile?->supervisor?->name ?? 'Not assigned' }}</p>
                             @if($student->studentProfile?->supervisor)
                                 <p class="text-xs text-gray-500">Email: {{ $student->studentProfile?->supervisor?->email }}</p>
@@ -173,65 +181,124 @@
                                 @endforeach
                             </div>
 
-                    <!-- Assign Supervisor (company-locked) -->
-                    @if(!$student->studentProfile?->supervisor)
-                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Assign Supervisor</h3>
+                    <!-- Supervisor Assignment Section -->
+                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6" x-data="{ open: {{ $student->studentProfile?->supervisor ? 'false' : 'true' }} }">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-900">Supervisor Assignment</h3>
+                            <div class="flex items-center gap-2">
+                                @if($student->studentProfile?->supervisor)
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">✓ Assigned</span>
+                                @else
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">⚠ Pending</span>
+                                @endif
+                                <button type="button" @click="open = !open" class="inline-flex items-center px-2.5 py-1 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50">
+                                    <span x-show="!open">Show</span>
+                                    <span x-show="open">Hide</span>
+                                </button>
+                            </div>
+                        </div>
+
                         <!-- Current assignment -->
-                        <div class="mb-4">
-                            <p class="text-sm text-gray-700"><span class="font-medium">Current:</span></p>
+                        <div class="mb-4" x-show="open">
                             @if($student->studentProfile?->supervisor)
-                                <p class="text-sm text-gray-900">{{ $student->studentProfile->supervisor->name }}</p>
-                                <p class="text-xs text-gray-500">{{ $student->studentProfile->supervisor->email }}</p>
+                        <div class="bg-ojt-accent/10 border border-ojt-accent/30 rounded-lg p-3">
+                            <p class="text-sm text-ojt-accent"><span class="font-medium">Assigned Supervisor:</span></p>
+                            <p class="text-sm text-ojt-dark">{{ $student->studentProfile->supervisor->name }}</p>
+                            <p class="text-xs text-ojt-dark/70">{{ $student->studentProfile->supervisor->email }}</p>
+                                </div>
                             @else
-                                <p class="text-sm text-gray-500">No supervisor assigned</p>
+                                <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                    <p class="text-sm text-gray-600">No supervisor assigned yet</p>
+                                    <p class="text-xs text-gray-500 mt-1">Student can submit supervisor details, or you can assign an existing supervisor.</p>
+                                </div>
                             @endif
                         </div>
 
                         <!-- Student-submitted details -->
                         @if(isset($latestProposal) && $latestProposal)
-                            <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
-                                <p class="text-sm text-amber-800"><span class="font-medium">Submitted by student:</span></p>
-                                <p class="text-sm text-amber-900">{{ $latestProposal->proposed_name ?? '—' }}</p>
-                                <p class="text-xs text-amber-700">{{ $latestProposal->proposed_email ?? '—' }}</p>
-                                <button type="button" onclick="document.getElementById('proposalNotes').classList.toggle('hidden')" class="mt-2 text-xs text-amber-800 underline">{{ $latestProposal->notes ? 'Show notes' : 'Show notes (empty)' }}</button>
-                                <div id="proposalNotes" class="hidden mt-2 text-xs text-amber-800">{{ $latestProposal->notes ?: 'No notes provided.' }}</div>
+                                <div class="bg-ojt-accent/10 border border-ojt-accent/30 rounded-lg p-3 mb-4" x-show="open">
+                                <p class="text-sm text-ojt-accent font-medium mb-2">📝 Supervisor Details Submitted by Student:</p>
+                                <p class="text-sm text-ojt-dark"><strong>Name:</strong> {{ $latestProposal->proposed_name ?? 'Not provided' }}</p>
+                                <p class="text-sm text-ojt-dark"><strong>Email:</strong> {{ $latestProposal->proposed_email ?? 'Not provided' }}</p>
+                                @if($latestProposal->notes)
+                                    <button type="button" onclick="document.getElementById('proposalNotes').classList.toggle('hidden')" class="mt-2 text-xs text-ojt-accent underline">Show notes</button>
+                                    <div id="proposalNotes" class="hidden mt-2 text-xs text-ojt-dark bg-ojt-accent/10 p-2 rounded">{{ $latestProposal->notes }}</div>
+                                @endif
                             </div>
                         @endif
 
-                        <!-- Toggle assign form -->
-                        <button type="button" onclick="document.getElementById('assignSupForm').classList.toggle('hidden')" class="inline-flex items-center px-3 py-2 bg-ojt-primary text-white text-sm font-medium rounded-lg hover:bg-maroon-700 transition-colors">
-                            {{ $student->studentProfile?->supervisor ? 'Change Supervisor' : 'Assign Supervisor' }}
-                        </button>
+                        <!-- Assignment Options -->
+                        <div class="space-y-3" x-show="open">
+                            <!-- Option 1: Create from student proposal -->
+                            @if(isset($latestProposal) && $latestProposal && $latestProposal->proposed_name && $latestProposal->proposed_email)
+                                <div class="border border-blue-200 rounded-lg p-3">
+                                    <h4 class="text-sm font-medium text-ojt-dark mb-2">Option 1: Create Supervisor Account</h4>
+                                    <p class="text-xs text-gray-600 mb-3">Create a new supervisor account using the details submitted by the student.</p>
+                                    <form method="POST" action="{{ route('coord.students.assign-supervisor', $student) }}" class="inline">
+                                        @csrf
+                                        <input type="hidden" name="action" value="create_from_proposal">
+                                        <button type="submit" class="bg-ojt-primary text-white px-3 py-1 rounded text-sm hover:bg-maroon-700 transition-colors">
+                                            Create Account & Assign
+                                        </button>
+                                    </form>
+                                </div>
+                            @endif
 
-                        <form id="assignSupForm" method="POST" action="{{ route('coord.students.assign-supervisor', $student) }}" class="mt-4 hidden">
-                            @csrf
-                            <div class="grid grid-cols-1 gap-3">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Supervisor</label>
-                                    <select name="supervisor_id" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-ojt-primary focus:border-ojt-primary" {{ ($studentCompanyId ?? null) ? '' : 'disabled' }}>
-                                        @if(!($studentCompanyId ?? null))
-                                            <option value="">Assign a company first</option>
-                                        @else
-                                            @if(isset($eligibleSupervisors) && count($eligibleSupervisors) === 0)
-                                                <option value="">No supervisors for this company</option>
-                                            @else
-                                                @foreach($eligibleSupervisors as $sup)
-                                                    <option value="{{ $sup->id }}" {{ $student->studentProfile?->supervisor_id == $sup->id ? 'selected' : '' }}>{{ $sup->name }}</option>
-                                                @endforeach
-                                            @endif
-                                        @endif
-                                    </select>
-                                    <p class="text-xs text-gray-500 mt-1">Only supervisors attached to the student's company are listed.</p>
-                                </div>
-                                <div class="flex items-center gap-3">
-                                    <button type="submit" class="bg-ojt-primary text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-maroon-700 transition-colors" {{ ($studentCompanyId ?? null) ? '' : 'disabled' }}>Save</button>
-                                    <a href="{{ route('coord.supervisors.create', ['company_id' => $studentCompanyId]) }}" class="text-sm text-ojt-primary hover:text-maroon-700 underline">Create New Supervisor</a>
-                                </div>
+                            <!-- Option 2: Assign existing supervisor -->
+                            <div class="border border-gray-200 rounded-lg p-3">
+                                <h4 class="text-sm font-medium text-ojt-dark mb-2">Option 2: Assign Existing Supervisor</h4>
+                                <form method="POST" action="{{ route('coord.students.assign-supervisor', $student) }}">
+                                    @csrf
+                                    <input type="hidden" name="action" value="assign_existing">
+                                    <div class="flex items-end gap-3">
+                                        <div class="flex-1">
+                                            <select name="supervisor_id" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-ojt-primary focus:border-ojt-primary" {{ ($studentCompanyId) ? '' : 'disabled' }}>
+                                                @if(!$studentCompanyId && !$externalCompanyName)
+                                                    <option value="">No company assigned</option>
+                                                @elseif($externalCompanyName)
+                                                    <option value="">External placement: create supervisor from proposal</option>
+                                                @else
+                                                    @if(isset($eligibleSupervisors) && count($eligibleSupervisors) === 0)
+                                                        <option value="">No supervisors available</option>
+                                                    @else
+                                                        <option value="">Select a supervisor</option>
+                                                        @foreach($eligibleSupervisors as $sup)
+                                                            <option value="{{ $sup->id }}" {{ $student->studentProfile?->supervisor_id == $sup->id ? 'selected' : '' }}>
+                                                                {{ $sup->name }}@if(!empty($sup->email)) ({{ $sup->email }})@endif
+                                                            </option>
+                                                        @endforeach
+                                                    @endif
+                                                @endif
+                                            </select>
+                                        </div>
+                                        <button type="submit" class="bg-ojt-primary text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-maroon-700 transition-colors" {{ ($studentCompanyId) ? '' : 'disabled' }}>
+                                            Assign
+                                        </button>
+                                    </div>
+                                </form>
+                                <p class="text-xs text-gray-500 mt-2">
+                                    @if($studentCompanyId)
+                                        Only supervisors from {{ $student->studentProfile->company->name }} are shown.
+                                    @elseif($externalCompanyName)
+                                        For external placements, please use Option 1 to create the supervisor from the student's proposal (or add the company to the system first).
+                                    @else
+                                        Student needs an assigned company first.
+                                    @endif
+                                </p>
                             </div>
-                        </form>
+
+                            <!-- Option 3: Create new supervisor -->
+                            @if($studentCompanyId)
+                                <div class="border border-gray-200 rounded-lg p-3">
+                                    <h4 class="text-sm font-medium text-ojt-dark mb-2">Option 3: Create New Supervisor</h4>
+                                    <p class="text-xs text-gray-600 mb-3">Create a new supervisor account for {{ $student->studentProfile->company->name }}.</p>
+                                    <a href="{{ route('coord.supervisors.create', ['company_id' => $studentCompanyId]) }}" class="inline-flex items-center px-3 py-1 bg-ojt-primary text-white rounded text-sm hover:bg-maroon-700 transition-colors">
+                                        Create New Supervisor
+                                    </a>
+                                </div>
+                            @endif
+                        </div>
                     </div>
-                    @endif
                         </div>
                     @endif
                 </div>

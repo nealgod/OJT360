@@ -121,6 +121,24 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->studentProfile && $this->studentProfile->ojt_status === 'active';
     }
 
+    // Check if user completed their profile (aligned with CheckProfileCompletion)
+    public function hasCompletedProfile(): bool
+    {
+        if ($this->isStudent()) {
+            $profile = $this->studentProfile;
+            return (bool) ($profile && $profile->student_id && $profile->course && $profile->department);
+        }
+        if ($this->isCoordinator()) {
+            $profile = $this->coordinatorProfile;
+            return (bool) ($profile && $profile->employee_id && $profile->department);
+        }
+        if ($this->isSupervisor()) {
+            $profile = $this->supervisorProfile;
+            return (bool) ($profile && $profile->company_id);
+        }
+        return true; // Admins considered complete
+    }
+
     // Get the appropriate profile based on role
     public function getProfile()
     {

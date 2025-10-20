@@ -70,15 +70,19 @@ Route::middleware(['auth', 'force.password.change', 'profile.complete'])->group(
     });
     
     // (Removed enhanced/isolated attendance routes to keep original flow only)
-    Route::get('/reports', [App\Http\Controllers\DailyReportController::class, 'index'])->name('reports.index');
-    Route::get('/reports/create', [App\Http\Controllers\DailyReportController::class, 'create'])->name('reports.create');
-    Route::post('/reports', [App\Http\Controllers\DailyReportController::class, 'store'])->name('reports.store');
+    Route::middleware(['placement.started'])->group(function () {
+        Route::get('/reports', [App\Http\Controllers\DailyReportController::class, 'index'])->name('reports.index');
+        Route::get('/reports/create', [App\Http\Controllers\DailyReportController::class, 'create'])->name('reports.create');
+        Route::post('/reports', [App\Http\Controllers\DailyReportController::class, 'store'])->name('reports.store');
+    });
     
-    // Document Requirements
-    Route::get('/documents', [App\Http\Controllers\DocumentController::class, 'index'])->name('documents.index');
-    Route::get('/documents/{requirement}', [App\Http\Controllers\DocumentController::class, 'show'])->name('documents.show');
-    Route::post('/documents/{requirement}/submit', [App\Http\Controllers\DocumentController::class, 'submit'])->name('documents.submit');
-    Route::get('/documents/submissions/{submission}/download', [App\Http\Controllers\DocumentController::class, 'download'])->name('documents.download');
+    // Document Requirements (visible after placement starts to reduce overwhelm)
+    Route::middleware(['placement.started'])->group(function () {
+        Route::get('/documents', [App\Http\Controllers\DocumentController::class, 'index'])->name('documents.index');
+        Route::get('/documents/{requirement}', [App\Http\Controllers\DocumentController::class, 'show'])->name('documents.show');
+        Route::post('/documents/{requirement}/submit', [App\Http\Controllers\DocumentController::class, 'submit'])->name('documents.submit');
+        Route::get('/documents/submissions/{submission}/download', [App\Http\Controllers\DocumentController::class, 'download'])->name('documents.download');
+    });
 });
 
 // Admin routes
@@ -98,6 +102,7 @@ Route::middleware(['auth', 'verified', 'force.password.change', 'profile.complet
     Route::get('/coord/placements', [App\Http\Controllers\PlacementRequestController::class, 'inbox'])->name('coord.placements.inbox');
     Route::post('/coord/placements/{placementRequest}/approve', [App\Http\Controllers\PlacementRequestController::class, 'approve'])->name('coord.placements.approve');
     Route::post('/coord/placements/{placementRequest}/decline', [App\Http\Controllers\PlacementRequestController::class, 'decline'])->name('coord.placements.decline');
+    Route::get('/coord/placements/{placementRequest}/supervisors', [App\Http\Controllers\PlacementRequestController::class, 'getSupervisors'])->name('coord.placements.supervisors');
 
     // Coordinator manage companies
     Route::get('/coord/companies/create', [App\Http\Controllers\CompanyController::class, 'create'])->name('coord.companies.create');

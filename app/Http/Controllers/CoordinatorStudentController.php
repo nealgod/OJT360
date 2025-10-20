@@ -24,13 +24,30 @@ class CoordinatorStudentController extends Controller
                 $q->where('department', $department)
                   ->where('course', $programName);
             })
-            ->with(['studentProfile.company', 'studentProfile.supervisor']);
+            ->with([
+                'studentProfile.company',
+                'studentProfile.supervisor',
+                'placementRequests' => function($q) {
+                    $q->where('status', 'approved')->latest('decided_at');
+                }
+            ]);
 
-        // Apply filters (only status and search since program is fixed)
+        // Apply filters (status, supervisor, search; program is fixed)
         $status = $request->get('status', 'all');
         if ($status !== 'all') {
             $query->whereHas('studentProfile', function($q) use ($status) {
                 $q->where('ojt_status', $status);
+            });
+        }
+
+        $supervisorFilter = $request->get('supervisor', 'all');
+        if ($supervisorFilter === 'assigned') {
+            $query->whereHas('studentProfile', function($q) {
+                $q->whereNotNull('supervisor_id');
+            });
+        } elseif ($supervisorFilter === 'pending') {
+            $query->whereHas('studentProfile', function($q) {
+                $q->whereNull('supervisor_id');
             });
         }
 
@@ -92,9 +109,9 @@ class CoordinatorStudentController extends Controller
         ];
 
         // Add current filter/sort values for the view
-        $students->appends($request->only(['status', 'search', 'sort']));
+        $students->appends($request->only(['status', 'search', 'sort', 'supervisor']));
 
-        return view('coord.students.index', compact('students', 'stats', 'status', 'search', 'sort', 'programName'));
+        return view('coord.students.index', compact('students', 'stats', 'status', 'search', 'sort', 'programName', 'supervisorFilter'));
     }
 
     public function show(User $student)
@@ -135,13 +152,22 @@ class CoordinatorStudentController extends Controller
         // Eligible supervisors for assigned company
         $eligibleSupervisors = collect();
         $studentCompanyId = $student->studentProfile?->assigned_company_id;
+        
+        // Get company info from placement request if no assigned company
+        $placementRequest = $student->placementRequests()->where('status', 'approved')->latest('decided_at')->first();
+        $externalCompanyName = $placementRequest?->external_company_name;
+        
         if ($studentCompanyId) {
+            // For listed companies - show supervisors from that specific company
             $eligibleSupervisors = User::where('role', 'supervisor')
                 ->whereHas('supervisorProfile', function($q) use ($studentCompanyId) {
                     $q->where('company_id', $studentCompanyId);
                 })
                 ->orderBy('name')
                 ->get(['id','name']);
+        } elseif ($externalCompanyName) {
+            // For external companies - do not list existing supervisors to enforce company-specific assignment
+            $eligibleSupervisors = collect();
         }
 
         // Latest proposal, guarded if table not yet migrated
@@ -152,7 +178,7 @@ class CoordinatorStudentController extends Controller
                 ->first();
         }
 
-        return view('coord.students.show', compact('student', 'availableCompanies', 'eligibleSupervisors', 'latestProposal', 'studentCompanyId'));
+        return view('coord.students.show', compact('student', 'availableCompanies', 'eligibleSupervisors', 'latestProposal', 'studentCompanyId', 'externalCompanyName', 'placementRequest'));
     }
 
     public function updateCompany(Request $request, User $student)
@@ -221,15 +247,73 @@ class CoordinatorStudentController extends Controller
         }
 
         $request->validate([
-            'supervisor_id' => ['required', 'exists:users,id'],
+            'action' => ['required', 'in:assign_existing,create_from_proposal'],
+            'supervisor_id' => ['required_if:action,assign_existing', 'exists:users,id'],
         ]);
 
-        // Ensure supervisor belongs to same company
-        $supervisor = User::where('id', $request->supervisor_id)->where('role', 'supervisor')->firstOrFail();
-        $studentCompanyId = $student->studentProfile?->assigned_company_id;
-        $supervisorCompanyId = $supervisor->supervisorProfile?->company_id ?? null;
-        abort_unless($studentCompanyId && $supervisorCompanyId && $studentCompanyId === $supervisorCompanyId, 422);
+        $action = $request->input('action');
+        $supervisor = null;
+        
+        if ($action === 'create_from_proposal') {
+            // Get the latest proposal from student
+            $latestProposal = SupervisorAssignmentRequest::where('student_user_id', $student->id)
+                ->latest()
+                ->first();
+                
+            if (!$latestProposal || !$latestProposal->proposed_name || !$latestProposal->proposed_email) {
+                return back()->withErrors(['error' => 'No supervisor proposal found from student.']);
+            }
+            
+            // Create or get supervisor by email
+            $email = strtolower($latestProposal->proposed_email);
+            $supervisor = User::whereRaw('LOWER(email) = ?', [$email])
+                ->where('role', 'supervisor')
+                ->first();
+                
+            if (!$supervisor) {
+                $supervisor = User::create([
+                    'name' => $latestProposal->proposed_name,
+                    'email' => $email,
+                    'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(12)),
+                    'role' => 'supervisor',
+                    'email_verified_at' => now(),
+                ]);
+            }
+            
+            // Ensure SupervisorProfile exists
+            \App\Models\SupervisorProfile::firstOrCreate(
+                ['user_id' => $supervisor->id],
+                [
+                    'company_id' => $student->studentProfile?->assigned_company_id,
+                    'employee_id' => null,
+                    'position' => 'Supervisor',
+                    'status' => 'active',
+                ]
+            );
+            
+        } elseif ($action === 'assign_existing') {
+            // Validate existing supervisor
+            $supervisor = User::where('id', $request->supervisor_id)->where('role', 'supervisor')->firstOrFail();
+            $studentCompanyId = $student->studentProfile?->assigned_company_id;
+            $supervisorCompanyId = $supervisor->supervisorProfile?->company_id ?? null;
+            
+            // Get placement request info for external companies
+            $placementRequest = $student->placementRequests()->where('status', 'approved')->latest('decided_at')->first();
+            $externalCompanyName = $placementRequest?->external_company_name;
+            
+            if ($studentCompanyId) {
+                // For listed companies - supervisor must be from same company
+                abort_unless($studentCompanyId && $supervisorCompanyId && $studentCompanyId === $supervisorCompanyId, 422);
+            } elseif ($externalCompanyName) {
+                // For external companies - supervisor must be from same department
+                $supervisorDepartment = $supervisor->supervisorProfile?->company?->department;
+                abort_unless($supervisorDepartment === $department, 422);
+            } else {
+                abort(422, 'No company assigned to student');
+            }
+        }
 
+        // Assign supervisor to student
         $student->studentProfile->update([
             'supervisor_id' => $supervisor->id,
         ]);

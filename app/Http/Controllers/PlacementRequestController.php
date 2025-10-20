@@ -231,8 +231,8 @@ class PlacementRequestController extends Controller
 
         $request->validate([
             'start_date' => ['required', 'date'],
-            'shift_start' => ['required', 'date_format:H:i'],
-            'shift_end' => ['required', 'date_format:H:i'],
+            'shift_start' => ['required', 'string'],
+            'shift_end' => ['required', 'string'],
             'working_days' => ['required', 'array', 'min:1'],
             'working_days.*' => ['in:mon,tue,wed,thu,fri,sat,sun'],
             'break_minutes' => ['nullable', 'integer', 'min:0', 'max:240'],
@@ -277,6 +277,8 @@ class PlacementRequestController extends Controller
                 ],
             ]);
         }
+
+        // Supervisor assignment will be handled separately after placement approval
 
         // Assign to student profile and activate OJT
         if ($student && $student->studentProfile) {
@@ -451,6 +453,31 @@ class PlacementRequestController extends Controller
         $coordinatorProgramName = optional($coordinatorProfile->program)->name;
         $sameProgram = empty($coordinatorProgramName) ? true : ($coordinatorProgramName === $studentProfile->course);
         abort_unless($sameDepartment && $sameProgram, 403);
+    }
+
+    public function getSupervisors(PlacementRequest $placementRequest, Request $request)
+    {
+        $this->authorizeAction($placementRequest);
+        
+        $companyId = $placementRequest->company_id;
+        $department = Auth::user()->coordinatorProfile->department;
+        
+        $supervisors = User::where('role', 'supervisor')
+            ->whereHas('supervisorProfile', function($q) use ($companyId, $department) {
+                if ($companyId) {
+                    // For listed companies, get supervisors from the same company
+                    $q->where('company_id', $companyId);
+                } else {
+                    // For external companies, get supervisors from the same department
+                    $q->whereHas('company', function($q) use ($department) {
+                        $q->where('department', $department);
+                    });
+                }
+            })
+            ->select('id', 'name', 'email')
+            ->get();
+
+        return response()->json(['supervisors' => $supervisors]);
     }
 }
 
