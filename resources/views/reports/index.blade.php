@@ -12,6 +12,9 @@
 
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                 <div class="divide-y">
+                    <div class="p-4 sm:p-6 bg-ojt-accent/5 border-b border-ojt-accent/20 flex items-center justify-between">
+                        <div class="text-sm text-ojt-dark">Attachments show previews for images; PDFs/docs open in a new tab.</div>
+                    </div>
                     @forelse($reports as $report)
                         <div class="p-4 sm:p-6 flex items-center justify-between">
                             <div>
@@ -21,7 +24,14 @@
                             <div class="text-xs flex items-center gap-3">
                                 <span class="px-2 py-1 rounded-full {{ $report->status === 'approved' ? 'bg-green-100 text-green-800' : ($report->status === 'returned' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800') }}">{{ ucfirst($report->status) }}</span>
                                 @if($report->attachment_path)
-                                    <a href="{{ Storage::url($report->attachment_path) }}" target="_blank" class="text-ojt-primary underline">Attachment</a>
+                                    @php $ext = strtolower(pathinfo($report->attachment_path, PATHINFO_EXTENSION)); @endphp
+                                    @if(in_array($ext, ['jpg','jpeg','png','gif','webp']))
+                                        <a href="{{ Storage::url($report->attachment_path) }}" target="_blank" class="inline-block">
+                                            <img src="{{ Storage::url($report->attachment_path) }}" alt="Attachment" class="w-12 h-12 object-cover rounded border" />
+                                        </a>
+                                    @else
+                                        <a href="{{ Storage::url($report->attachment_path) }}" target="_blank" class="text-ojt-primary underline">Attachment</a>
+                                    @endif
                                 @endif
                             </div>
                         </div>

@@ -6,6 +6,23 @@
     <div class="py-6 sm:py-12">
         <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6">
+                @php
+                    $todayAttendance = Auth::user()->attendanceLogs()->where('work_date', today())->first();
+                @endphp
+                @if($todayAttendance)
+                    <div class="mb-4 rounded-lg border border-ojt-accent/30 bg-ojt-accent/5 p-3">
+                        <div class="text-sm text-ojt-dark">
+                            <span class="font-medium">Today's attendance:</span>
+                            Time In {{ $todayAttendance->time_in_formatted }}
+                            @if($todayAttendance->time_out)
+                                — Time Out {{ $todayAttendance->time_out_formatted }}
+                            @else
+                                — Time Out: not recorded yet
+                            @endif
+                            — Worked {{ $todayAttendance->hours_worked_formatted }}h
+                        </div>
+                    </div>
+                @endif
                 <form method="POST" action="{{ route('reports.store') }}" enctype="multipart/form-data" class="space-y-6">
                     @csrf
                     <div>
@@ -25,11 +42,19 @@
                     </div>
                     <div>
                         <x-input-label for="attachment" :value="__('Attachment (optional)')" />
-                        <input id="attachment" name="attachment" type="file" class="mt-1 block w-full border-gray-300 rounded-md" />
+                        <input id="attachment" name="attachment" type="file" accept="image/*,.pdf,.doc,.docx" class="mt-1 block w-full border-gray-300 rounded-md" />
+                        <div id="attachmentPreview" class="mt-3 hidden">
+                            <div class="flex items-center gap-3">
+                                <img id="attachmentThumb" class="hidden w-20 h-20 object-cover rounded border" />
+                                <div class="text-sm text-gray-600" id="attachmentInfo"></div>
+                            </div>
+                        </div>
                         <x-input-error class="mt-2" :messages="$errors->get('attachment')" />
                     </div>
                     <div class="flex items-center gap-4">
                         <x-primary-button>Submit</x-primary-button>
+                        <button type="button" id="saveDraftBtn" class="text-gray-600 hover:text-ojt-primary">Save Draft</button>
+                        <button type="button" id="clearDraftBtn" class="text-gray-400 hover:text-red-600">Clear Draft</button>
                         <a href="{{ route('reports.index') }}" class="text-gray-600 hover:text-ojt-primary">Cancel</a>
                     </div>
                 </form>
@@ -43,6 +68,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const summaryTextarea = document.getElementById('summary');
     const charCount = document.getElementById('charCount');
     const submitButton = document.querySelector('button[type="submit"]');
+    const saveDraftBtn = document.getElementById('saveDraftBtn');
+    const clearDraftBtn = document.getElementById('clearDraftBtn');
+    const storageKey = 'ojt360_report_draft_' + (document.getElementById('work_date')?.value || '{{ today()->format('Y-m-d') }}');
+    const templateFlagKey = storageKey + '_template_inserted';
     
     // Character counting
     summaryTextarea.addEventListener('input', function() {
@@ -72,6 +101,65 @@ document.addEventListener('DOMContentLoaded', function() {
         // Show loading state
         submitButton.disabled = true;
         submitButton.textContent = 'Submitting...';
+
+        // Clear draft after successful submit attempt
+        try { localStorage.removeItem(storageKey); } catch (e) {}
     });
+
+    // Load draft if present
+    let loadedDraft = false;
+    try {
+        const draft = localStorage.getItem(storageKey);
+        if (draft && !summaryTextarea.value) {
+            summaryTextarea.value = draft;
+            const count = draft.length;
+            charCount.textContent = count;
+            charCount.className = count < 50 ? 'text-red-500 font-medium' : 'text-green-600 font-medium';
+            loadedDraft = true;
+        }
+    } catch (e) {}
+
+    // Autosave draft
+    let autosaveTimer = null;
+    function queueAutosave() {
+        if (autosaveTimer) clearTimeout(autosaveTimer);
+        autosaveTimer = setTimeout(() => {
+            try { localStorage.setItem(storageKey, summaryTextarea.value); } catch (e) {}
+        }, 1000);
+    }
+    summaryTextarea.addEventListener('input', queueAutosave);
+
+    // Manual save draft
+    if (saveDraftBtn) {
+        saveDraftBtn.addEventListener('click', function() {
+            try { localStorage.setItem(storageKey, summaryTextarea.value); alert('Draft saved.'); } catch (e) { alert('Unable to save draft.'); }
+        });
+    }
+
+    // Auto-insert attendance-based template if no draft/content yet (idempotent)
+    (function autoInsertTemplate() {
+        if (loadedDraft || summaryTextarea.value) return;
+        try { if (localStorage.getItem(templateFlagKey) === '1') return; } catch (e) {}
+        const base = `Today I attended my OJT from {{ $todayAttendance?->time_in_formatted ?? '—' }}{{ $todayAttendance && $todayAttendance->time_out ? ' to ' . $todayAttendance->time_out_formatted : '' }} ({{ $todayAttendance?->hours_worked_formatted ?? '0.00' }} hours).\n\nKey tasks accomplished:\n- \n- \n- \n\nLearnings/notes:\n- \n- \n`;
+        @if($todayAttendance)
+            // Skip if template-like content already present (defensive)
+            if (!summaryTextarea.value.includes('Key tasks accomplished:') && !summaryTextarea.value.includes('Learnings/notes:')) {
+                summaryTextarea.value = base;
+                summaryTextarea.dispatchEvent(new Event('input'));
+                try { localStorage.setItem(templateFlagKey, '1'); } catch (e) {}
+            }
+        @endif
+    })();
+
+    // Clear draft
+    if (clearDraftBtn) {
+        clearDraftBtn.addEventListener('click', function() {
+            if (confirm('Clear saved draft for this date?')) {
+                try { localStorage.removeItem(storageKey); localStorage.removeItem(templateFlagKey); } catch (e) {}
+                summaryTextarea.value = '';
+                summaryTextarea.dispatchEvent(new Event('input'));
+            }
+        });
+    }
 });
 </script>
