@@ -74,15 +74,17 @@ Route::middleware(['auth', 'force.password.change', 'profile.complete'])->group(
         Route::get('/reports', [App\Http\Controllers\DailyReportController::class, 'index'])->name('reports.index');
         Route::get('/reports/create', [App\Http\Controllers\DailyReportController::class, 'create'])->name('reports.create');
         Route::post('/reports', [App\Http\Controllers\DailyReportController::class, 'store'])->name('reports.store');
+        Route::get('/reports/{report}', [App\Http\Controllers\DailyReportController::class, 'show'])->name('reports.show');
+        Route::delete('/reports/{report}', [App\Http\Controllers\DailyReportController::class, 'destroy'])->name('reports.destroy');
     });
     
     // Document Requirements (visible after placement starts to reduce overwhelm)
-    Route::middleware(['placement.started'])->group(function () {
-        Route::get('/documents', [App\Http\Controllers\DocumentController::class, 'index'])->name('documents.index');
-        Route::get('/documents/{requirement}', [App\Http\Controllers\DocumentController::class, 'show'])->name('documents.show');
-        Route::post('/documents/{requirement}/submit', [App\Http\Controllers\DocumentController::class, 'submit'])->name('documents.submit');
-        Route::get('/documents/submissions/{submission}/download', [App\Http\Controllers\DocumentController::class, 'download'])->name('documents.download');
-    });
+    // Document Requirements
+    Route::get('/documents', [App\Http\Controllers\DocumentController::class, 'index'])->name('documents.index');
+    Route::get('/documents/{requirement}', [App\Http\Controllers\DocumentController::class, 'show'])->name('documents.show');
+    Route::post('/documents/{requirement}/submit', [App\Http\Controllers\DocumentController::class, 'submit'])->name('documents.submit');
+    Route::delete('/documents/submissions/{submission}/cancel', [App\Http\Controllers\DocumentController::class, 'cancel'])->name('documents.cancel');
+    Route::get('/documents/submissions/{submission}/download', [App\Http\Controllers\DocumentController::class, 'download'])->name('documents.download');
 });
 
 // Admin routes

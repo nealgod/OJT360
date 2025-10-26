@@ -33,11 +33,11 @@ class DocumentController extends Controller
             ->orderBy('name')
             ->get();
 
-        // Get user's submissions
+        // Get user's submissions (grouped per requirement to support up to 2 files)
         $submissions = StudentDocumentSubmission::where('student_user_id', $user->id)
             ->with(['requirement', 'reviewer'])
             ->get()
-            ->keyBy('document_requirement_id');
+            ->groupBy('document_requirement_id');
 
         // Group requirements by type
         $prePlacement = $requirements->where('type', 'pre_placement');
@@ -74,9 +74,16 @@ class DocumentController extends Controller
             $submission = StudentDocumentSubmission::where('student_user_id', $user->id)
                 ->where('document_requirement_id', $requirement->id)
                 ->with('reviewer')
+                ->latest()
                 ->first();
 
-            return view('documents.show', compact('requirement', 'submission'));
+            $submissionsAll = StudentDocumentSubmission::where('student_user_id', $user->id)
+                ->where('document_requirement_id', $requirement->id)
+                ->with('reviewer')
+                ->orderByDesc('created_at')
+                ->get();
+
+            return view('documents.show', compact('requirement', 'submission', 'submissionsAll'));
         }
         
         abort(403);
@@ -88,7 +95,13 @@ class DocumentController extends Controller
         abort_unless($user->isStudent(), 403);
 
         $request->validate([
-            'file' => [
+            'files' => [
+                'required',
+                'array',
+                'min:1',
+                'max:2',
+            ],
+            'files.*' => [
                 'required',
                 'file',
                 'max:' . $requirement->max_file_size_mb * 1024, // Convert MB to KB
@@ -100,30 +113,57 @@ class DocumentController extends Controller
             ],
         ]);
 
-        // Check if already submitted
-        $existingSubmission = StudentDocumentSubmission::where('student_user_id', $user->id)
+        // Allow up to 2 files per requirement
+        $existingCount = StudentDocumentSubmission::where('student_user_id', $user->id)
             ->where('document_requirement_id', $requirement->id)
-            ->first();
-
-        if ($existingSubmission) {
-            return back()->withErrors(['file' => 'You have already submitted a document for this requirement.']);
+            ->count();
+        $newFilesCount = count($request->file('files'));
+        
+        if ($existingCount + $newFilesCount > 2) {
+            return back()->withErrors(['files' => 'You can only have a maximum of 2 files for this requirement. You currently have ' . $existingCount . ' files.']);
         }
 
-        // Store file
-        $file = $request->file('file');
-        $path = $file->store('document-submissions', 'public');
+        // Store files and create submission records
+        $files = $request->file('files');
+        foreach ($files as $file) {
+            $path = $file->store('document-submissions', 'public');
 
-        // Create submission record
-        StudentDocumentSubmission::create([
-            'student_user_id' => $user->id,
-            'document_requirement_id' => $requirement->id,
-            'file_path' => $path,
-            'original_filename' => $file->getClientOriginalName(),
-            'file_size' => $file->getSize(),
-            'mime_type' => $file->getMimeType(),
-        ]);
+            StudentDocumentSubmission::create([
+                'student_user_id' => $user->id,
+                'document_requirement_id' => $requirement->id,
+                'file_path' => $path,
+                'original_filename' => $file->getClientOriginalName(),
+                'file_size' => $file->getSize(),
+                'mime_type' => $file->getMimeType(),
+            ]);
+        }
 
-        return redirect()->route('documents.index')->with('success', 'Document submitted successfully!');
+        $fileCount = count($files);
+        $message = $fileCount === 1 ? 'Document submitted successfully!' : $fileCount . ' documents submitted successfully!';
+        
+        return redirect()->route('documents.index')->with('success', $message);
+    }
+
+    public function cancel(StudentDocumentSubmission $submission)
+    {
+        $user = Auth::user();
+        abort_unless($user->isStudent(), 403);
+        abort_unless($submission->student_user_id === $user->id, 403);
+
+        // Only allow cancellation if status is 'submitted' (not reviewed yet)
+        if ($submission->status !== 'submitted') {
+            return back()->withErrors(['submission' => 'Cannot cancel submission that has already been reviewed.']);
+        }
+
+        // Delete the file from storage
+        if (Storage::disk('public')->exists($submission->file_path)) {
+            Storage::disk('public')->delete($submission->file_path);
+        }
+
+        // Delete the submission record
+        $submission->delete();
+
+        return redirect()->route('documents.index')->with('success', 'Document submission cancelled successfully!');
     }
 
     public function download(StudentDocumentSubmission $submission)

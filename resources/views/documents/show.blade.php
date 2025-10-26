@@ -53,69 +53,74 @@
             </div>
 
             <!-- Submission Status -->
-            @if($submission)
+            @if(isset($submissionsAll) && $submissionsAll->count() > 0)
                 <div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-                    <h2 class="text-lg font-semibold text-ojt-dark mb-4">Your Submission</h2>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <h3 class="font-medium text-gray-700 mb-2">File Details</h3>
-                            <div class="space-y-2 text-sm">
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Filename:</span>
-                                    <span class="font-medium">{{ $submission->original_filename }}</span>
+                    <h2 class="text-lg font-semibold text-ojt-dark mb-4">Your Submission{{ $submissionsAll->count() > 1 ? 's' : '' }}</h2>
+                    <div class="space-y-4">
+                        @foreach($submissionsAll as $sub)
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 border rounded-lg p-4">
+                                <div>
+                                    <h3 class="font-medium text-gray-700 mb-2">File Details</h3>
+                                    <div class="space-y-2 text-sm">
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Filename:</span>
+                                            <span class="font-medium">{{ $sub->original_filename }}</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Size:</span>
+                                            <span class="font-medium">{{ $sub->file_size_formatted }}</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Submitted:</span>
+                                            <span class="font-medium">{{ $sub->created_at->format('M d, Y g:i A') }}</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Size:</span>
-                                    <span class="font-medium">{{ $submission->file_size_formatted }}</span>
+                                <div>
+                                    <h3 class="font-medium text-gray-700 mb-2">Status</h3>
+                                    <div class="space-y-2">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-gray-600">Status:</span>
+                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $sub->status_badge }}">{{ $sub->status_text }}</span>
+                                        </div>
+                                        @if($sub->reviewed_at)
+                                            <div class="flex justify-between text-sm">
+                                                <span class="text-gray-600">Reviewed:</span>
+                                                <span class="font-medium">{{ $sub->reviewed_at->format('M d, Y g:i A') }}</span>
+                                            </div>
+                                        @endif
+                                        @if($sub->reviewer)
+                                            <div class="flex justify-between text-sm">
+                                                <span class="text-gray-600">Reviewed by:</span>
+                                                <span class="font-medium">{{ $sub->reviewer->name }}</span>
+                                            </div>
+                                        @endif
+                                    </div>
                                 </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Submitted:</span>
-                                    <span class="font-medium">{{ $submission->created_at->format('M d, Y g:i A') }}</span>
+                                <div class="md:col-span-2">
+                                    <div class="flex space-x-3">
+                                        <a href="{{ route('documents.download', $sub) }}" class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                            Download File
+                                        </a>
+                                        @if($sub->status === 'submitted')
+                                            <form method="POST" action="{{ route('documents.cancel', $sub) }}" class="inline" onsubmit="return confirm('Are you sure you want to cancel this submission? This action cannot be undone.')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-100 text-red-700 text-sm font-medium rounded-lg hover:bg-red-200 transition-colors">
+                                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                    </svg>
+                                                    Cancel Submission
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <div>
-                            <h3 class="font-medium text-gray-700 mb-2">Status</h3>
-                            <div class="space-y-2">
-                                <div class="flex items-center justify-between">
-                                    <span class="text-gray-600">Status:</span>
-                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $submission->status_badge }}">
-                                        {{ $submission->status_text }}
-                                    </span>
-                                </div>
-                                @if($submission->reviewed_at)
-                                    <div class="flex justify-between text-sm">
-                                        <span class="text-gray-600">Reviewed:</span>
-                                        <span class="font-medium">{{ $submission->reviewed_at->format('M d, Y g:i A') }}</span>
-                                    </div>
-                                @endif
-                                @if($submission->reviewer)
-                                    <div class="flex justify-between text-sm">
-                                        <span class="text-gray-600">Reviewed by:</span>
-                                        <span class="font-medium">{{ $submission->reviewer->name }}</span>
-                                    </div>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-
-                    @if($submission->feedback)
-                        <div class="mt-4 p-4 bg-gray-50 rounded-lg">
-                            <h3 class="font-medium text-gray-700 mb-2">Coordinator Feedback:</h3>
-                            <p class="text-gray-600 text-sm">{{ $submission->feedback }}</p>
-                        </div>
-                    @endif
-
-                    <div class="mt-4 flex space-x-4">
-                        <a href="{{ route('documents.download', $submission) }}" 
-                           class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            Download File
-                        </a>
+                        @endforeach
                     </div>
                 </div>
             @else
@@ -127,20 +132,32 @@
                         @csrf
                         
                         <div>
-                            <label for="file" class="block text-sm font-medium text-gray-700 mb-2">
-                                Select File
+                            <label for="files" class="block text-sm font-medium text-gray-700 mb-2">
+                                Select Files (up to 2)
                             </label>
                             <input type="file" 
-                                   id="file" 
-                                   name="file" 
+                                   id="files" 
+                                   name="files[]" 
+                                   multiple
                                    accept="{{ $requirement->file_types ? '.' . implode(',.', $requirement->file_types) : '' }}"
                                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-ojt-primary file:text-white hover:file:bg-maroon-700"
                                    required>
                             <p class="mt-1 text-sm text-gray-500">
                                 Accepted formats: {{ $requirement->file_types_string }} | 
-                                Max size: {{ $requirement->max_file_size_string }}
+                                Max size: {{ $requirement->max_file_size_string }} |
+                                Max files: 2 per requirement
                             </p>
-                            @error('file')
+                            
+                            <!-- Selected Files Preview -->
+                            <div id="selectedFiles" class="mt-3 hidden">
+                                <h4 class="text-sm font-medium text-gray-700 mb-2">Selected Files:</h4>
+                                <div id="fileList" class="space-y-2"></div>
+                            </div>
+                            
+                            @error('files')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                            @error('files.*')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
@@ -160,4 +177,65 @@
             @endif
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('files');
+            const selectedFilesDiv = document.getElementById('selectedFiles');
+            const fileListDiv = document.getElementById('fileList');
+            const maxFiles = 2;
+
+            fileInput.addEventListener('change', function() {
+                const files = Array.from(this.files);
+                
+                if (files.length > maxFiles) {
+                    alert(`You can only select up to ${maxFiles} files.`);
+                    this.value = '';
+                    selectedFilesDiv.classList.add('hidden');
+                    return;
+                }
+
+                if (files.length > 0) {
+                    selectedFilesDiv.classList.remove('hidden');
+                    fileListDiv.innerHTML = '';
+
+                    files.forEach((file, index) => {
+                        const fileItem = document.createElement('div');
+                        fileItem.className = 'flex items-center justify-between bg-gray-50 p-3 rounded-lg';
+                        fileItem.innerHTML = `
+                            <div class="flex items-center space-x-3">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-900">${file.name}</p>
+                                    <p class="text-xs text-gray-500">${(file.size / 1024).toFixed(2)} KB</p>
+                                </div>
+                            </div>
+                            <button type="button" onclick="removeFile(${index})" class="text-red-500 hover:text-red-700">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        `;
+                        fileListDiv.appendChild(fileItem);
+                    });
+                } else {
+                    selectedFilesDiv.classList.add('hidden');
+                }
+            });
+
+            window.removeFile = function(index) {
+                const dt = new DataTransfer();
+                const files = Array.from(fileInput.files);
+                files.splice(index, 1);
+                
+                files.forEach(file => dt.items.add(file));
+                fileInput.files = dt.files;
+                
+                // Trigger change event to update preview
+                fileInput.dispatchEvent(new Event('change'));
+            };
+        });
+    </script>
 </x-app-layout>

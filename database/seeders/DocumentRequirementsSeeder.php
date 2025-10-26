@@ -75,13 +75,13 @@ class DocumentRequirementsSeeder extends Seeder
                 'instructions' => 'Submit certificates from all required seminars and training sessions.',
             ],
             [
-                'name' => 'Letter of Acceptance (Optional)',
-                'description' => 'Letter of acceptance from training company (if available)',
+                'name' => 'Letter of Acceptance',
+                'description' => 'Letter of acceptance from training company',
                 'type' => 'pre_placement',
-                'is_required' => false,
+                'is_required' => true,
                 'file_types' => ['pdf', 'jpg', 'jpeg', 'png'],
                 'max_file_size_mb' => 3,
-                'instructions' => 'Submit if you have already received a letter of acceptance from your training company.',
+                'instructions' => 'Submit your letter of acceptance from the training company.',
             ],
             [
                 'name' => 'Recommendation',
@@ -220,10 +220,14 @@ class DocumentRequirementsSeeder extends Seeder
                 'max_file_size_mb' => 10,
                 'instructions' => 'Submit any other documents that may be required by your school.',
             ],
+
         ];
 
         foreach ($requirements as $requirement) {
-            DocumentRequirement::create($requirement);
+            DocumentRequirement::firstOrCreate(
+                ['name' => $requirement['name'], 'type' => $requirement['type']],
+                $requirement
+            );
         }
     }
 }

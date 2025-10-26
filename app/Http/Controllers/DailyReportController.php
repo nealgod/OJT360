@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\DailyReport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class DailyReportController extends Controller
 {
@@ -68,6 +69,30 @@ class DailyReportController extends Controller
         }
 
         return redirect()->route('reports.index')->with('success', 'Daily report submitted successfully!');
+    }
+
+    public function show(DailyReport $report)
+    {
+        $user = Auth::user();
+        abort_unless($report->student_user_id === $user->id, 403);
+
+        return view('reports.show', compact('report'));
+    }
+
+    public function destroy(DailyReport $report)
+    {
+        $user = Auth::user();
+        abort_unless($report->student_user_id === $user->id, 403);
+        abort_unless($report->status === 'submitted', 403, 'Cannot delete approved or returned reports.');
+
+        // Delete attachment if exists
+        if ($report->attachment_path && Storage::disk('public')->exists($report->attachment_path)) {
+            Storage::disk('public')->delete($report->attachment_path);
+        }
+
+        $report->delete();
+
+        return redirect()->route('reports.index')->with('success', 'Daily report deleted successfully!');
     }
 }
 

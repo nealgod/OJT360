@@ -51,11 +51,15 @@
                         </div>
                         <x-input-error class="mt-2" :messages="$errors->get('attachment')" />
                     </div>
-                    <div class="flex items-center gap-4">
-                        <x-primary-button>Submit</x-primary-button>
-                        <button type="button" id="saveDraftBtn" class="text-gray-600 hover:text-ojt-primary">Save Draft</button>
-                        <button type="button" id="clearDraftBtn" class="text-gray-400 hover:text-red-600">Clear Draft</button>
-                        <a href="{{ route('reports.index') }}" class="text-gray-600 hover:text-ojt-primary">Cancel</a>
+                    <div class="flex justify-between">
+                        <a href="{{ route('reports.index') }}" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors">
+                            Back to Reports
+                        </a>
+                        <div class="flex items-center gap-3">
+                            <button type="button" id="saveDraftBtn" class="text-gray-600 hover:text-ojt-primary text-sm">Save Draft</button>
+                            <button type="button" id="clearDraftBtn" class="text-gray-400 hover:text-red-600 text-sm">Clear Draft</button>
+                            <x-primary-button>Submit</x-primary-button>
+                        </div>
                     </div>
                 </form>
             </div>
