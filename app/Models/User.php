@@ -156,12 +156,18 @@ class User extends Authenticatable implements MustVerifyEmail
             return 0;
         }
 
-        // If coordinator has set custom hours, use that
+        // 1. If coordinator has set custom hours for this student, use that
         if ($this->studentProfile->required_hours) {
             return $this->studentProfile->required_hours;
         }
 
-        // Otherwise use default from config
+        // 2. Check if program has custom required hours (set by coordinator)
+        $program = \App\Models\Program::where('name', $this->studentProfile->course)->first();
+        if ($program && $program->required_hours) {
+            return $program->required_hours;
+        }
+
+        // 3. Otherwise use default from config
         $departments = config('departments.departments');
         $department = $this->studentProfile->department;
         $course = $this->studentProfile->course;

@@ -58,6 +58,20 @@
                             <p class="text-lg text-gray-700">{{ $report->work_date->format('l, F d, Y') }}</p>
                         </div>
 
+                        <!-- Attendance (if available) -->
+                        @if($attendance)
+                            <div>
+                                <h4 class="text-sm font-medium text-gray-900 mb-2">Attendance</h4>
+                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                    <p class="text-sm text-gray-700">
+                                        <span class="font-medium">In:</span> {{ $attendance->time_in_formatted }} • 
+                                        <span class="font-medium">Out:</span> {{ $attendance->time_out_formatted ?? 'Not recorded' }} • 
+                                        <span class="font-medium">{{ $attendance->hours_worked_formatted }} hrs</span>
+                                    </p>
+                                </div>
+                            </div>
+                        @endif
+
                         <!-- Report Summary -->
                         <div>
                             <h4 class="text-sm font-medium text-gray-900 mb-3">Daily Activities Summary</h4>
@@ -117,27 +131,6 @@
                             </div>
                         @endif
 
-                        <!-- Feedback (if returned) -->
-                        @if($report->status === 'returned' && $report->feedback)
-                            <div>
-                                <h4 class="text-sm font-medium text-gray-900 mb-3">Coordinator Feedback</h4>
-                                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                                    <div class="flex items-start">
-                                        <svg class="w-5 h-5 text-yellow-600 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                        </svg>
-                                        <div>
-                                            <h5 class="font-medium text-yellow-800 mb-1">Feedback from Coordinator</h5>
-                                            <p class="text-yellow-700 whitespace-pre-wrap">{{ $report->feedback }}</p>
-                                            @if($report->reviewed_at)
-                                                <p class="text-xs text-yellow-600 mt-2">Reviewed on {{ $report->reviewed_at->format('M d, Y g:i A') }}</p>
-                                            @endif
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        @endif
-
                         <!-- Report Metadata -->
                         <div class="border-t border-gray-200 pt-6">
                             <h4 class="text-sm font-medium text-gray-900 mb-3">Report Information</h4>
@@ -150,12 +143,6 @@
                                     <span class="font-medium text-gray-700">Status:</span>
                                     <span class="text-gray-600">{{ ucfirst($report->status) }}</span>
                                 </div>
-                                @if($report->reviewed_at)
-                                    <div>
-                                        <span class="font-medium text-gray-700">Reviewed:</span>
-                                        <span class="text-gray-600">{{ $report->reviewed_at->format('M d, Y g:i A') }}</span>
-                                    </div>
-                                @endif
                                 @if($report->attachment_path)
                                     <div>
                                         <span class="font-medium text-gray-700">Attachment:</span>

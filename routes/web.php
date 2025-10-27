@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -76,6 +78,10 @@ Route::middleware(['auth', 'force.password.change', 'profile.complete'])->group(
         Route::post('/reports', [App\Http\Controllers\DailyReportController::class, 'store'])->name('reports.store');
         Route::get('/reports/{report}', [App\Http\Controllers\DailyReportController::class, 'show'])->name('reports.show');
         Route::delete('/reports/{report}', [App\Http\Controllers\DailyReportController::class, 'destroy'])->name('reports.destroy');
+        Route::get('/reports/weekly/generate', [App\Http\Controllers\DailyReportController::class, 'weekly'])->name('reports.weekly');
+        Route::post('/reports/weekly/generate', [App\Http\Controllers\DailyReportController::class, 'generateWeekly'])->name('reports.generate-weekly');
+        Route::post('/reports/weekly/download', [App\Http\Controllers\DailyReportController::class, 'downloadWeekly'])->name('reports.download-weekly');
+        Route::post('/reports/weekly/submit', [App\Http\Controllers\DailyReportController::class, 'submitWeeklyToDocuments'])->name('reports.submit-weekly');
     });
     
     // Document Requirements (visible after placement starts to reduce overwhelm)
@@ -118,6 +124,10 @@ Route::middleware(['auth', 'verified', 'force.password.change', 'profile.complet
     Route::get('/coord/supervisors', [App\Http\Controllers\CoordinatorSupervisorController::class, 'index'])->name('coord.supervisors.index');
     Route::get('/coord/supervisors/create', [App\Http\Controllers\CoordinatorSupervisorController::class, 'create'])->name('coord.supervisors.create');
     Route::post('/coord/supervisors', [App\Http\Controllers\CoordinatorSupervisorController::class, 'store'])->name('coord.supervisors.store');
+    
+    // Coordinator manage program hours
+    Route::get('/coord/program/hours', [App\Http\Controllers\CoordinatorProgramController::class, 'showHours'])->name('coord.program.hours');
+    Route::patch('/coord/program/hours', [App\Http\Controllers\CoordinatorProgramController::class, 'updateHours'])->name('coord.program.update-hours');
 
     // Coordinator manage students
     Route::get('/coord/students', [App\Http\Controllers\CoordinatorStudentController::class, 'index'])->name('coord.students.index');
@@ -129,4 +139,48 @@ Route::middleware(['auth', 'verified', 'force.password.change', 'profile.complet
     // Coordinator document review
     Route::get('/coord/documents', [App\Http\Controllers\DocumentController::class, 'index'])->name('coord.documents.index');
     Route::post('/coord/documents/submissions/{submission}/review', [App\Http\Controllers\DocumentController::class, 'review'])->name('coord.documents.review');
+
+    // API route for fetching attendance data by date
+    Route::get('/api/attendance/{date}', function (Request $request, $date) {
+        try {
+            $user = Auth::user();
+            
+            // Only allow students
+            if (!$user->isStudent()) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+            }
+            
+            // Validate date format
+            $dateObj = \Carbon\Carbon::parse($date);
+            
+            // Get attendance for the selected date
+            $attendance = \App\Models\AttendanceLog::where('student_user_id', $user->id)
+                ->whereDate('work_date', $dateObj->format('Y-m-d'))
+                ->first();
+            
+            if ($attendance) {
+                return response()->json([
+                    'success' => true,
+                    'attendance' => [
+                        'time_in' => $attendance->time_in,
+                        'time_out' => $attendance->time_out,
+                        'time_in_formatted' => $attendance->time_in_formatted,
+                        'time_out_formatted' => $attendance->time_out_formatted,
+                        'hours_worked_formatted' => $attendance->hours_worked_formatted,
+                        'minutes_worked' => $attendance->minutes_worked,
+                    ]
+                ]);
+            }
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'No attendance found for this date'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid date format'
+            ], 400);
+        }
+    })->name('api.attendance');
 });

@@ -177,8 +177,18 @@ class CoordinatorStudentController extends Controller
                 ->latest()
                 ->first();
         }
+        
+        // If no proposal exists, check the approved placement request for supervisor info
+        $placementSupervisorInfo = null;
+        if (!$latestProposal && $placementRequest && $placementRequest->supervisor_name && $placementRequest->supervisor_email) {
+            $placementSupervisorInfo = (object)[
+                'proposed_name' => $placementRequest->supervisor_name,
+                'proposed_email' => $placementRequest->supervisor_email,
+                'proposal_id' => null, // Not from SupervisorAssignmentRequest
+            ];
+        }
 
-        return view('coord.students.show', compact('student', 'availableCompanies', 'eligibleSupervisors', 'latestProposal', 'studentCompanyId', 'externalCompanyName', 'placementRequest'));
+        return view('coord.students.show', compact('student', 'availableCompanies', 'eligibleSupervisors', 'latestProposal', 'placementSupervisorInfo', 'studentCompanyId', 'externalCompanyName', 'placementRequest'));
     }
 
     public function updateCompany(Request $request, User $student)
@@ -255,29 +265,59 @@ class CoordinatorStudentController extends Controller
         $supervisor = null;
         
         if ($action === 'create_from_proposal') {
-            // Get the latest proposal from student
-            $latestProposal = SupervisorAssignmentRequest::where('student_user_id', $student->id)
-                ->latest()
-                ->first();
+            // Get the latest proposal from student OR from placement request
+            $latestProposal = null;
+            $proposedName = null;
+            $proposedEmail = null;
+            
+            if (Schema::hasTable('supervisor_assignment_requests')) {
+                $latestProposal = SupervisorAssignmentRequest::where('student_user_id', $student->id)
+                    ->latest()
+                    ->first();
+            }
+            
+            if ($latestProposal) {
+                $proposedName = $latestProposal->proposed_name;
+                $proposedEmail = $latestProposal->proposed_email;
+            } else {
+                // Check placement request for supervisor info
+                $placementRequest = $student->placementRequests()->where('status', 'approved')->latest('decided_at')->first();
+                if ($placementRequest && $placementRequest->supervisor_name && $placementRequest->supervisor_email) {
+                    $proposedName = $placementRequest->supervisor_name;
+                    $proposedEmail = $placementRequest->supervisor_email;
+                }
+            }
                 
-            if (!$latestProposal || !$latestProposal->proposed_name || !$latestProposal->proposed_email) {
-                return back()->withErrors(['error' => 'No supervisor proposal found from student.']);
+            if (!$proposedName || !$proposedEmail) {
+                return back()->withErrors(['error' => 'No supervisor information found from student.']);
             }
             
             // Create or get supervisor by email
-            $email = strtolower($latestProposal->proposed_email);
+            $email = strtolower($proposedEmail);
             $supervisor = User::whereRaw('LOWER(email) = ?', [$email])
                 ->where('role', 'supervisor')
                 ->first();
                 
             if (!$supervisor) {
+                // Generate temporary password
+                $temporaryPassword = \Illuminate\Support\Str::random(12);
+                $hashedPassword = \Illuminate\Support\Facades\Hash::make($temporaryPassword);
+                
                 $supervisor = User::create([
-                    'name' => $latestProposal->proposed_name,
+                    'name' => $proposedName,
                     'email' => $email,
-                    'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(12)),
+                    'password' => $hashedPassword,
                     'role' => 'supervisor',
+                    'must_change_password' => true,
                     'email_verified_at' => now(),
                 ]);
+                
+                // Send email with credentials
+                try {
+                    $supervisor->notify(new \App\Notifications\VerifyWithTemporaryPassword($temporaryPassword));
+                } catch (\Exception $e) {
+                    \Log::error('Supervisor email failed: ' . $e->getMessage());
+                }
             }
             
             // Ensure SupervisorProfile exists

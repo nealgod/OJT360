@@ -7,7 +7,12 @@
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="mb-6 flex justify-between items-center">
                 <h1 class="text-2xl font-bold text-ojt-dark">Your Reports</h1>
-                <a href="{{ route('reports.create') }}" class="bg-ojt-primary text-white px-4 py-2 rounded-lg hover:bg-maroon-700">Submit Report</a>
+                <div class="flex gap-3">
+                    <a href="{{ route('reports.weekly') }}" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                        📄 Generate Weekly Report
+                    </a>
+                    <a href="{{ route('reports.create') }}" class="bg-ojt-primary text-white px-4 py-2 rounded-lg hover:bg-maroon-700">Submit Report</a>
+                </div>
             </div>
 
             <!-- Search and Filter -->
@@ -56,9 +61,6 @@
                                     <p class="text-sm text-gray-600 line-clamp-2 mb-3">{{ $report->summary }}</p>
                                     <div class="flex items-center gap-4 text-xs text-gray-500">
                                         <span>Submitted: {{ $report->created_at->format('M d, Y g:i A') }}</span>
-                                        @if($report->status === 'returned' && $report->feedback)
-                                            <span class="text-yellow-600">• Has feedback</span>
-                                        @endif
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-2 ml-4">

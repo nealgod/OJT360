@@ -94,12 +94,15 @@ class DocumentController extends Controller
         $user = Auth::user();
         abort_unless($user->isStudent(), 403);
 
+        // Get the dynamic max files limit for this requirement
+        $maxFiles = $requirement->max_files_per_submission ?? 2;
+        
         $request->validate([
             'files' => [
                 'required',
                 'array',
                 'min:1',
-                'max:2',
+                'max:' . $maxFiles,
             ],
             'files.*' => [
                 'required',
@@ -113,14 +116,15 @@ class DocumentController extends Controller
             ],
         ]);
 
-        // Allow up to 2 files per requirement
+        // Check against the dynamic limit
         $existingCount = StudentDocumentSubmission::where('student_user_id', $user->id)
             ->where('document_requirement_id', $requirement->id)
             ->count();
         $newFilesCount = count($request->file('files'));
         
-        if ($existingCount + $newFilesCount > 2) {
-            return back()->withErrors(['files' => 'You can only have a maximum of 2 files for this requirement. You currently have ' . $existingCount . ' files.']);
+        if ($existingCount + $newFilesCount > $maxFiles) {
+            $remaining = $maxFiles - $existingCount;
+            return back()->withErrors(['files' => "You can only have a maximum of {$maxFiles} files for this requirement. You currently have {$existingCount} files. You can add {$remaining} more."]);
         }
 
         // Store files and create submission records

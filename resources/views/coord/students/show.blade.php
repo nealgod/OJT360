@@ -229,11 +229,31 @@
 
                         <!-- Assignment Options -->
                         <div class="space-y-3" x-show="open">
-                            <!-- Option 1: Create from student proposal -->
-                            @if(isset($latestProposal) && $latestProposal && $latestProposal->proposed_name && $latestProposal->proposed_email)
+                            <!-- Option 1: Create from student proposal or placement info -->
+                            @php
+                                $hasSupervisorInfo = false;
+                                $supervisorName = null;
+                                $supervisorEmail = null;
+                                
+                                if (isset($latestProposal) && $latestProposal && $latestProposal->proposed_name && $latestProposal->proposed_email) {
+                                    $hasSupervisorInfo = true;
+                                    $supervisorName = $latestProposal->proposed_name;
+                                    $supervisorEmail = $latestProposal->proposed_email;
+                                } elseif (isset($placementSupervisorInfo) && $placementSupervisorInfo) {
+                                    $hasSupervisorInfo = true;
+                                    $supervisorName = $placementSupervisorInfo->proposed_name;
+                                    $supervisorEmail = $placementSupervisorInfo->proposed_email;
+                                }
+                            @endphp
+                            
+                            @if($hasSupervisorInfo)
                                 <div class="border border-blue-200 rounded-lg p-3">
                                     <h4 class="text-sm font-medium text-ojt-dark mb-2">Option 1: Create Supervisor Account</h4>
-                                    <p class="text-xs text-gray-600 mb-3">Create a new supervisor account using the details submitted by the student.</p>
+                                    <p class="text-xs text-gray-600 mb-2">Create a new supervisor account using the details submitted by the student.</p>
+                                    <div class="text-xs text-gray-700 mb-3 space-y-1">
+                                        <p><strong>Name:</strong> {{ $supervisorName }}</p>
+                                        <p><strong>Email:</strong> {{ $supervisorEmail }}</p>
+                                    </div>
                                     <form method="POST" action="{{ route('coord.students.assign-supervisor', $student) }}" class="inline">
                                         @csrf
                                         <input type="hidden" name="action" value="create_from_proposal">

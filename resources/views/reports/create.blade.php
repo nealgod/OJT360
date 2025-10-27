@@ -6,23 +6,6 @@
     <div class="py-6 sm:py-12">
         <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6">
-                @php
-                    $todayAttendance = Auth::user()->attendanceLogs()->where('work_date', today())->first();
-                @endphp
-                @if($todayAttendance)
-                    <div class="mb-4 rounded-lg border border-ojt-accent/30 bg-ojt-accent/5 p-3">
-                        <div class="text-sm text-ojt-dark">
-                            <span class="font-medium">Today's attendance:</span>
-                            Time In {{ $todayAttendance->time_in_formatted }}
-                            @if($todayAttendance->time_out)
-                                — Time Out {{ $todayAttendance->time_out_formatted }}
-                            @else
-                                — Time Out: not recorded yet
-                            @endif
-                            — Worked {{ $todayAttendance->hours_worked_formatted }}h
-                        </div>
-                    </div>
-                @endif
                 <form method="POST" action="{{ route('reports.store') }}" enctype="multipart/form-data" class="space-y-6">
                     @csrf
                     <div>
@@ -30,6 +13,14 @@
                         <x-text-input id="work_date" name="work_date" type="date" class="mt-1 block w-full" value="{{ old('work_date', today()->format('Y-m-d')) }}" max="{{ today()->format('Y-m-d') }}" required />
                         <x-input-error class="mt-2" :messages="$errors->get('work_date')" />
                         <p class="mt-1 text-sm text-gray-500">Select the date for your daily report (cannot be in the future)</p>
+                    </div>
+
+                    <!-- Dynamic Attendance Info - Will be populated by JavaScript -->
+                    <div id="attendanceInfo" class="mb-4 rounded-lg border border-ojt-accent/30 bg-ojt-accent/5 p-3 hidden">
+                        <div class="text-sm text-ojt-dark">
+                            <span class="font-medium" id="attendanceLabel">Today's attendance:</span>
+                            <span id="attendanceDetails" class="ml-2"></span>
+                        </div>
                     </div>
                     <div>
                         <x-input-label for="summary" :value="__('What did you do today?')" />
@@ -74,8 +65,85 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitButton = document.querySelector('button[type="submit"]');
     const saveDraftBtn = document.getElementById('saveDraftBtn');
     const clearDraftBtn = document.getElementById('clearDraftBtn');
-    const storageKey = 'ojt360_report_draft_' + (document.getElementById('work_date')?.value || '{{ today()->format('Y-m-d') }}');
+    const workDateInput = document.getElementById('work_date');
+    const attendanceInfo = document.getElementById('attendanceInfo');
+    const attendanceDetails = document.getElementById('attendanceDetails');
+    const attendanceLabel = document.getElementById('attendanceLabel');
+    let currentAttendanceData = null;
+    
+    const storageKey = 'ojt360_report_draft_' + (workDateInput?.value || '{{ today()->format('Y-m-d') }}');
     const templateFlagKey = storageKey + '_template_inserted';
+    
+    // Fetch and display attendance for selected date
+    async function loadAttendanceForDate(selectedDate) {
+        if (!selectedDate) return;
+        
+        try {
+            const response = await fetch(`/api/attendance/${selectedDate}`);
+            const data = await response.json();
+            
+            if (data.success && data.attendance) {
+                currentAttendanceData = data.attendance;
+                const att = data.attendance;
+                
+                // Determine label (Today vs Date)
+                const isToday = selectedDate === '{{ today()->format('Y-m-d') }}';
+                attendanceLabel.textContent = isToday ? 'Today\'s attendance:' : 'Attendance for selected date:';
+                
+                // Build attendance details - consistent with attendance/index.blade.php format
+                let details = `In: ${att.time_in_formatted}`;
+                if (att.time_out) {
+                    details += ` • Out: ${att.time_out_formatted} • ${att.hours_worked_formatted} hrs`;
+                } else {
+                    details += ` • Out: not recorded yet`;
+                }
+                
+                attendanceDetails.textContent = details;
+                attendanceInfo.classList.remove('hidden');
+            } else {
+                attendanceInfo.classList.add('hidden');
+                currentAttendanceData = null;
+            }
+        } catch (error) {
+            // No attendance data available for this date
+            attendanceInfo.classList.add('hidden');
+            currentAttendanceData = null;
+        }
+    }
+    
+    // Load attendance when date changes
+    if (workDateInput) {
+        // Load initial attendance
+        loadAttendanceForDate(workDateInput.value);
+        
+        // Watch for date changes
+        workDateInput.addEventListener('change', function() {
+            const newDate = this.value;
+            const newStorageKey = 'ojt360_report_draft_' + newDate;
+            const newTemplateFlagKey = newStorageKey + '_template_inserted';
+            
+            // Update storage keys
+            Object.defineProperty(this, 'storageKey', { value: newStorageKey, writable: true });
+            Object.defineProperty(this, 'templateFlagKey', { value: newTemplateFlagKey, writable: true });
+            
+            // Save current draft
+            try { 
+                if (summaryTextarea.value) {
+                    localStorage.setItem(storageKey, summaryTextarea.value); 
+                }
+            } catch (e) {}
+            
+            // Load new draft or clear
+            try {
+                const newDraft = localStorage.getItem(newStorageKey);
+                summaryTextarea.value = newDraft || '';
+                summaryTextarea.dispatchEvent(new Event('input'));
+            } catch (e) {}
+            
+            // Load attendance for new date
+            loadAttendanceForDate(newDate);
+        });
+    }
     
     // Character counting
     summaryTextarea.addEventListener('input', function() {
@@ -144,15 +212,36 @@ document.addEventListener('DOMContentLoaded', function() {
     (function autoInsertTemplate() {
         if (loadedDraft || summaryTextarea.value) return;
         try { if (localStorage.getItem(templateFlagKey) === '1') return; } catch (e) {}
-        const base = `Today I attended my OJT from {{ $todayAttendance?->time_in_formatted ?? '—' }}{{ $todayAttendance && $todayAttendance->time_out ? ' to ' . $todayAttendance->time_out_formatted : '' }} ({{ $todayAttendance?->hours_worked_formatted ?? '0.00' }} hours).\n\nKey tasks accomplished:\n- \n- \n- \n\nLearnings/notes:\n- \n- \n`;
-        @if($todayAttendance)
+        
+        // Generate template based on current attendance data
+        if (currentAttendanceData) {
+            const att = currentAttendanceData;
+            let dateLabel = 'Today';
+            const selectedDate = workDateInput ? workDateInput.value : '';
+            if (selectedDate && selectedDate !== '{{ today()->format('Y-m-d') }}') {
+                const dateObj = new Date(selectedDate + 'T00:00:00');
+                dateLabel = dateObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            }
+            
+            // Build attendance summary in template - using consistent format
+            let attendanceSummary = '';
+            if (att.time_in_formatted) {
+                if (att.time_out) {
+                    attendanceSummary = `from ${att.time_in_formatted} to ${att.time_out_formatted} (${att.hours_worked_formatted} hrs)`;
+                } else {
+                    attendanceSummary = `from ${att.time_in_formatted} (time-out not recorded yet)`;
+                }
+            }
+            
+            const base = `${dateLabel} I attended my OJT ${attendanceSummary}.\n\nKey tasks accomplished:\n- \n- \n- \n\nLearnings/notes:\n- \n- \n`;
+            
             // Skip if template-like content already present (defensive)
             if (!summaryTextarea.value.includes('Key tasks accomplished:') && !summaryTextarea.value.includes('Learnings/notes:')) {
                 summaryTextarea.value = base;
                 summaryTextarea.dispatchEvent(new Event('input'));
                 try { localStorage.setItem(templateFlagKey, '1'); } catch (e) {}
             }
-        @endif
+        }
     })();
 
     // Clear draft

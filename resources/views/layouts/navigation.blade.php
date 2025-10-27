@@ -49,6 +49,9 @@
                             @endif
                         </x-nav-link>
                     @elseif(Auth::user()->isCoordinator())
+                        <x-nav-link :href="route('coord.students.index')" :active="request()->routeIs('coord.students.*')">
+                            {{ __('Students') }}
+                        </x-nav-link>
                         <x-nav-link :href="route('coord.placements.inbox')" :active="request()->routeIs('coord.placements.*')">
                             {{ __('Placement Inbox') }}
                         </x-nav-link>
@@ -57,6 +60,9 @@
                         </x-nav-link>
                         <x-nav-link :href="route('coord.documents.index')" :active="request()->routeIs('coord.documents.*')">
                             {{ __('Document Review') }}
+                        </x-nav-link>
+                        <x-nav-link :href="route('coord.program.hours')" :active="request()->routeIs('coord.program.*')">
+                            {{ __('Program Settings') }}
                         </x-nav-link>
                     @elseif(Auth::user()->isSupervisor())
                         <x-nav-link href="#" :active="false">

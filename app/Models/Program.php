@@ -13,6 +13,7 @@ class Program extends Model
         'department_id',
         'name',
         'slug',
+        'required_hours',
     ];
 
     public function department()

@@ -288,6 +288,38 @@ class PlacementRequestController extends Controller
             ]);
         }
 
+        // Auto-approve the Letter of Acceptance document (proof) if it was submitted with placement request
+        if ($placementRequest->proof_path && \Illuminate\Support\Facades\Schema::hasTable('document_requirements')) {
+            $letterOfAcceptanceRequirement = \App\Models\DocumentRequirement::where('name', 'LIKE', '%Letter of Acceptance%')
+                ->where('type', 'pre_placement')
+                ->first();
+            
+            if ($letterOfAcceptanceRequirement && \Illuminate\Support\Facades\Schema::hasTable('student_document_submissions')) {
+                $updated = \App\Models\StudentDocumentSubmission::where('student_user_id', $student->id)
+                    ->where('document_requirement_id', $letterOfAcceptanceRequirement->id)
+                    ->where('file_path', $placementRequest->proof_path)
+                    ->update([
+                        'status' => 'approved',
+                        'reviewed_by' => Auth::id(),
+                        'reviewed_at' => now(),
+                    ]);
+                
+                // Notify student that their Letter of Acceptance was automatically approved
+                if ($updated) {
+                    \App\Models\Notification::create([
+                        'user_id' => $student->id,
+                        'type' => 'document_reviewed',
+                        'title' => 'Letter of Acceptance Approved',
+                        'message' => 'Your Letter of Acceptance has been automatically approved along with your placement.',
+                        'data' => [
+                            'requirement_id' => $letterOfAcceptanceRequirement->id,
+                            'status' => 'approved',
+                        ],
+                    ]);
+                }
+            }
+        }
+
         // Notify student
         \App\Models\Notification::create([
             'user_id' => $student->id,

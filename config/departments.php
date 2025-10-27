@@ -4,7 +4,7 @@ return [
     'departments' => [
         'Department of Computer Studies' => [
             'courses' => [
-                'Bachelor of Science in Information Technology (BSIT)' => 460,
+                'Bachelor of Science in Information Technology (BSIT)' => 486,
             ],
         ],
         'Department of Teacher Education' => [

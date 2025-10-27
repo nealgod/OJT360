@@ -382,7 +382,7 @@
                             }
                             
                             // Submit using fetch
-                            console.log('Submitting time in request...');
+                            // Submitting time in request...
                             const response = await fetch(routes.in, {
                                 method: 'POST',
                                 body: formData,
@@ -391,14 +391,13 @@
                                 }
                             });
                             
-                            console.log('Response status:', response.status);
-                            console.log('Response ok:', response.ok);
+                            // Response status: response.status
                             
                             const responseData = await response.json();
-                            console.log('Response data:', responseData);
+                            // Response data received
                             
                             if (response.ok && responseData.success) {
-                                console.log('Time in successful, reloading page...');
+                                // Time in successful, reloading page...
                                 // Show success message before reload
                                 showSuccess(responseData.message + ' Redirecting...');
                                 // Reload page after a short delay
@@ -531,7 +530,7 @@
                             });
                             
                             const responseData = await response.json();
-                            console.log('Time out response:', responseData);
+                            // Time out response received
                             
                             if (response.ok && responseData.success) {
                                 // Show success message before reload

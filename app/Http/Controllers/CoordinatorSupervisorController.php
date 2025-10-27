@@ -51,12 +51,17 @@ class CoordinatorSupervisorController extends Controller
             'phone' => ['nullable', 'string', 'max:255'],
         ]);
 
+        // Generate temporary password
+        $temporaryPassword = Str::random(12);
+        $hashedPassword = bcrypt($temporaryPassword);
+
         // Create supervisor user
         $supervisor = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'role' => 'supervisor',
-            'password' => bcrypt(Str::random(12)), // Temporary password
+            'password' => $hashedPassword,
+            'must_change_password' => true,
             'email_verified_at' => now(),
         ]);
 
@@ -68,8 +73,15 @@ class CoordinatorSupervisorController extends Controller
             'phone' => $request->phone,
         ]);
 
+        // Send email with credentials
+        try {
+            $supervisor->notify(new \App\Notifications\VerifyWithTemporaryPassword($temporaryPassword));
+        } catch (\Exception $e) {
+            \Log::error('Supervisor email failed: ' . $e->getMessage());
+        }
+
         return redirect()->route('coord.supervisors.index')
-            ->with('success', 'Supervisor account created successfully.');
+            ->with('success', 'Supervisor account created successfully. An email with login credentials has been sent.');
     }
 
 }

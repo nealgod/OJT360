@@ -16,6 +16,7 @@ class DocumentRequirement extends Model
         'is_required',
         'file_types',
         'max_file_size_mb',
+        'max_files_per_submission',
         'instructions',
         'is_active',
     ];

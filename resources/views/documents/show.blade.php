@@ -33,7 +33,7 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                     <div>
                         <span class="font-medium text-gray-700">File Types:</span>
                         <span class="text-gray-600">{{ $requirement->file_types_string }}</span>
@@ -42,6 +42,12 @@
                         <span class="font-medium text-gray-700">Max File Size:</span>
                         <span class="text-gray-600">{{ $requirement->max_file_size_string }}</span>
                     </div>
+                    @if($requirement->max_files_per_submission && $requirement->max_files_per_submission > 2)
+                        <div>
+                            <span class="font-medium text-gray-700">Max Files:</span>
+                            <span class="text-gray-600">{{ $requirement->max_files_per_submission }}</span>
+                        </div>
+                    @endif
                 </div>
 
                 @if($requirement->instructions)
@@ -133,7 +139,7 @@
                         
                         <div>
                             <label for="files" class="block text-sm font-medium text-gray-700 mb-2">
-                                Select Files (up to 2)
+                                Select Files (up to {{ $requirement->max_files_per_submission ?? 2 }})
                             </label>
                             <input type="file" 
                                    id="files" 
@@ -145,7 +151,7 @@
                             <p class="mt-1 text-sm text-gray-500">
                                 Accepted formats: {{ $requirement->file_types_string }} | 
                                 Max size: {{ $requirement->max_file_size_string }} |
-                                Max files: 2 per requirement
+                                Max files: {{ $requirement->max_files_per_submission ?? 2 }} per requirement
                             </p>
                             
                             <!-- Selected Files Preview -->

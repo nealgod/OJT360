@@ -114,12 +114,13 @@ class DocumentRequirementsSeeder extends Seeder
             ],
             [
                 'name' => 'Weekly Accomplishment Report',
-                'description' => 'Weekly reports of accomplishments during OJT',
+                'description' => 'Weekly reports of accomplishments during OJT (one per week, up to 4 per month)',
                 'type' => 'post_placement',
                 'is_required' => true,
                 'file_types' => ['pdf', 'doc', 'docx'],
                 'max_file_size_mb' => 5,
-                'instructions' => 'Compile all your weekly accomplishment reports into one document.',
+                'max_files_per_submission' => 4, // Allow up to 4 weekly reports
+                'instructions' => 'Submit your weekly accomplishment reports. You can submit up to 4 reports (one per week for a month).',
             ],
             [
                 'name' => 'OJT Learning Experience Journal',
@@ -209,7 +210,8 @@ class DocumentRequirementsSeeder extends Seeder
                 'is_required' => true,
                 'file_types' => ['pdf', 'jpg', 'jpeg', 'png', 'zip'],
                 'max_file_size_mb' => 10,
-                'instructions' => 'Submit photos documenting your OJT activities, workplace, and key moments.',
+                'max_files_per_submission' => 50, // Allow up to 50 photos
+                'instructions' => 'Submit photos documenting your OJT activities, workplace, and key moments. You can upload multiple photos.',
             ],
             [
                 'name' => 'Other Documents Not Specified',
