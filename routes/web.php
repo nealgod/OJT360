@@ -105,6 +105,10 @@ Route::middleware(['auth', 'verified', 'force.password.change', 'profile.complet
 
 require __DIR__.'/auth.php';
 
+// Claim-your-account routes
+Route::get('/activate', [App\Http\Controllers\ActivationController::class, 'show'])->name('activate.show');
+Route::post('/activate', [App\Http\Controllers\ActivationController::class, 'activate'])->name('activate');
+
 // Coordinator placement inbox
 Route::middleware(['auth', 'verified', 'force.password.change', 'profile.complete'])->group(function () {
     Route::get('/coord/placements', [App\Http\Controllers\PlacementRequestController::class, 'inbox'])->name('coord.placements.inbox');
@@ -131,6 +135,16 @@ Route::middleware(['auth', 'verified', 'force.password.change', 'profile.complet
 
     // Coordinator manage students
     Route::get('/coord/students', [App\Http\Controllers\CoordinatorStudentController::class, 'index'])->name('coord.students.index');
+
+    // Coordinator whitelist import (static routes must be BEFORE the {student} param route)
+    Route::get('/coord/students/import', [App\Http\Controllers\CoordinatorImportController::class, 'showImport'])->name('coord.students.import');
+    Route::post('/coord/students/import/preview', [App\Http\Controllers\CoordinatorImportController::class, 'preview'])->name('coord.students.import.preview');
+    Route::post('/coord/students/import/commit', [App\Http\Controllers\CoordinatorImportController::class, 'commit'])->name('coord.students.import.commit');
+    Route::get('/coord/students/whitelist', [App\Http\Controllers\CoordinatorImportController::class, 'status'])->name('coord.students.whitelist');
+    Route::get('/coord/students/whitelist/export', [App\Http\Controllers\CoordinatorImportController::class, 'export'])->name('coord.students.whitelist.export');
+    Route::get('/coord/students/whitelist/uploaded-file', [App\Http\Controllers\CoordinatorImportController::class, 'downloadUploaded'])->name('coord.students.whitelist.uploaded');
+    Route::post('/coord/students/whitelist/end-term', [App\Http\Controllers\CoordinatorImportController::class, 'endTerm'])->name('coord.students.whitelist.end-term');
+
     Route::get('/coord/students/{student}', [App\Http\Controllers\CoordinatorStudentController::class, 'show'])->name('coord.students.show');
     Route::post('/coord/students/{student}/update-company', [App\Http\Controllers\CoordinatorStudentController::class, 'updateCompany'])->name('coord.students.update-company');
     Route::post('/coord/students/{student}/update-status', [App\Http\Controllers\CoordinatorStudentController::class, 'updateStatus'])->name('coord.students.update-status');

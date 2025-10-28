@@ -52,12 +52,18 @@ class DocumentController extends Controller
         $user = Auth::user();
         $department = $user->coordinatorProfile?->department;
         
+        if (!$department) {
+            return redirect()->route('coord.students.index')->with('error', 'No department assigned to your coordinator profile.');
+        }
+        
         // Get students in coordinator's department
         $students = \App\Models\User::where('role', 'intern')
             ->whereHas('studentProfile', function($query) use ($department) {
                 $query->where('department', $department);
             })
-            ->with(['studentProfile', 'documentSubmissions.requirement'])
+            ->with(['studentProfile', 'documentSubmissions' => function($query) {
+                $query->with('requirement')->orderBy('created_at', 'desc');
+            }])
             ->get();
 
         // Get all document requirements
@@ -224,5 +230,64 @@ class DocumentController extends Controller
         ]);
 
         return back()->with('success', 'Document review updated successfully!');
+    }
+
+    public function bulkReview(Request $request)
+    {
+        $user = Auth::user();
+        abort_unless($user->isCoordinator(), 403);
+
+        $request->validate([
+            'submission_ids' => ['required', 'array', 'min:1'],
+            'submission_ids.*' => ['exists:student_document_submissions,id'],
+            'status' => ['required', 'in:approved,rejected'],
+            'feedback' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $submissionIds = $request->submission_ids;
+        $status = $request->status;
+        $feedback = $request->feedback;
+
+        // Get submissions and verify they belong to coordinator's department
+        $submissions = StudentDocumentSubmission::whereIn('id', $submissionIds)
+            ->with(['student', 'requirement'])
+            ->get();
+
+        $department = $user->coordinatorProfile?->department;
+        $validSubmissions = $submissions->filter(function($submission) use ($department) {
+            return $submission->student->studentProfile?->department === $department;
+        });
+
+        if ($validSubmissions->isEmpty()) {
+            return back()->withErrors(['error' => 'No valid submissions found for your department.']);
+        }
+
+        // Update all valid submissions
+        $updatedCount = 0;
+        foreach ($validSubmissions as $submission) {
+            $submission->update([
+                'status' => $status,
+                'feedback' => $feedback,
+                'reviewed_by' => $user->id,
+                'reviewed_at' => now(),
+            ]);
+
+            // Notify student
+            \App\Models\Notification::create([
+                'user_id' => $submission->student_user_id,
+                'type' => 'document_reviewed',
+                'title' => 'Document Review Update',
+                'message' => 'Your ' . ($submission->requirement?->name ?? 'document') . ' has been ' . $status . '.',
+                'data' => [
+                    'submission_id' => $submission->id,
+                    'status' => $status,
+                ],
+            ]);
+
+            $updatedCount++;
+        }
+
+        $action = $status === 'approved' ? 'approved' : 'rejected';
+        return back()->with('success', "Successfully {$action} {$updatedCount} document(s)!");
     }
 }

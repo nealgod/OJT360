@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex justify-between items-center">
             <h2 class="font-semibold text-xl text-ojt-dark leading-tight">
-                {{ __('Document Submissions Review') }}
+                {{ __('Document Review') }}
             </h2>
         </div>
     </x-slot>
@@ -11,91 +11,178 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Header Section -->
             <div class="mb-8">
-                <h1 class="text-2xl sm:text-3xl font-bold text-ojt-dark mb-2">Document Submissions Review</h1>
-                <p class="text-gray-600">Review and approve student document submissions for your department.</p>
+                <h1 class="text-2xl sm:text-3xl font-bold text-ojt-dark mb-2">Document Review</h1>
+                <p class="text-gray-600">Review student document submissions by document type.</p>
             </div>
 
-            <!-- Students List -->
-            <div class="space-y-6">
-                @forelse($students as $student)
-                    <div class="bg-white rounded-lg border border-gray-200 p-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <div>
-                                <h3 class="text-lg font-semibold text-ojt-dark">{{ $student->name }}</h3>
-                                <p class="text-sm text-gray-600">{{ $student->studentProfile?->course }} - {{ $student->studentProfile?->department }}</p>
+            <!-- Quick Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                @php
+                    $totalSubmissions = $students->sum(function($student) {
+                        return $student->documentSubmissions->count();
+                    });
+                    $pendingSubmissions = $students->sum(function($student) {
+                        return $student->documentSubmissions->where('status', 'submitted')->count();
+                    });
+                    $underReviewSubmissions = $students->sum(function($student) {
+                        return $student->documentSubmissions->where('status', 'under_review')->count();
+                    });
+                    $approvedSubmissions = $students->sum(function($student) {
+                        return $student->documentSubmissions->where('status', 'approved')->count();
+                    });
+                @endphp
+                
+                <div class="bg-white rounded-lg border border-gray-200 p-4">
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-gray-900">{{ $totalSubmissions }}</p>
+                        <p class="text-sm text-gray-500">Total</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg border border-gray-200 p-4">
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-yellow-600">{{ $pendingSubmissions }}</p>
+                        <p class="text-sm text-gray-500">Pending</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg border border-gray-200 p-4">
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-orange-600">{{ $underReviewSubmissions }}</p>
+                        <p class="text-sm text-gray-500">Reviewing</p>
+                    </div>
+            </div>
+
+                <div class="bg-white rounded-lg border border-gray-200 p-4">
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-green-600">{{ $approvedSubmissions }}</p>
+                        <p class="text-sm text-gray-500">Approved</p>
                             </div>
-                            <div class="text-right">
-                                <p class="text-sm text-gray-600">Company: {{ $student->studentProfile?->assignedCompany?->name ?? 'Not assigned' }}</p>
-                                <p class="text-sm text-gray-600">Status: {{ ucfirst($student->studentProfile?->ojt_status ?? 'pending') }}</p>
                             </div>
                         </div>
 
-                        <!-- Document Submissions -->
-                        <div class="space-y-4">
-                            @php
-                                $studentSubmissions = $student->documentSubmissions()->with(['requirement', 'reviewer'])->get();
+            <!-- Document Types Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                @foreach($requirements as $requirement)
+                    @php
+                        $submissions = collect();
+                        foreach($students as $student) {
+                            $studentSubmissions = $student->documentSubmissions->where('document_requirement_id', $requirement->id);
+                            $submissions = $submissions->merge($studentSubmissions);
+                        }
+                        
+                        $pendingCount = $submissions->where('status', 'submitted')->count();
+                        $underReviewCount = $submissions->where('status', 'under_review')->count();
+                        $approvedCount = $submissions->where('status', 'approved')->count();
+                        $rejectedCount = $submissions->where('status', 'rejected')->count();
+                        $totalCount = $submissions->count();
                             @endphp
                             
-                            @if($studentSubmissions->count() > 0)
-                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    @foreach($studentSubmissions as $submission)
-                                        <div class="border border-gray-200 rounded-lg p-4">
-                                            <div class="flex items-start justify-between mb-2">
-                                                <h4 class="font-medium text-gray-900 text-sm">{{ $submission->requirement->name }}</h4>
-                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $submission->status_badge }}">
-                                                    {{ $submission->status_text }}
+                    <div class="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow cursor-pointer" 
+                         onclick="showDocumentDetails('{{ $requirement->id }}', '{{ $requirement->name }}')">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex-1">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ $requirement->name }}</h3>
+                                <p class="text-sm text-gray-600 mb-3">{{ $requirement->description }}</p>
+                                
+                                <!-- Document Type Badge -->
+                                <div class="mb-4">
+                                    @if($requirement->type === 'pre_placement')
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                            Pre-Placement
+                                        </span>
+                                    @elseif($requirement->type === 'post_placement')
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            Post-Placement
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                            Ongoing
                                                 </span>
+                                    @endif
+                                </div>
+                            </div>
                                             </div>
                                             
-                                            <div class="text-xs text-gray-500 mb-3">
-                                                <p>File: {{ $submission->original_filename }}</p>
-                                                <p>Size: {{ $submission->file_size_formatted }}</p>
-                                                <p>Submitted: {{ $submission->created_at->format('M d, Y') }}</p>
+                        <!-- Submission Stats -->
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">Total Submissions:</span>
+                                <span class="font-medium">{{ $totalCount }}</span>
                                             </div>
 
-                                            @if($submission->feedback)
-                                                <div class="mb-3 p-2 bg-gray-50 rounded text-xs">
-                                                    <strong>Feedback:</strong> {{ $submission->feedback }}
+                            @if($pendingCount > 0)
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-yellow-600">Pending:</span>
+                                    <span class="font-medium text-yellow-600">{{ $pendingCount }}</span>
+                                </div>
+                            @endif
+                            
+                            @if($underReviewCount > 0)
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-orange-600">Under Review:</span>
+                                    <span class="font-medium text-orange-600">{{ $underReviewCount }}</span>
                                                 </div>
                                             @endif
 
-                                            <div class="flex space-x-2">
-                                                <a href="{{ route('documents.download', $submission) }}" 
-                                                   class="text-xs text-ojt-primary hover:text-maroon-700 underline">
-                                                    Download
-                                                </a>
-                                                
-                                                @if($submission->status === 'submitted' || $submission->status === 'under_review')
-                                                    <button onclick="openReviewModal({{ $submission->id }}, '{{ $submission->requirement->name }}')" 
-                                                            class="text-xs text-blue-600 hover:text-blue-800 underline">
-                                                        Review
-                                                    </button>
+                            @if($approvedCount > 0)
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-green-600">Approved:</span>
+                                    <span class="font-medium text-green-600">{{ $approvedCount }}</span>
+                                </div>
+                            @endif
+                            
+                            @if($rejectedCount > 0)
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-red-600">Rejected:</span>
+                                    <span class="font-medium text-red-600">{{ $rejectedCount }}</span>
+                                </div>
                                                 @endif
+                                            </div>
+                        
+                        <!-- Click to view message -->
+                        <div class="mt-4 pt-4 border-t border-gray-200">
+                            <p class="text-xs text-gray-500 text-center">
+                                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                Click to view submissions
+                            </p>
                                             </div>
                                         </div>
                                     @endforeach
                                 </div>
-                            @else
-                                <div class="text-center py-8 text-gray-500">
-                                    <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                    <p>No document submissions yet</p>
-                                </div>
-                            @endif
                         </div>
                     </div>
-                @empty
-                    <div class="text-center py-12">
-                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+
+    <!-- Document Details Modal -->
+    <div id="documentModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden">
+                <!-- Modal Header -->
+                <div class="flex items-center justify-between p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900" id="modalDocumentName">Document Submissions</h3>
+                    <button onclick="closeDocumentModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                             </svg>
-                        </div>
-                        <h3 class="text-lg font-medium text-gray-900 mb-2">No Students Found</h3>
-                        <p class="text-gray-500">No students are assigned to your department yet.</p>
+                    </button>
+                </div>
+                
+                <!-- Modal Content -->
+                <div class="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+                    <!-- Search -->
+                    <div class="mb-6">
+                        <input type="text" id="studentSearch" placeholder="Search by student name..." 
+                               class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-ojt-primary focus:border-ojt-primary">
                     </div>
-                @endforelse
+                    
+                    <!-- Students List -->
+                    <div id="studentsList" class="space-y-4">
+                        <!-- Students will be loaded here -->
+                        </div>
+                    </div>
             </div>
         </div>
     </div>
@@ -136,21 +223,175 @@
     </div>
 
     <script>
-        function openReviewModal(submissionId, documentName) {
-            document.getElementById('modalTitle').textContent = `Review: ${documentName}`;
+        let currentDocumentId = null;
+        let allStudents = @json($students);
+
+        function showDocumentDetails(documentId, documentName) {
+            currentDocumentId = documentId;
+            document.getElementById('modalDocumentName').textContent = `${documentName} - Submissions`;
+            
+            // Filter students who have submissions for this document
+            const studentsWithSubmissions = allStudents.filter(student => {
+                return student.document_submissions.some(submission => 
+                    submission.document_requirement_id == documentId
+                );
+            });
+            
+            renderStudentsList(studentsWithSubmissions, documentId);
+            document.getElementById('documentModal').classList.remove('hidden');
+        }
+
+        function renderStudentsList(students, documentId) {
+            const container = document.getElementById('studentsList');
+            
+            if (students.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <p>No submissions for this document type yet.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = students.map(student => {
+                const submissions = student.document_submissions.filter(sub => 
+                    sub.document_requirement_id == documentId
+                );
+                
+                return submissions.map(submission => `
+                    <div class="bg-gray-50 rounded-lg p-4" data-student="${student.name}" data-status="${submission.status}">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-3 mb-2">
+                                    <h4 class="font-medium text-gray-900">${student.name}</h4>
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusBadge(submission.status)}">
+                                        ${getStatusText(submission.status)}
+                                    </span>
+                                </div>
+                                <div class="text-sm text-gray-600 mb-2">
+                                    ${student.student_profile?.course || 'Unknown'} - ${student.student_profile?.department || 'Unknown'}
+                                </div>
+                                <div class="text-sm text-gray-500">
+                                    <strong>File:</strong> ${submission.original_filename || 'Unknown'} • 
+                                    <strong>Size:</strong> ${formatFileSize(submission.file_size)} • 
+                                    <strong>Submitted:</strong> ${formatDate(submission.created_at)}
+                                </div>
+                                ${submission.feedback ? `
+                                    <div class="mt-2 text-sm text-gray-600 bg-white p-2 rounded border">
+                                        <strong>Feedback:</strong> ${submission.feedback}
+                                    </div>
+                                ` : ''}
+                            </div>
+                            
+                            <div class="flex items-center space-x-2 ml-4">
+                                <a href="/documents/submissions/${submission.id}/download" 
+                                   class="text-sm text-ojt-primary hover:text-maroon-700 underline">
+                                    Download
+                                </a>
+                                
+                                ${submission.status === 'submitted' || submission.status === 'under_review' ? `
+                                    <button onclick="openReviewModal(${submission.id}, '${student.name}', '${submission.status}')" 
+                                            class="text-sm text-blue-600 hover:text-blue-800 underline">
+                                        Review
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }).join('');
+        }
+
+        function getStatusBadge(status) {
+            const badges = {
+                'submitted': 'bg-blue-100 text-blue-800',
+                'under_review': 'bg-yellow-100 text-yellow-800',
+                'approved': 'bg-green-100 text-green-800',
+                'rejected': 'bg-red-100 text-red-800'
+            };
+            return badges[status] || 'bg-gray-100 text-gray-800';
+        }
+
+        function getStatusText(status) {
+            const texts = {
+                'submitted': 'Submitted',
+                'under_review': 'Under Review',
+                'approved': 'Approved',
+                'rejected': 'Rejected'
+            };
+            return texts[status] || 'Unknown';
+        }
+
+        function formatFileSize(bytes) {
+            if (!bytes) return 'Unknown';
+            const units = ['B', 'KB', 'MB', 'GB'];
+            let size = parseInt(bytes);
+            let unitIndex = 0;
+            
+            while (size >= 1024 && unitIndex < units.length - 1) {
+                size /= 1024;
+                unitIndex++;
+            }
+            
+            return Math.round(size * 100) / 100 + ' ' + units[unitIndex];
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'Unknown';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+        }
+
+        function closeDocumentModal() {
+            document.getElementById('documentModal').classList.add('hidden');
+            currentDocumentId = null;
+        }
+
+        // Search functionality
+        document.getElementById('studentSearch').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const studentCards = document.querySelectorAll('#studentsList > div');
+            
+            studentCards.forEach(card => {
+                const studentName = card.getAttribute('data-student').toLowerCase();
+                if (studentName.includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+
+        // Review Modal Functions
+        function openReviewModal(submissionId, studentName, currentStatus) {
+            document.getElementById('modalTitle').textContent = `Review: ${studentName}`;
             document.getElementById('reviewForm').action = `/coord/documents/submissions/${submissionId}/review`;
+            
+            const statusSelect = document.getElementById('status');
+            statusSelect.value = currentStatus || 'under_review';
+            
             document.getElementById('reviewModal').classList.remove('hidden');
         }
 
         function closeReviewModal() {
             document.getElementById('reviewModal').classList.add('hidden');
+            document.getElementById('reviewForm').reset();
         }
 
-        // Close modal when clicking outside
+        // Close modals when clicking outside
+        document.getElementById('documentModal').addEventListener('click', function(e) {
+            if (e.target === this) closeDocumentModal();
+        });
+
         document.getElementById('reviewModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeReviewModal();
-            }
+            if (e.target === this) closeReviewModal();
         });
     </script>
 </x-app-layout>

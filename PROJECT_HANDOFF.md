@@ -4,30 +4,48 @@
 
 **Project Name:** OJT360 - End-to-End Web-Based Internship Monitoring and Management System  
 **Framework:** Laravel (PHP) with Blade Templates  
-**Status:** Active Development - Latest commit includes Reports & Documents improvements  
+**Status:** Student Module + Whitelist Activation Complete - Ready for Long-Term Use  
 **URL:** https://github.com/nealgod/OJT360.git
 
 ---
 
-## CURRENT STATE (Latest Changes - Commit 01b2363)
+## CURRENT STATE (Student Module Complete - Ready for Adviser Presentation)
 
 ### Recently Implemented Features:
-1. **Reports Section Improvements:**
-   - Added view functionality for detailed report viewing
-   - Simplified filtering (search + month only, removed status filter)
-   - Removed edit functionality (submit only, delete if submitted)
-   - Clean, consistent UI with back buttons
+1. **Reports Section Enhancements:**
+   - Dynamic attendance display based on selected work date
+   - Consistent formatting across all attendance displays
+   - PDF generation for weekly reports using DomPDF
+   - Direct submission of weekly reports to documents system
+   - Removed feedback system (simplified workflow)
+   - Auto-generated report templates from attendance data
 
 2. **Documents Section Improvements:**
    - Enhanced UI with grid layout (3 columns responsive)
    - Added search and filter capabilities
    - Added cancel submission feature (like Google Classroom)
-   - Letter of Acceptance now required (was optional)
-   - Support for multiple file uploads (up to 2 files per requirement)
+   - Letter of Acceptance auto-approved upon placement approval
+   - Flexible file upload limits (configurable per requirement)
+   - Photo Documentation: up to 50 files
+   - Weekly Accomplishment Report: up to 4 files
 
-3. **Database Changes:**
-   - Migration: Fixed document submissions table to allow multiple files
-   - Removed unique constraint on student_document_submissions
+3. **Program Management Features:**
+   - Coordinators can modify required OJT hours for their programs
+   - BSIT program updated to 486 hours (from 460)
+   - Program-specific hours override default department config
+   - Automatic notifications to students when hours change
+
+4. **Supervisor Management Enhancements:**
+   - Auto-creation of supervisor accounts from placement requests
+   - Email notifications with temporary passwords for new supervisors
+   - Support for both external and listed company supervisors
+   - Improved supervisor assignment workflow
+
+5. **Database Changes:**
+   - Added `max_files_per_submission` to document_requirements
+   - Added `required_hours` to programs table
+   - Added supervisor fields to placement_requests table
+   - Migration for flexible file upload limits
 
 ---
 
@@ -44,7 +62,11 @@
 **Authentication Flow:**
 - Email verification required for all users
 - First password change enforced for coordinators/supervisors (created by admin)
-- Students self-register → email verify → complete profile → submit placement request
+- Students DO NOT publicly register. Registration is via activation against a coordinator-uploaded whitelist:
+  - Coordinator uploads Class List (CSV/XLSX) → creates pending whitelist rows
+  - Student opens Activate page (`/activate`) and enters Student ID + EVSU email
+  - If matched to a pending whitelist row: account is created (`role=intern`), email verification sent, auto-login
+  - Whitelist row flips to `activated`
 - Admin creates coordinators/supervisors → sends temp password → they login → change password
 
 ### Key Middleware:
@@ -57,6 +79,33 @@
 ---
 
 ## MAIN CONTROLLERS & WORKFLOWS
+### 0. **ActivationController** (`app/Http/Controllers/ActivationController.php`)
+**Purpose:** Student account activation via whitelist
+
+**Key Methods:**
+- `show()` - Renders activation form (`resources/views/auth/activate.blade.php`)
+- `activate()` - Validates EVSU email + student_id against pending whitelist; creates user, minimal profile, marks row activated, sends email verification, logs in
+
+**Notes:**
+- EVSU emails only; rejects non-`@evsu.edu.ph`
+- Sets `course` and `department` from the program associated with the whitelist row
+
+### 0.1. **CoordinatorImportController** (`app/Http/Controllers/CoordinatorImportController.php`)
+**Purpose:** Coordinator class list import + whitelist management
+
+**Key Methods:**
+- `showImport()` - Upload UI
+- `preview()` - Validates CSV/XLSX, shows valid/invalid preview with clear errors and counts; supports "Upload" shortcut path which persists whitelist directly
+- `commit()` - Enforces single active upload: clears existing pending for program, inserts valid rows, redirects to whitelist
+- `status()` - Whitelist Status page with search, filter, pagination; archived hidden by default with optional toggle
+- `endTerm()` - Archives all pending/activated rows for current program (past batches remain viewable when toggled)
+- `export()` - CSV export of current (pending/activated) whitelist (kept for admin usage; UI download links currently removed)
+- `downloadUploaded()` - Download last uploaded original file (currently disabled in UI)
+
+**Views:**
+- `resources/views/coord/students/import.blade.php`
+- `resources/views/coord/students/import-preview.blade.php`
+- `resources/views/coord/students/whitelist.blade.php`
 
 ### 1. **PlacementRequestController** (`app/Http/Controllers/PlacementRequestController.php`)
 **Purpose:** Handles student placement requests and coordinator approvals
@@ -88,20 +137,26 @@
 - External companies require special handling
 
 ### 3. **DailyReportController** (`app/Http/Controllers/DailyReportController.php`)
-**Purpose:** Handles student daily reports
+**Purpose:** Handles student daily and weekly reports
 
 **Key Methods:**
 - `index()` - Lists student's reports (with search/filter)
-- `create()` - Shows report submission form
+- `create()` - Shows report submission form with dynamic attendance
 - `store()` - Saves report, sends notification to coordinator
-- `show()` - Shows detailed report view
+- `show()` - Shows detailed report view with attendance data
 - `destroy()` - Deletes report (only if status='submitted')
+- `weekly()` - Generates weekly report preview
+- `generateWeekly()` - Creates weekly report with PDF generation
+- `downloadWeekly()` - Downloads weekly report as PDF
+- `submitWeeklyToDocuments()` - Submits weekly report to documents system
 
 **Important Logic:**
 - Reports cannot be edited (submit-only)
 - Reports require minimum 50 characters
 - Auto-generates template from attendance if available
-- Stores drafts in localStorage
+- Dynamic attendance display based on selected work date
+- Weekly reports generated as PDFs using DomPDF
+- Direct integration with document management system
 
 ### 4. **DocumentController** (`app/Http/Controllers/DocumentController.php`)
 **Purpose:** Manages document submissions
@@ -109,13 +164,16 @@
 **Key Methods:**
 - `index()` - Shows documents to students/coordinators (role-based)
 - `show()` - Shows document details and submission form
-- `submit()` - Handles multiple file uploads (up to 2 files)
+- `submit()` - Handles flexible file uploads (configurable limits)
 - `cancel()` - Allows cancellation of 'submitted' status documents
 - `download()` - Downloads submitted documents
+- `review()` - Coordinator reviews and approves/rejects documents
 
 **Important Logic:**
-- Supports multiple file uploads (1-2 files per requirement)
-- Letter of Acceptance is required (auto-submitted with placement)
+- Supports flexible file uploads (configurable per requirement)
+- Photo Documentation: up to 50 files
+- Weekly Accomplishment Report: up to 4 files
+- Letter of Acceptance auto-approved with placement
 - Can cancel submissions before review
 
 ### 5. **AttendanceController** (`app/Http/Controllers/AttendanceController.php`)
@@ -127,7 +185,20 @@
 - Recovery feature for missed time-out
 - Calculates hours worked automatically
 
-### 6. **DashboardController** (`app/Http/Controllers/DashboardController.php`)
+### 6. **CoordinatorProgramController** (`app/Http/Controllers/CoordinatorProgramController.php`)
+**Purpose:** Manages program-specific settings for coordinators
+
+**Key Methods:**
+- `showHours()` - Displays program hours and statistics
+- `updateHours()` - Updates required hours for coordinator's program
+
+**Important Logic:**
+- Coordinators can modify required OJT hours for their programs
+- Changes automatically notify affected students
+- Program hours override default department config
+- Shows statistics on students using custom vs default hours
+
+### 7. **DashboardController** (`app/Http/Controllers/DashboardController.php`)
 **Purpose:** Role-based dashboard
 
 **Student Dashboard Shows:**
@@ -152,7 +223,8 @@
 **User** (app/Models/User.php)
 - Central auth model with roles: admin, coordinator, supervisor, intern
 - Key relationships: studentProfile(), coordinatorProfile(), supervisorProfile()
-- Key methods: isStudent(), isCoordinator(), hasActiveOJT(), hasCompletedProfile()
+- Key methods: isStudent(), isCoordinator(), hasActiveOJT(), hasCompletedProfile(), getRequiredHours()
+- Enhanced getRequiredHours() prioritizes program-specific hours over department defaults
 
 **StudentProfile** (app/Models/StudentProfile.php)
 - Links to User
@@ -168,16 +240,18 @@
 - Pre-defined document types
 - Types: pre_placement, post_placement, ongoing
 - Has file_types, max_file_size restrictions
+- Added max_files_per_submission for flexible upload limits
 
 **StudentDocumentSubmission**
 - Links student to requirement
-- Supports multiple files per requirement (up to 2)
+- Supports flexible file uploads (configurable per requirement)
 - Status: submitted/under_review/approved/rejected
 
 **DailyReport**
 - Links to student
-- Contains: work_date, summary, attachment_path, status, feedback
+- Contains: work_date, summary, attachment_path, status
 - Status: submitted/approved/returned
+- Removed feedback system for simplified workflow
 
 **AttendanceLog**
 - Links to student and company
@@ -189,8 +263,9 @@
 
 ### Public Routes:
 - `/` - Welcome page
-- `/login`, `/register` - Authentication
-- Email verification routes
+- `/login` - Authentication (Register link removed)
+- `/activate` - Student activation via whitelist (replaces public register)
+- Email verification routes (with coordinator/supervisor resend using temporary password)
 
 ### Student Routes (protected by auth, verified, profile.complete):
 - `/dashboard` - Student dashboard
@@ -210,9 +285,13 @@
 
 ### Coordinator Routes:
 - `/coord/students` - Manage students
+- `/coord/students/import` - Class List upload (CSV/XLSX)
+- `/coord/students/import/preview` - Preview validation results
+- `/coord/students/import/commit` - Commit valid rows (single active upload policy)
+- `/coord/students/whitelist` - Whitelist Status (search, filter; archived toggle)
+- `/coord/students/whitelist/end-term` - Archive all pending/activated (close term)
 - `/coord/placements/inbox` - Review placement requests
 - `/coord/documents` - Review student documents
-- `/coord/reports` - Review daily reports
 - Companies management
 
 ### Admin Routes:
@@ -224,7 +303,7 @@
 ## KEY CONCEPTS & DECISIONS
 
 ### 1. **OJT Status Flow:**
-- Student registers → completes profile → submits placement request
+- Student activates via whitelist → completes profile → submits placement request
 - Coordinator approves → `ojt_status` = 'active'
 - Student can now access: Attendance, Reports, Documents
 - Navigation hides these until active
@@ -251,6 +330,14 @@
 - Attendance/Reports/Documents links hidden until OJT active
 - Uses: `@if(Auth::user()->hasActiveOJT())`
 - Coordinators always see their sections
+
+### 6. **Whitelist & Activation (Key Points):
+- Public register disabled; links changed to activation
+- Upload accepts external formats (headers like "Student ID", "Student Name", "Phone", "E-Mail"). Name parsing supports "Last, First Middle".
+- Validation checks required fields, EVSU email domain, duplicate IDs/emails in file, and existing IDs in DB
+- Single active upload: re-upload clears pending rows before insert; activated users remain
+- End Term action archives active/pending rows; archived hidden by default but viewable with toggle
+- Activation creates user and minimal profile; whitelist row marked `activated`
 
 ---
 
@@ -325,6 +412,7 @@
 - Photos: `storage/app/public/attendance-photos`
 - Reports: `storage/app/public/daily-reports`
 - Documents: `storage/app/public/document-submissions`
+ - Whitelists (internal): `storage/app/whitelists/program_{id}/latest.(csv|xlsx|xls|txt)` (kept for internal reference; not exposed in UI by default)
 
 ---
 
@@ -350,13 +438,35 @@ Rollback: `php artisan migrate:rollback`
 
 ---
 
-## NEXT DEVELOPMENT AREAS
+## NEXT DEVELOPMENT AREAS (Pending Modules)
 
-1. **Reports:** Consider adding edit functionality or weekly reports
-2. **Documents:** PDF generation for documents
-3. **Attendance:** Analytics dashboard for coordinators
-4. **Messaging:** Real-time chat functionality
-5. **Notifications:** Email notifications for key events
+### 🎯 **Priority 1: Coordinator Module**
+- Enhanced coordinator dashboard with analytics
+- Advanced student management features
+- Company management and approval workflows
+- Document review and approval system
+- Report analytics and insights
+
+### 🎯 **Priority 2: Supervisor Module**
+- Supervisor dashboard for managing interns
+- Attendance monitoring and approval
+- Report review and feedback system
+- Intern progress tracking
+- Communication tools with students
+
+### 🎯 **Priority 3: Admin Module**
+- System-wide user management
+- Department and program configuration
+- System analytics and reporting
+- Backup and maintenance tools
+- Global settings and configurations
+
+### 🔧 **Technical Enhancements**
+- Real-time notifications
+- Advanced analytics and reporting
+- Mobile responsiveness improvements
+- API development for mobile app
+- Performance optimizations
 
 ---
 
@@ -408,6 +518,6 @@ whereHas('studentProfile', function($q) {
 
 ---
 
-**Last Updated:** Commit 01b2363 (Latest push)  
-**Project Status:** Active Development  
+**Last Updated:** Student Module + Whitelist Activation Complete  
+**Project Status:** Student Module + Coordinator Whitelist flow complete; Supervisor/Admin modules pending  
 **Contact:** Continue with this document as your base understanding.

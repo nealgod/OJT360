@@ -55,8 +55,8 @@
                             <a href="{{ route('login') }}" class="bg-gradient-to-r from-ojt-primary to-maroon-700 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:from-maroon-700 hover:to-ojt-primary transition-all duration-200 transform hover:scale-105">
                                 Sign In
                             </a>
-                            <a href="{{ route('register') }}" class="bg-gradient-to-r from-ojt-primary to-maroon-700 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:from-maroon-700 hover:to-ojt-primary transition-all duration-200 transform hover:scale-105">
-                                Create Account
+                            <a href="{{ route('activate.show') }}" class="bg-gradient-to-r from-ojt-primary to-maroon-700 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:from-maroon-700 hover:to-ojt-primary transition-all duration-200 transform hover:scale-105">
+                                Activate Account
                             </a>
                         @endauth
                                 </div>

@@ -15,10 +15,14 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
 Route::middleware('guest')->group(function () {
-    Route::get('register', [RegisteredUserController::class, 'create'])
-                ->name('register');
+    // Disable public registration: redirect to Activate flow
+    Route::get('register', function () {
+        return redirect()->route('activate.show');
+    })->name('register');
 
-    Route::post('register', [RegisteredUserController::class, 'store']);
+    Route::post('register', function () {
+        abort(404);
+    });
 
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
                 ->name('login');
