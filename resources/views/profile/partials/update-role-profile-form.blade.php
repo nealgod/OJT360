@@ -30,51 +30,29 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <x-input-label for="student_id" :value="__('Student ID')" />
-                    <x-text-input id="student_id" name="student_id" type="text" class="mt-1 block w-full" 
-                        :value="old('student_id', $profile->student_id ?? '')" required autofocus />
+                    <x-text-input id="student_id" type="text" class="mt-1 block w-full bg-gray-50" 
+                        :value="old('student_id', $profile->student_id ?? '')" disabled />
+                    <input type="hidden" name="student_id" value="{{ old('student_id', $profile->student_id ?? '') }}" />
                     <x-input-error class="mt-2" :messages="$errors->get('student_id')" />
                 </div>
 
                 <div>
-                    <x-input-label for="department" :value="__('Department')" />
-                    <select id="department" name="department" class="mt-1 block w-full border-gray-300 focus:border-ojt-primary focus:ring-ojt-primary rounded-md shadow-sm" required>
-                        <option value="">Select Department</option>
-                        @foreach(config('departments.departments') as $dept => $data)
-                            <option value="{{ $dept }}" 
-                                {{ old('department', $profile->department ?? '') == $dept ? 'selected' : '' }}>
-                                {{ $dept }}
-                            </option>
-                        @endforeach
-                    </select>
+                    <x-input-label :value="__('Department')" />
+                    <div class="mt-1 block w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-700">
+                        {{ old('department', $profile->department ?? '') }}
+                    </div>
+                    <input type="hidden" name="department" value="{{ old('department', $profile->department ?? '') }}" />
                     <x-input-error class="mt-2" :messages="$errors->get('department')" />
                 </div>
 
                 <div class="md:col-span-2">
-                    <x-input-label for="course" :value="__('Course / Program')" />
-                    <select id="course" name="course" class="mt-1 block w-full border-gray-300 focus:border-ojt-primary focus:ring-ojt-primary rounded-md shadow-sm" required>
-                        <option value="">Select Course</option>
-                        @if(old('department', $profile->department ?? ''))
-                            @foreach(config('departments.departments')[old('department', $profile->department ?? '')]['courses'] ?? [] as $course => $hours)
-                                <option value="{{ $course }}" 
-                                    {{ old('course', $profile->course ?? '') == $course ? 'selected' : '' }}>
-                                    {{ $course }} ({{ $hours }} hours)
-                                </option>
-                            @endforeach
-                        @endif
-                    </select>
-                    <p class="mt-1 text-sm text-gray-500">Select your course/program. The number in parentheses shows the required OJT hours.</p>
+                    <x-input-label :value="__('Course / Program')" />
+                    <div class="mt-1 block w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-700">
+                        {{ old('course', $profile->course ?? '') }}
+                    </div>
+                    <input type="hidden" name="course" value="{{ old('course', $profile->course ?? '') }}" />
                     <x-input-error class="mt-2" :messages="$errors->get('course')" />
                 </div>
-
-                @if($profile && $profile->course)
-                <div class="md:col-span-2">
-                    <x-input-label :value="__('Current Course')" />
-                    <div class="mt-1 block w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-700">
-                        {{ $profile->course }}
-                    </div>
-                    <p class="mt-1 text-sm text-gray-500">Your currently selected course</p>
-                </div>
-                @endif
 
                 <div>
                     <x-input-label for="phone" :value="__('Phone Number')" />
@@ -179,41 +157,6 @@
     </form>
 
     @if($user->isStudent())
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const departmentSelect = document.getElementById('department');
-            const courseSelect = document.getElementById('course');
-            const departments = @json(config('departments.departments'));
-            const originalCourseValue = courseSelect.value; // Store the original selected course
-
-            function updateCourseOptions() {
-                const selectedDepartment = departmentSelect.value;
-                const currentCourseValue = courseSelect.value;
-                
-                courseSelect.innerHTML = '<option value="">Select Course</option>';
-                
-                if (selectedDepartment && departments[selectedDepartment] && departments[selectedDepartment].courses) {
-                    Object.keys(departments[selectedDepartment].courses).forEach(function(course) {
-                        const option = document.createElement('option');
-                        option.value = course;
-                        option.textContent = course + ' (' + departments[selectedDepartment].courses[course] + ' hours)';
-                        courseSelect.appendChild(option);
-                    });
-                    
-                    // Restore the selected course if it exists in the new options
-                    if (currentCourseValue) {
-                        courseSelect.value = currentCourseValue;
-                    }
-                }
-            }
-
-            departmentSelect.addEventListener('change', updateCourseOptions);
-
-            // Only trigger change event on page load if department is selected but course is not
-            if (departmentSelect.value && !originalCourseValue) {
-                updateCourseOptions();
-            }
-        });
-    </script>
+    <!-- Dropdown scripts removed because fields are read-only for students -->
     @endif
 </section>

@@ -49,11 +49,12 @@ class ActivationController extends Controller
             'role' => 'intern',
         ]);
 
-        // Minimal student profile
+        // Minimal student profile, auto-filled from whitelist (including phone)
         $user->studentProfile()->create([
             'student_id' => $row->student_id,
             'course' => $row->program?->name,
             'department' => $row->program?->department?->name,
+            'phone' => $row->contact_number,
         ]);
 
         $row->update(['status' => 'activated']);

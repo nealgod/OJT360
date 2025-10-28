@@ -20,17 +20,20 @@
                     </div>
                 </div>
                 @if(Auth::user()->isStudent())
+                    @php
+                        $preReqCompleteTop = \App\Models\DocumentRequirement::where('type', 'pre_placement')
+                            ->whereDoesntHave('submissions', function($q) {
+                                $q->where('student_user_id', Auth::id())->where('status', 'approved');
+                            })->count() === 0;
+                    @endphp
                     @if(Auth::user()->studentProfile && Auth::user()->studentProfile->ojt_status === 'active')
                         <p class="text-gray-600">Here's what's happening with your OJT internship today.</p>
                     @else
-                        <p class="text-gray-600">Browse approved companies and apply for your OJT placement.</p>
-                        <div class="mt-3">
-                            <a href="{{ route('companies.index') }}" class="text-ojt-primary hover:text-maroon-700 underline">Browse companies</a>
-                            @if(!Auth::user()->placementRequests()->where('status', 'approved')->exists())
-                                <span class="mx-2">•</span>
-                                <a href="{{ route('placements.create') }}" class="text-ojt-primary hover:text-maroon-700 underline">Notify acceptance</a>
-                            @endif
-                        </div>
+                        @if(!$preReqCompleteTop)
+                            <p class="text-gray-600">Complete your pre-requirement documents first to proceed to placement.</p>
+                        @else
+                            <p class="text-gray-600">Pre-requirements approved. You can proceed with placement when ready.</p>
+                        @endif
                     @endif
                 @else
                     <p class="text-gray-600">Here's what's happening in your OJT management system today.</p>
@@ -564,13 +567,23 @@
                                         @endif
                                     </div>
                                 @else
-                                    <!-- Pre-OJT Activities -->
-                                    @php($latestPlacement = Auth::user()->placementRequests()->latest()->first())
+                                    <!-- Pre-OJT Activities (New Flow) -->
                                     <div class="space-y-4">
+                                        <div class="flex items-start space-x-3">
+                                            <div class="w-8 h-8 bg-ojt-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                                                <svg class="w-4 h-4 text-ojt-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4" />
+                                                </svg>
+                                            </div>
+                                            <div class="flex-1">
+                                                <p class="text-sm font-medium text-ojt-dark">Submit Pre-Requirements</p>
+                                                <p class="text-xs text-gray-500">Upload and complete all pre-placement requirements in Documents.</p>
+                                            </div>
+                                        </div>
                                         <div class="flex items-start space-x-3">
                                             <div class="w-8 h-8 bg-ojt-success/10 rounded-full flex items-center justify-center flex-shrink-0">
                                                 <svg class="w-4 h-4 text-ojt-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4" />
                                                 </svg>
                                             </div>
                                             <div class="flex-1">
@@ -579,56 +592,14 @@
                                             </div>
                                         </div>
                                         <div class="flex items-start space-x-3">
-                                            <div class="w-8 h-8 bg-ojt-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                                                <svg class="w-4 h-4 text-ojt-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                                </svg>
-                                            </div>
-                                            <div class="flex-1">
-                                                <p class="text-sm font-medium text-ojt-dark">Browse Companies</p>
-                                                <p class="text-xs text-gray-500">View approved companies for your department</p>
-                                                <div class="mt-2">
-                                                    <a href="{{ route('companies.index') }}" class="text-ojt-primary hover:text-maroon-700 underline">Open companies</a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="flex items-start space-x-3">
                                             <div class="w-8 h-8 bg-ojt-warning/10 rounded-full flex items-center justify-center flex-shrink-0">
                                                 <svg class="w-4 h-4 text-ojt-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3" />
                                                 </svg>
                                             </div>
                                             <div class="flex-1">
-                                                @if(!$latestPlacement)
-                                                    <p class="text-sm font-medium text-ojt-dark">OJT Placement Required</p>
-                                                    <p class="text-xs text-gray-500">Apply to companies and get accepted to start OJT</p>
-                                                    <div class="mt-2">
-                                                        <a href="{{ route('placements.create') }}" class="text-ojt-primary hover:text-maroon-700 underline">Notify acceptance</a>
-                                                    </div>
-                                                @elseif($latestPlacement->status === 'approved')
-                                                    <p class="text-sm font-medium text-ojt-dark">Placement Approved ✅</p>
-                                                    <p class="text-xs text-gray-500">Your OJT placement has been approved. You can now start your internship.</p>
-                                                    <div class="mt-2 space-x-3">
-                                                        <a href="{{ route('placements.index') }}" class="text-ojt-primary hover:text-maroon-700 underline">View details</a>
-                                                        <a href="{{ route('notifications.index') }}" class="text-ojt-primary hover:text-maroon-700 underline">Messages</a>
-                                                    </div>
-                                                @else
-                                                    <p class="text-sm font-medium text-ojt-dark">Placement {{ ucfirst($latestPlacement->status) }}</p>
-                                                    <p class="text-xs text-gray-500">
-                                                        @if($latestPlacement->status === 'pending')
-                                                            Your coordinator is reviewing your placement request.
-                                                        @elseif($latestPlacement->status === 'declined')
-                                                            Your last request was declined. You may submit another.
-                                                        @endif
-                                                    </p>
-                                                    <div class="mt-2 space-x-3">
-                                                        <a href="{{ route('placements.index') }}" class="text-ojt-primary hover:text-maroon-700 underline">View request</a>
-                                                        <a href="{{ route('notifications.index') }}" class="text-ojt-primary hover:text-maroon-700 underline">Messages</a>
-                                                        @if($latestPlacement->status === 'declined')
-                                                            <a href="{{ route('placements.create') }}" class="text-ojt-primary hover:text-maroon-700 underline">Submit new</a>
-                                                        @endif
-                                                    </div>
-                                                @endif
+                                                <p class="text-sm font-medium text-ojt-dark">Placement (Next)</p>
+                                                <p class="text-xs text-gray-500">Available after your pre-requirements are approved by your coordinator.</p>
                                             </div>
                                         </div>
                                     </div>
