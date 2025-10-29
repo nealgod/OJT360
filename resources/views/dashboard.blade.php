@@ -33,7 +33,7 @@
                             <p class="text-gray-600">Complete your pre-requirement documents first to proceed to placement.</p>
                         @else
                             <p class="text-gray-600">Pre-requirements approved. You can proceed with placement when ready.</p>
-                        @endif
+                            @endif
                     @endif
                 @else
                     <p class="text-gray-600">Here's what's happening in your OJT management system today.</p>
@@ -534,6 +534,31 @@
                                             </div>
                                         @endif
 
+                                        @php($recentNotification = Auth::user()->notifications()->latest()->first())
+                                        {{-- Debug: {{ Auth::user()->notifications()->count() }} notifications --}}
+                                        @if($recentNotification)
+                                            <div class="flex items-start space-x-3">
+                                                <div class="w-8 h-8 {{ $recentNotification->type === 'pre_placement_complete' ? 'bg-green-100' : 'bg-blue-100' }} rounded-full flex items-center justify-center flex-shrink-0">
+                                                    @if($recentNotification->type === 'pre_placement_complete')
+                                                        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                        </svg>
+                                                    @else
+                                                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5zM4.5 19.5a2.5 2.5 0 01-2.5-2.5V6a2.5 2.5 0 012.5-2.5h15a2.5 2.5 0 012.5 2.5v11a2.5 2.5 0 01-2.5 2.5h-15z" />
+                                                        </svg>
+                                                    @endif
+                                                </div>
+                                                <div class="flex-1">
+                                                    <p class="text-sm font-medium text-ojt-dark">{{ $recentNotification->title }}</p>
+                                                    <p class="text-xs text-gray-500">{{ Str::limit($recentNotification->message, 60) }}</p>
+                                                    <div class="mt-1">
+                                                        <a href="{{ route('notifications.index') }}" class="text-xs text-blue-600 hover:text-blue-800 underline">View all notifications</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endif
+
                                         @php($recentMessage = Auth::user()->receivedMessages()->latest()->first())
                                         @if($recentMessage)
                                             <div class="flex items-start space-x-3">
@@ -600,7 +625,7 @@
                                             <div class="flex-1">
                                                 <p class="text-sm font-medium text-ojt-dark">Placement (Next)</p>
                                                 <p class="text-xs text-gray-500">Available after your pre-requirements are approved by your coordinator.</p>
-                                            </div>
+                                                    </div>
                                         </div>
                                     </div>
                                 @endif
@@ -705,6 +730,13 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                                         </svg>
                                         Manage Students
+                                    </a>
+                                    <a href="{{ route('coord.program.hours') }}" class="w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center">
+                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        </svg>
+                                        Program Settings
                                     </a>
                                 </div>
                             @elseif(Auth::user()->isSupervisor())

@@ -15,7 +15,7 @@
                 <p class="text-gray-600">Review student document submissions by document type.</p>
             </div>
 
-            <!-- Quick Stats -->
+            <!-- Quick Stats (pinned above) -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 @php
                     $totalSubmissions = $students->sum(function($student) {
@@ -24,137 +24,80 @@
                     $pendingSubmissions = $students->sum(function($student) {
                         return $student->documentSubmissions->where('status', 'submitted')->count();
                     });
-                    $underReviewSubmissions = $students->sum(function($student) {
-                        return $student->documentSubmissions->where('status', 'under_review')->count();
-                    });
                     $approvedSubmissions = $students->sum(function($student) {
                         return $student->documentSubmissions->where('status', 'approved')->count();
                     });
+                    $rejectedSubmissions = $students->sum(function($student) {
+                        return $student->documentSubmissions->where('status', 'rejected')->count();
+                    });
                 @endphp
-                
-                <div class="bg-white rounded-lg border border-gray-200 p-4">
-                    <div class="text-center">
-                        <p class="text-2xl font-bold text-gray-900">{{ $totalSubmissions }}</p>
-                        <p class="text-sm text-gray-500">Total</p>
-                    </div>
-                </div>
+                <div class="bg-white rounded-lg border border-gray-200 p-4"><div class="text-center"><p class="text-2xl font-bold text-gray-900">{{ $totalSubmissions }}</p><p class="text-sm text-gray-500">Total</p></div></div>
+                <div class="bg-white rounded-lg border border-gray-200 p-4"><div class="text-center"><p class="text-2xl font-bold text-yellow-600">{{ $pendingSubmissions }}</p><p class="text-sm text-gray-500">Pending</p></div></div>
+                <div class="bg-white rounded-lg border border-gray-200 p-4"><div class="text-center"><p class="text-2xl font-bold text-green-600">{{ $approvedSubmissions }}</p><p class="text-sm text-gray-500">Approved</p></div></div>
+                <div class="bg-white rounded-lg border border-gray-200 p-4"><div class="text-center"><p class="text-2xl font-bold text-red-600">{{ $rejectedSubmissions }}</p><p class="text-sm text-gray-500">Rejected</p></div></div>
+            </div>
 
-                <div class="bg-white rounded-lg border border-gray-200 p-4">
-                    <div class="text-center">
-                        <p class="text-2xl font-bold text-yellow-600">{{ $pendingSubmissions }}</p>
-                        <p class="text-sm text-gray-500">Pending</p>
-                    </div>
+            <!-- Tabs -->
+            <div class="mb-6">
+                <div class="flex items-center space-x-2 mb-3">
+                    <button class="px-4 py-2 rounded-lg text-sm font-medium bg-ojt-primary text-white hover:bg-maroon-700" id="tabQueue">Needs Review</button>
+                    <button class="px-4 py-2 rounded-lg text-sm font-medium bg-white border hover:bg-gray-50" id="tabAll">All Submissions</button>
+                    <button class="px-4 py-2 rounded-lg text-sm font-medium bg-white border hover:bg-gray-50" id="tabPerReq">Per‑Requirement</button>
+                    <button class="px-4 py-2 rounded-lg text-sm font-medium bg-white border hover:bg-gray-50" id="tabByStudent">By Student</button>
                 </div>
+                <!-- Move sidebar above lists for consistent layout -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
+                    <aside id="studentSidebar" class="hidden bg-white rounded-lg border border-gray-200 p-4 h-max lg:col-span-1 order-1 lg:order-none">
+                        <div class="flex items-center space-x-3 mb-3">
+                            <div id="sidebarAvatar" class="w-12 h-12 rounded-full bg-ojt-primary flex items-center justify-center text-white font-bold overflow-hidden">S</div>
+                            <div>
+                                <h3 class="text-sm font-semibold text-ojt-dark" id="sidebarName">Student</h3>
+                                <div class="text-xs text-gray-600" id="sidebarId">—</div>
+                            </div>
+                        </div>
+                        <div id="sidebarContent" class="text-sm text-gray-700 space-y-1"></div>
+                        <div class="mt-4 pt-4 border-t">
+                            <h4 class="text-xs font-medium text-gray-500 mb-2">Pre‑requirements</h4>
+                            <div id="sidebarChecklist" class="text-xs text-gray-600 space-y-1"></div>
+                        </div>
+                    </aside>
+                    <div class="lg:col-span-2 order-2 lg:order-none">
+                        <div id="queueList" class="space-y-3"></div>
+                        <div id="allList" class="space-y-3 hidden"></div>
+                        <div id="perReqGrid" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
+                            @foreach($requirements as $requirement)
+                                <div class="bg-white rounded-lg border border-gray-200 p-4">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <h3 class="text-sm font-semibold text-ojt-dark">{{ $requirement->name }}</h3>
+                                        <span class="text-xs px-2 py-0.5 rounded-full {{ $requirement->type === 'pre_placement' ? 'bg-blue-100 text-blue-800' : ($requirement->type === 'post_placement' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800') }}">{{ ucfirst(str_replace('_',' ', $requirement->type)) }}</span>
+                                    </div>
+                                    <button class="inline-flex items-center px-3 py-1.5 bg-ojt-primary text-white text-xs font-medium rounded-lg hover:bg-maroon-700 transition-colors"
+                                            onclick="showDocumentDetails('{{ $requirement->id }}', '{{ addslashes($requirement->name) }}')">
+                                        View Submissions
+                                    </button>
+                                </div>
+                            @endforeach
+                        </div>
+                        <!-- By Student Pane -->
+                        <div id="byStudentPane" class="hidden">
+                            <!-- Student Search & Selection -->
+                            <div class="bg-white rounded-lg border border-gray-200 p-4 mb-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <input id="studentSearchInput" placeholder="Search student name or ID..." class="px-3 py-2 border rounded-md focus:ring-ojt-primary focus:border-ojt-primary" />
+                                    <select id="studentPicker" class="px-3 py-2 border rounded-md focus:ring-ojt-primary focus:border-ojt-primary">
+                                        <option value="">Select a student...</option>
+                                    </select>
+                </div>
+            </div>
 
-                <div class="bg-white rounded-lg border border-gray-200 p-4">
-                    <div class="text-center">
-                        <p class="text-2xl font-bold text-orange-600">{{ $underReviewSubmissions }}</p>
-                        <p class="text-sm text-gray-500">Reviewing</p>
+                            <!-- Requirements Checklist -->
+                            <div id="studentChecklist" class="space-y-4"></div>
+                </div>
+                    </div>
                     </div>
             </div>
 
-                <div class="bg-white rounded-lg border border-gray-200 p-4">
-                    <div class="text-center">
-                        <p class="text-2xl font-bold text-green-600">{{ $approvedSubmissions }}</p>
-                        <p class="text-sm text-gray-500">Approved</p>
-                            </div>
-                            </div>
-                        </div>
-
-            <!-- Document Types Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                @foreach($requirements as $requirement)
-                    @php
-                        $submissions = collect();
-                        foreach($students as $student) {
-                            $studentSubmissions = $student->documentSubmissions->where('document_requirement_id', $requirement->id);
-                            $submissions = $submissions->merge($studentSubmissions);
-                        }
-                        
-                        $pendingCount = $submissions->where('status', 'submitted')->count();
-                        $underReviewCount = $submissions->where('status', 'under_review')->count();
-                        $approvedCount = $submissions->where('status', 'approved')->count();
-                        $rejectedCount = $submissions->where('status', 'rejected')->count();
-                        $totalCount = $submissions->count();
-                            @endphp
-                            
-                    <div class="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow cursor-pointer" 
-                         onclick="showDocumentDetails('{{ $requirement->id }}', '{{ $requirement->name }}')">
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="flex-1">
-                                <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ $requirement->name }}</h3>
-                                <p class="text-sm text-gray-600 mb-3">{{ $requirement->description }}</p>
-                                
-                                <!-- Document Type Badge -->
-                                <div class="mb-4">
-                                    @if($requirement->type === 'pre_placement')
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                            Pre-Placement
-                                        </span>
-                                    @elseif($requirement->type === 'post_placement')
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                            Post-Placement
-                                        </span>
-                                    @else
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                            Ongoing
-                                                </span>
-                                    @endif
-                                </div>
-                            </div>
-                                            </div>
-                                            
-                        <!-- Submission Stats -->
-                        <div class="space-y-2">
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-600">Total Submissions:</span>
-                                <span class="font-medium">{{ $totalCount }}</span>
-                                            </div>
-
-                            @if($pendingCount > 0)
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-yellow-600">Pending:</span>
-                                    <span class="font-medium text-yellow-600">{{ $pendingCount }}</span>
-                                </div>
-                            @endif
-                            
-                            @if($underReviewCount > 0)
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-orange-600">Under Review:</span>
-                                    <span class="font-medium text-orange-600">{{ $underReviewCount }}</span>
-                                                </div>
-                                            @endif
-
-                            @if($approvedCount > 0)
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-green-600">Approved:</span>
-                                    <span class="font-medium text-green-600">{{ $approvedCount }}</span>
-                                </div>
-                            @endif
-                            
-                            @if($rejectedCount > 0)
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-red-600">Rejected:</span>
-                                    <span class="font-medium text-red-600">{{ $rejectedCount }}</span>
-                                </div>
-                                                @endif
-                                            </div>
-                        
-                        <!-- Click to view message -->
-                        <div class="mt-4 pt-4 border-t border-gray-200">
-                            <p class="text-xs text-gray-500 text-center">
-                                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                </svg>
-                                Click to view submissions
-                            </p>
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                </div>
-                        </div>
-                    </div>
+            <!-- Removed old grid; replaced with pinned Quick Stats above -->
 
     <!-- Document Details Modal -->
     <div id="documentModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
@@ -198,7 +141,6 @@
                     <div class="mb-4">
                         <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
                         <select id="status" name="status" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-ojt-primary focus:border-ojt-primary">
-                            <option value="under_review">Under Review</option>
                             <option value="approved">Approved</option>
                             <option value="rejected">Rejected</option>
                         </select>
@@ -225,6 +167,231 @@
     <script>
         let currentDocumentId = null;
         let allStudents = @json($students);
+        let allRequirements = @json($requirements);
+        const storageBase = "{{ asset('storage') }}/";
+        let currentTab = 'queue';
+        let selectedStudentId = null;
+
+        // Flatten submissions for filters
+        const allSubmissions = [];
+        allStudents.forEach(s => {
+            (s.document_submissions || []).forEach(sub => {
+                const req = allRequirements.find(r => r.id === sub.document_requirement_id);
+                allSubmissions.push({ submission: sub, student: s, requirement: req || {} });
+            });
+        });
+
+        const queueList = document.getElementById('queueList');
+        const allList = document.getElementById('allList');
+        const perReqGrid = document.getElementById('perReqGrid');
+        const sidebar = document.getElementById('studentSidebar');
+        const sidebarContent = document.getElementById('sidebarContent');
+        const sidebarChecklist = document.getElementById('sidebarChecklist');
+
+        // Tabs
+        document.getElementById('tabQueue').addEventListener('click', () => setTab('queue'));
+        document.getElementById('tabAll').addEventListener('click', () => setTab('all'));
+        document.getElementById('tabPerReq').addEventListener('click', () => setTab('per'));
+        document.getElementById('tabByStudent').addEventListener('click', () => setTab('student'));
+
+        function setTab(tab) {
+            currentTab = tab;
+            document.getElementById('tabQueue').className = 'px-4 py-2 rounded-lg text-sm font-medium ' + (tab==='queue'?'bg-ojt-primary text-white':'bg-white border');
+            document.getElementById('tabAll').className = 'px-4 py-2 rounded-lg text-sm font-medium ' + (tab==='all'?'bg-ojt-primary text-white':'bg-white border');
+            document.getElementById('tabPerReq').className = 'px-4 py-2 rounded-lg text-sm font-medium ' + (tab==='per'?'bg-ojt-primary text-white':'bg-white border');
+            document.getElementById('tabByStudent').className = 'px-4 py-2 rounded-lg text-sm font-medium ' + (tab==='student'?'bg-ojt-primary text-white':'bg-white border');
+            queueList.classList.toggle('hidden', tab!=='queue');
+            allList.classList.toggle('hidden', tab!=='all');
+            perReqGrid.classList.toggle('hidden', tab!=='per');
+            document.getElementById('byStudentPane').classList.toggle('hidden', tab!=='student');
+            // Sidebar should only appear in By Student tab
+            if (tab !== 'student') {
+                sidebar.classList.add('hidden');
+            } else if (selectedStudentId) {
+                openSidebar(selectedStudentId);
+            }
+            renderLists();
+            if (tab==='student') initStudentPicker();
+        }
+
+        // Filters scoped to current tab
+        // Simple render trigger only
+        function debounce(fn, delay=200){ let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), delay); }; }
+
+        function renderLists() {
+            const q = '';
+            const reqId = '';
+            const status = '';
+            const type = '';
+
+            if (currentTab === 'queue' || currentTab === 'all') {
+                const filtered = allSubmissions;
+
+                if (currentTab === 'queue') {
+                    const queue = filtered.filter(i => i.submission.status==='submitted')
+                                          .sort((a,b)=> new Date(b.submission.created_at) - new Date(a.submission.created_at));
+                    queueList.innerHTML = queue.length ? queue.map(renderRow).join('') : emptyState('No items to review');
+                    allList.innerHTML = '';
+                } else {
+                    const allSorted = filtered.slice().sort((a,b)=> new Date(b.submission.created_at) - new Date(a.submission.created_at));
+                    allList.innerHTML = allSorted.length ? allSorted.map(renderRow).join('') : emptyState('No submissions found');
+                    queueList.innerHTML = '';
+                }
+            } else if (currentTab === 'per') {
+                // Filter requirements by search/type only (status not applicable here)
+                const reqs = allRequirements;
+                if (reqs.length === 0) {
+                    perReqGrid.innerHTML = emptyState('No requirements match your filters');
+                } else {
+                    perReqGrid.innerHTML = reqs.map(requirement => `
+                        <div class=\"bg-white rounded-lg border border-gray-200 p-4\">
+                            <div class=\"flex items-center justify-between mb-2\">
+                                <h3 class=\"text-sm font-semibold text-ojt-dark\">${escapeHtml(requirement.name)}</h3>
+                                <span class=\"text-xs px-2 py-0.5 rounded-full ${requirement.type === 'pre_placement' ? 'bg-blue-100 text-blue-800' : (requirement.type === 'post_placement' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800')}\">${(requirement.type||'').replace('_',' ')}</span>
+                            </div>
+                            <button class=\"inline-flex items-center px-3 py-1.5 bg-ojt-primary text-white text-xs font-medium rounded-lg hover:bg-maroon-700 transition-colors\"
+                                    onclick=\"showDocumentDetails('${requirement.id}', '${escapeHtml(requirement.name)}')\">
+                                View Submissions
+                            </button>
+                        </div>
+                    `).join('');
+                }
+            } else if (currentTab === 'student') {
+                // Rendering handled by initStudentPicker/select change
+            }
+        }
+
+        function initStudentPicker(){
+            const picker = document.getElementById('studentPicker');
+            const search = document.getElementById('studentSearchInput');
+            if (!picker || !search) return;
+            
+            const renderOptions = () => {
+                const q = (search.value||'').toLowerCase();
+                const filtered = allStudents.filter(s => 
+                    ((s.name||'') + ' ' + (s.student_profile?.student_id||'')).toLowerCase().includes(q)
+                );
+                const opts = filtered.map(s => 
+                    `<option value="${s.id}">${escapeHtml(s.name||'Student')} • ${escapeHtml(s.student_profile?.student_id||'')}</option>`
+                ).join('');
+                picker.innerHTML = `<option value="">Select a student...</option>` + opts;
+            };
+            
+            if (!picker.dataset.initialized){
+                search.addEventListener('input', debounce(renderOptions, 150));
+                picker.addEventListener('change', () => {
+                    const id = parseInt(picker.value, 10);
+                    const s = allStudents.find(x => x.id === id);
+                    if (s) {
+                        selectedStudentId = id;
+                        openSidebar(id); // Show profile in sidebar
+                        renderStudentChecklist(s);
+                    } else {
+                        selectedStudentId = null;
+                        sidebar.classList.add('hidden');
+                        document.getElementById('studentChecklist').innerHTML = emptyState('Select a student to view requirements');
+                    }
+                });
+                picker.dataset.initialized = '1';
+                renderOptions();
+            }
+        }
+
+        function renderStudentChecklist(student){
+            const container = document.getElementById('studentChecklist');
+            if (!student){ container.innerHTML = emptyState('Select a student to view requirements'); return; }
+
+            // Build a map of requirementId -> latest submission status
+            const subMap = {};
+            (student.document_submissions||[]).forEach(sub => {
+                const key = sub.document_requirement_id;
+                if (!subMap[key] || new Date(sub.created_at) > new Date(subMap[key].created_at)) {
+                    subMap[key] = sub;
+                }
+            });
+
+            const groups = {
+                pre_placement: [],
+                ongoing: [],
+                post_placement: []
+            };
+
+            allRequirements.forEach(req => {
+                const latest = subMap[req.id] || null;
+                const status = latest ? latest.status : 'pending';
+                const satisfied = status === 'approved';
+                const required = !!req.is_required;
+                const missing = required && !satisfied;
+                groups[req.type||'ongoing'].push({req, latest, status, required, missing});
+            });
+
+            const renderGroup = (title, arr) => {
+                const missingCount = arr.filter(x => x.missing).length;
+                const totalRequired = arr.filter(x => x.required).length;
+                const header = `
+                    <div class=\"flex items-center justify-between mb-2\">
+                        <h3 class=\"text-sm font-semibold text-ojt-dark\">${title}</h3>
+                        <span class=\"text-xs ${missingCount? 'text-red-700' : 'text-green-700'}\">${missingCount} missing of ${totalRequired} required</span>
+                    </div>`;
+                
+                const items = arr.map(x => `
+                    <div class=\"flex items-start justify-between border rounded-lg p-3 mb-2\">
+                        <div class=\"text-sm\">
+                            <div class=\"font-medium\">${escapeHtml(x.req.name)}</div>
+                            <div class=\"text-xs text-gray-500\">${x.required? 'Required' : 'Optional'} • Types: ${escapeHtml((x.req.file_types||[]).join(', ')||'Any')} • Max: ${escapeHtml(String(x.req.max_file_size_mb||'')+' MB')}</div>
+                            ${x.latest && x.latest.feedback ? `<div class=\"mt-1 text-xs text-blue-800 bg-blue-50 border border-blue-200 rounded px-2 py-1\">Feedback: ${escapeHtml(x.latest.feedback)}</div>` : ''}
+                        </div>
+                        <div class=\"text-xs text-right\">
+                            <span class=\"inline-flex items-center px-2 py-0.5 rounded-full ${getStatusBadge(x.status)}\">${getStatusText(x.status)}</span>
+                            ${x.latest ? `<div class=\"text-gray-500 mt-1\">${formatDate(x.latest.created_at)}</div>` : ''}
+                            ${x.latest ? `
+                                <div class=\"mt-2 space-x-2\">
+                                    <a href=\"/documents/submissions/${x.latest.id}/stream\" target=\"_blank\" class=\"inline-flex items-center px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200\">Preview</a>
+                                    <a href=\"/documents/submissions/${x.latest.id}/download\" class=\"inline-flex items-center px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200\">Download</a>
+                                    ${x.latest.status === 'submitted' ? `
+                                        <button onclick=\"openReviewModal(${x.latest.id}, '${escapeHtml(student.name)}', '${x.latest.status}')\" class=\"inline-flex items-center px-2 py-1 bg-ojt-primary text-white rounded hover:bg-maroon-700\">Review</button>
+                                    ` : ''}
+                                </div>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+                
+                return `<div class=\"bg-white rounded-lg border border-gray-200 p-4\">${header}${items || '<div class=\"text-xs text-gray-500\">No requirements</div>'}</div>`;
+            };
+
+            container.innerHTML = `
+                ${renderGroup('Pre‑placement', groups.pre_placement)}
+                ${renderGroup('Ongoing', groups.ongoing)}
+                ${renderGroup('Post‑placement', groups.post_placement)}
+            `;
+        }
+
+        function renderRow(item) {
+            const { submission, student, requirement } = item;
+            return `
+                <div class="bg-white border rounded-lg p-4">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-2 mb-1">
+                                <span class="text-sm font-medium text-ojt-dark">${student.name}</span>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getStatusBadge(submission.status)}">${getStatusText(submission.status)}</span>
+                            </div>
+                            <div class="text-xs text-gray-600 mb-1">${student.student_profile?.student_id || ''} • ${(student.student_profile?.course||'') + ' - ' + (student.student_profile?.department||'')}</div>
+                            <div class="text-xs text-gray-500">${requirement?.name || '—'} • ${submission.original_filename || ''} • ${formatFileSize(submission.file_size)} • ${formatDate(submission.created_at)}</div>
+                        </div>
+                        <div class="flex items-center space-x-2 ml-4">
+                            <a href="/documents/submissions/${submission.id}/stream" target="_blank" class="inline-flex items-center px-3 py-1.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-lg hover:bg-blue-200 transition-colors">Preview</a>
+                            <a href="/documents/submissions/${submission.id}/download" class="inline-flex items-center px-3 py-1.5 bg-white border text-xs font-medium rounded-lg hover:bg-gray-50 transition-colors">Download</a>
+                            ${(submission.status==='submitted') ? `
+                                <button class="inline-flex items-center px-3 py-1.5 bg-ojt-primary text-white text-xs font-medium rounded-lg hover:bg-maroon-700 transition-colors" onclick="openReviewModal(${submission.id}, '${escapeHtml(student.name)}', '${submission.status}')">Review</button>
+                            `: ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function emptyState(text) { return `<div class=\"text-center text-gray-500 bg-white border rounded-lg p-6\">${text}</div>`; }
 
         function showDocumentDetails(documentId, documentName) {
             currentDocumentId = documentId;
@@ -287,14 +454,18 @@
                             </div>
                             
                             <div class="flex items-center space-x-2 ml-4">
+                                <a href="/documents/submissions/${submission.id}/stream" target="_blank" 
+                                   class="inline-flex items-center px-3 py-1.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-lg hover:bg-blue-200 transition-colors">
+                                    Preview
+                                </a>
                                 <a href="/documents/submissions/${submission.id}/download" 
-                                   class="text-sm text-ojt-primary hover:text-maroon-700 underline">
+                                   class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-200 transition-colors">
                                     Download
                                 </a>
                                 
-                                ${submission.status === 'submitted' || submission.status === 'under_review' ? `
+                                ${submission.status === 'submitted' ? `
                                     <button onclick="openReviewModal(${submission.id}, '${student.name}', '${submission.status}')" 
-                                            class="text-sm text-blue-600 hover:text-blue-800 underline">
+                                            class="inline-flex items-center px-3 py-1.5 bg-ojt-primary text-white text-xs font-medium rounded-lg hover:bg-maroon-700 transition-colors">
                                         Review
                                     </button>
                                 ` : ''}
@@ -308,7 +479,6 @@
         function getStatusBadge(status) {
             const badges = {
                 'submitted': 'bg-blue-100 text-blue-800',
-                'under_review': 'bg-yellow-100 text-yellow-800',
                 'approved': 'bg-green-100 text-green-800',
                 'rejected': 'bg-red-100 text-red-800'
             };
@@ -318,7 +488,6 @@
         function getStatusText(status) {
             const texts = {
                 'submitted': 'Submitted',
-                'under_review': 'Under Review',
                 'approved': 'Approved',
                 'rejected': 'Rejected'
             };
@@ -375,10 +544,47 @@
             document.getElementById('reviewForm').action = `/coord/documents/submissions/${submissionId}/review`;
             
             const statusSelect = document.getElementById('status');
-            statusSelect.value = currentStatus || 'under_review';
+            statusSelect.value = currentStatus || 'submitted';
             
             document.getElementById('reviewModal').classList.remove('hidden');
         }
+
+
+        function openSidebar(studentId) {
+            const s = allStudents.find(x => x.id === studentId);
+            if (!s) return;
+            sidebar.classList.remove('hidden');
+            document.getElementById('sidebarName').textContent = s.name || 'Student';
+            document.getElementById('sidebarId').textContent = s.student_profile?.student_id || '—';
+            const avatar = document.getElementById('sidebarAvatar');
+            const imgPath = s.student_profile?.profile_image || '';
+            if (imgPath) {
+                // Normalize possible 'public/' prefix
+                const normalized = imgPath.startsWith('public/') ? imgPath.replace(/^public\//, '') : imgPath;
+                avatar.innerHTML = `<img src="${storageBase}${normalized}" alt="Avatar" class="w-12 h-12 object-cover">`;
+            } else {
+            const initials = (s.name||'S').trim().split(' ').map(p=>p[0]).join('').slice(0,2).toUpperCase();
+            avatar.textContent = initials;
+            }
+            sidebarContent.innerHTML = `
+                <div><span class=\"font-medium\">Program:</span> ${escapeHtml(s.student_profile?.course||'')}</div>
+                <div><span class=\"font-medium\">Department:</span> ${escapeHtml(s.student_profile?.department||'')}</div>
+                <div><span class=\"font-medium\">Email:</span> ${escapeHtml(s.email||'')}</div>
+            `;
+            const preReqs = allRequirements.filter(r => r.type==='pre_placement');
+            sidebarChecklist.innerHTML = preReqs.map(r => {
+                const sub = (s.document_submissions||[]).find(ss => ss.document_requirement_id === r.id);
+                const ok = sub && sub.status === 'approved';
+                return `<div class=\"flex items-center justify-between\"><span>${escapeHtml(r.name)}</span><span class=\"text-xs ${ok?'text-green-700':'text-gray-500'}\">${ok?'Approved':'Pending'}</span></div>`;
+            }).join('');
+        }
+
+        function escapeHtml(str){
+            return (str||'').toString().replace(/[&<>\"]/g, function(m){return ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'} )[m];});
+        }
+
+        // Init
+        setTab('queue');
 
         function closeReviewModal() {
             document.getElementById('reviewModal').classList.add('hidden');

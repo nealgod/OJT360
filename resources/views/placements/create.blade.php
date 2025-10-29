@@ -8,7 +8,7 @@
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-8">
                 <h1 class="text-2xl font-bold text-ojt-dark mb-6">I’ve been accepted</h1>
 
-                <form method="POST" action="{{ route('placements.store') }}" enctype="multipart/form-data" class="space-y-6">
+                <form method="POST" action="{{ route('placements.store') }}" class="space-y-6">
                     @csrf
 
                     <div>
@@ -143,18 +143,6 @@
                         <x-input-error class="mt-2" :messages="$errors->get('note')" />
                     </div>
 
-                    <div>
-                        <x-input-label for="proof" :value="__('Upload Proof of Acceptance *')" />
-                        <div class="mt-1">
-                            <input id="proof" name="proof" type="file" 
-                                   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-ojt-primary file:text-white hover:file:bg-maroon-700 file:cursor-pointer border border-gray-300 rounded-md cursor-pointer" 
-                                   accept=".jpg,.jpeg,.png,.pdf" required />
-                        </div>
-                        <x-input-error class="mt-2" :messages="$errors->get('proof')" />
-                        <p class="mt-1 text-xs text-gray-500">
-                            Upload acceptance letter, email screenshot, or any proof of your internship acceptance. (JPG, PNG, PDF - Max 4MB)
-                        </p>
-                    </div>
 
                     <div class="flex items-center gap-4">
                         <x-primary-button type="submit" onclick="return validateForm()">Submit</x-primary-button>

@@ -52,7 +52,6 @@ class PlacementRequestController extends Controller
             'supervisor_name' => ['nullable', 'string', 'max:255'],
             'supervisor_email' => ['nullable', 'email', 'max:255'],
             'note' => ['nullable', 'string', 'max:2000'],
-            'proof' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
         ]);
 
         // Custom validation: Either company_id or external_company_name must be provided
@@ -73,10 +72,6 @@ class PlacementRequestController extends Controller
             }
         }
 
-        $path = null;
-        if ($request->hasFile('proof')) {
-            $path = $request->file('proof')->store('placement-proofs', 'public');
-        }
 
         $companyId = $hasCompany ? (int) $request->input('company_id') : null;
 
@@ -95,37 +90,10 @@ class PlacementRequestController extends Controller
             'supervisor_name' => $request->string('supervisor_name'),
             'supervisor_email' => $request->string('supervisor_email'),
             'note' => $request->string('note'),
-            'proof_path' => $path,
         ]);
 
         // Supervisor assignment will be done manually by coordinator later
 
-        // Auto-create or update document submission for Letter of Acceptance if proof was uploaded
-        if ($path && \Illuminate\Support\Facades\Schema::hasTable('document_requirements') && \Illuminate\Support\Facades\Schema::hasTable('student_document_submissions')) {
-            $letterOfAcceptanceRequirement = \App\Models\DocumentRequirement::where('name', 'LIKE', '%Letter of Acceptance%')
-                ->where('type', 'pre_placement')
-                ->first();
-            
-            if ($letterOfAcceptanceRequirement) {
-                // Use updateOrCreate to handle existing submissions
-                \App\Models\StudentDocumentSubmission::updateOrCreate(
-                    [
-                        'student_user_id' => Auth::id(),
-                        'document_requirement_id' => $letterOfAcceptanceRequirement->id,
-                    ],
-                    [
-                        'file_path' => $path,
-                        'original_filename' => $request->file('proof')->getClientOriginalName(),
-                        'file_size' => $request->file('proof')->getSize(),
-                        'mime_type' => $request->file('proof')->getMimeType(),
-                        'status' => 'submitted',
-                        'feedback' => null, // Reset feedback when updating
-                        'reviewed_by' => null, // Reset review status
-                        'reviewed_at' => null,
-                    ]
-                );
-            }
-        }
 
         // Notify coordinator (reuse existing Notification model)
         $coordinator = User::where('role', 'coordinator')
@@ -146,21 +114,6 @@ class PlacementRequestController extends Controller
                     'company_id' => $placement->company_id,
                     'external_company_name' => $placement->external_company_name,
                 ],
-            ]);
-
-            // Also create a message from student to coordinator
-            \App\Models\Message::create([
-                'sender_id' => $user->id,
-                'recipient_id' => $coordinator->id,
-                'subject' => 'New Placement Request - ' . ($placement->company?->name ?? $placement->external_company_name),
-                'message' => "Hello " . $coordinator->name . ",\n\nI have submitted a placement request for " . ($placement->company?->name ?? $placement->external_company_name) . " starting on " . $placement->start_date->format('M d, Y') . ".\n\n" . 
-                           "Company Details:\n" .
-                           ($placement->company_id ? "• Company: " . $placement->company->name . "\n" : "• External Company: " . $placement->external_company_name . "\n") .
-                           "• Contact Person: " . $placement->contact_person . "\n" .
-                           ($placement->supervisor_name ? "• Supervisor: " . $placement->supervisor_name . "\n" : "") .
-                           ($placement->supervisor_email ? "• Supervisor Email: " . $placement->supervisor_email . "\n" : "") .
-                           ($placement->note ? "• Additional Notes: " . $placement->note . "\n" : "") .
-                           "\nPlease review and approve my placement request. Thank you!",
             ]);
         }
 
@@ -288,37 +241,6 @@ class PlacementRequestController extends Controller
             ]);
         }
 
-        // Auto-approve the Letter of Acceptance document (proof) if it was submitted with placement request
-        if ($placementRequest->proof_path && \Illuminate\Support\Facades\Schema::hasTable('document_requirements')) {
-            $letterOfAcceptanceRequirement = \App\Models\DocumentRequirement::where('name', 'LIKE', '%Letter of Acceptance%')
-                ->where('type', 'pre_placement')
-                ->first();
-            
-            if ($letterOfAcceptanceRequirement && \Illuminate\Support\Facades\Schema::hasTable('student_document_submissions')) {
-                $updated = \App\Models\StudentDocumentSubmission::where('student_user_id', $student->id)
-                    ->where('document_requirement_id', $letterOfAcceptanceRequirement->id)
-                    ->where('file_path', $placementRequest->proof_path)
-                    ->update([
-                        'status' => 'approved',
-                        'reviewed_by' => Auth::id(),
-                        'reviewed_at' => now(),
-                    ]);
-                
-                // Notify student that their Letter of Acceptance was automatically approved
-                if ($updated) {
-                    \App\Models\Notification::create([
-                        'user_id' => $student->id,
-                        'type' => 'document_reviewed',
-                        'title' => 'Letter of Acceptance Approved',
-                        'message' => 'Your Letter of Acceptance has been automatically approved along with your placement.',
-                        'data' => [
-                            'requirement_id' => $letterOfAcceptanceRequirement->id,
-                            'status' => 'approved',
-                        ],
-                    ]);
-                }
-            }
-        }
 
         // Notify student
         \App\Models\Notification::create([
@@ -329,14 +251,6 @@ class PlacementRequestController extends Controller
             'data' => [
                 'placement_request_id' => $placementRequest->id,
             ],
-        ]);
-
-        // Also create a message from coordinator to student
-        \App\Models\Message::create([
-            'sender_id' => Auth::id(),
-            'recipient_id' => $student->id,
-            'subject' => 'Placement Request Approved - ' . ($placementRequest->company?->name ?? $placementRequest->external_company_name),
-            'message' => "Congratulations! Your placement request has been approved. You can now start your OJT at " . ($placementRequest->company?->name ?? $placementRequest->external_company_name) . " starting " . $placementRequest->start_date->format('M d, Y') . ". Please ensure you complete all required hours and submit your daily reports.",
         ]);
 
         return back()->with('success', 'Placement approved and OJT activated.');
@@ -453,21 +367,6 @@ class PlacementRequestController extends Controller
                     'student_user_id' => $user->id,
                     'company_id' => $proposal->company_id ?? ($placementRequest->company_id ?? $placementRequest->student->studentProfile?->assigned_company_id),
                 ],
-            ]);
-
-            // Also send a message to the coordinator's inbox for easy tracking
-            $companyName = $placementRequest->company?->name ?? $placementRequest->external_company_name ?? 'the company';
-            \App\Models\Message::create([
-                'sender_id' => $user->id,
-                'recipient_id' => $coordinator->id,
-                'subject' => 'Supervisor details for my placement at ' . $companyName,
-                'message' => "Hi " . $coordinator->name . ",\n\n" .
-                    "I’d like to share my supervisor details for my approved OJT placement at " . $companyName . "." . "\n\n" .
-                    "Supervisor Name: " . ($request->input('proposed_name') ?: '—') . "\n" .
-                    "Supervisor Email: " . ($request->input('proposed_email') ?: '—') . "\n" .
-                    (trim((string)$request->input('notes')) !== '' ? ("Notes: " . trim((string)$request->input('notes')) . "\n\n") : "") .
-                    "Could you please create or assign this supervisor to my profile when you’re able?\n\n" .
-                    "Thank you,\n" . $user->name,
             ]);
         }
 

@@ -104,6 +104,12 @@
                                     </div>
                                 </div>
                                 <div class="md:col-span-2">
+                                    @if(!empty($sub->feedback))
+                                        <div class="mb-3 bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+                                            <div class="font-medium mb-1">Coordinator Feedback</div>
+                                            <p>{{ $sub->feedback }}</p>
+                                        </div>
+                                    @endif
                                     <div class="flex space-x-3">
                                         <a href="{{ route('documents.download', $sub) }}" class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
                                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -122,6 +128,10 @@
                                                     Cancel Submission
                                                 </button>
                                             </form>
+                                        @elseif($sub->status === 'rejected')
+                                            <a href="#resubmit" onclick="document.getElementById('resubmitForm').scrollIntoView({behavior: 'smooth'}); return false;" class="inline-flex items-center px-4 py-2 bg-ojt-primary text-white text-sm font-medium rounded-lg hover:bg-maroon-700 transition-colors">
+                                                Resubmit
+                                            </a>
                                         @endif
                                     </div>
                                 </div>
@@ -129,12 +139,16 @@
                         @endforeach
                     </div>
                 </div>
-            @else
+            @endif
+
+            <!-- Resubmit / First Submission Form -->
+            @php($latest = isset($submissionsAll) ? $submissionsAll->first() : null)
+            @if(!$latest || $latest->status === 'rejected')
                 <!-- Submission Form -->
                 <div class="bg-white rounded-lg border border-gray-200 p-6">
                     <h2 class="text-lg font-semibold text-ojt-dark mb-4">Submit Document</h2>
                     
-                    <form method="POST" action="{{ route('documents.submit', $requirement) }}" enctype="multipart/form-data" class="space-y-6">
+                    <form id="resubmitForm" method="POST" action="{{ route('documents.submit', $requirement) }}" enctype="multipart/form-data" class="space-y-6">
                         @csrf
                         
                         <div>

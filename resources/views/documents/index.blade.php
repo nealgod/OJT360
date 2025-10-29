@@ -15,12 +15,13 @@
                 <p class="text-gray-600">Submit your required documents for OJT</p>
             </div>
 
-            <!-- Simple Progress -->
+            <!-- Pre‑requirements Checklist & Progress -->
             <div class="bg-white rounded-lg border border-gray-200 p-4 mb-6">
                 @php
+                    // Compute overall progress
                     $totalRequired = $prePlacement->where('is_required', true)->count() + 
-                                   $postPlacement->where('is_required', true)->count() + 
-                                   $ongoing->where('is_required', true)->count();
+                                     $postPlacement->where('is_required', true)->count() + 
+                                     $ongoing->where('is_required', true)->count();
                     $submittedRequired = 0;
                     foreach([$prePlacement, $postPlacement, $ongoing] as $group) {
                         foreach($group->where('is_required', true) as $req) {
@@ -30,13 +31,42 @@
                         }
                     }
                     $progressPercentage = $totalRequired > 0 ? round(($submittedRequired / $totalRequired) * 100) : 0;
+
+                    // Pre‑placement checklist counts (Approved gating)
+                    $preTotal = $prePlacement->count();
+                    $preApproved = 0;
+                    $prePendingList = [];
+                    foreach($prePlacement as $req) {
+                        $first = ($submissions[$req->id] ?? collect())->first();
+                        if($first && $first->status === 'approved') {
+                            $preApproved++;
+                        } else {
+                            $prePendingList[] = $req->name;
+                        }
+                    }
                 @endphp
                 <div class="flex items-center justify-between mb-2">
-                    <span class="text-sm font-medium text-gray-700">Progress</span>
+                    <span class="text-sm font-medium text-gray-700">Overall Progress</span>
                     <span class="text-sm text-gray-600">{{ $submittedRequired }}/{{ $totalRequired }} completed</span>
                 </div>
-                <div class="w-full bg-gray-200 rounded-full h-2">
+                <div class="w-full bg-gray-200 rounded-full h-2 mb-4">
                     <div class="bg-ojt-primary h-2 rounded-full transition-all duration-300" style="width: {{ $progressPercentage }}%"></div>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <div class="text-sm text-gray-700">
+                        <span class="font-medium">Pre‑requirements:</span>
+                        <span>{{ $preApproved }} of {{ $preTotal }} approved</span>
+                    </div>
+                    @if($preTotal > 0 && $preApproved === $preTotal)
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">You can proceed to Placement</span>
+                    @else
+                        @if(count($prePendingList))
+                            <div class="text-xs text-gray-500">
+                                Missing: {{ implode(', ', array_map(fn($n)=>Str::limit($n, 20), $prePendingList)) }}
+                            </div>
+                        @endif
+                    @endif
                 </div>
             </div>
 
@@ -51,6 +81,8 @@
                         <select id="statusFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-ojt-primary focus:border-ojt-primary">
                             <option value="all">All Status</option>
                             <option value="submitted">Submitted</option>
+                            <option value="approved">Approved</option>
+                            <option value="rejected">Rejected</option>
                             <option value="pending">Not Submitted</option>
                         </select>
                         <select id="typeFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-ojt-primary focus:border-ojt-primary">
@@ -238,9 +270,11 @@
                     const cardType = card.getAttribute('data-type');
 
                     const matchesSearch = cardName.includes(searchTerm);
-                    const matchesStatus = statusValue === 'all' || 
+                                const matchesStatus = statusValue === 'all' || 
                         (statusValue === 'pending' && cardStatus === 'pending') ||
-                        (statusValue === 'submitted' && cardStatus === 'submitted');
+                        (statusValue === 'submitted' && cardStatus === 'submitted') ||
+                        (statusValue === 'approved' && cardStatus === 'approved') ||
+                        (statusValue === 'rejected' && cardStatus === 'rejected');
                     const matchesType = typeValue === 'all' || cardType === typeValue;
 
                     if (matchesSearch && matchesStatus && matchesType) {

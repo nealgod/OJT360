@@ -122,9 +122,10 @@ class DocumentController extends Controller
             ],
         ]);
 
-        // Check against the dynamic limit
+        // Check against the dynamic limit (ignore previously rejected submissions to allow resubmission)
         $existingCount = StudentDocumentSubmission::where('student_user_id', $user->id)
             ->where('document_requirement_id', $requirement->id)
+            ->where('status', '!=', 'rejected')
             ->count();
         $newFilesCount = count($request->file('files'));
         
@@ -150,6 +151,28 @@ class DocumentController extends Controller
 
         $fileCount = count($files);
         $message = $fileCount === 1 ? 'Document submitted successfully!' : $fileCount . ' documents submitted successfully!';
+        
+        // Notify coordinator about new document submission
+        $coordinator = \App\Models\User::where('role', 'coordinator')
+            ->whereHas('coordinatorProfile', function($q) use ($user) {
+                $q->where('department', $user->studentProfile?->department);
+            })
+            ->first();
+
+        if ($coordinator) {
+            \App\Models\Notification::create([
+                'user_id' => $coordinator->id,
+                'type' => 'document_submitted',
+                'title' => 'New Document Submission',
+                'message' => $user->name . ' submitted ' . ($fileCount === 1 ? 'a document' : $fileCount . ' documents') . ' for ' . $requirement->name . '.',
+                'data' => [
+                    'submission_count' => $fileCount,
+                    'requirement_id' => $requirement->id,
+                    'requirement_name' => $requirement->name,
+                    'student_user_id' => $user->id,
+                ],
+            ]);
+        }
         
         return redirect()->route('documents.index')->with('success', $message);
     }
@@ -200,13 +223,72 @@ class DocumentController extends Controller
         return Storage::disk('public')->download($submission->file_path, $submission->original_filename);
     }
 
+    public function preview(StudentDocumentSubmission $submission)
+    {
+        $user = Auth::user();
+
+        if ($user->isStudent() && $submission->student_user_id !== $user->id) {
+            abort(403);
+        }
+
+        if ($user->isCoordinator()) {
+            $student = \App\Models\User::find($submission->student_user_id);
+            $department = $user->coordinatorProfile?->department;
+            if ($student->studentProfile?->department !== $department) {
+                abort(403);
+            }
+        }
+
+        if (!Storage::disk('public')->exists($submission->file_path)) {
+            abort(404, 'File not found');
+        }
+
+        // Return the file directly for inline viewing (like Google Classroom)
+        $mime = $submission->mime_type ?: Storage::disk('public')->mimeType($submission->file_path);
+        
+        return Storage::disk('public')->response($submission->file_path, $submission->original_filename, [
+            'Content-Type' => $mime,
+            'Content-Disposition' => 'inline'
+        ]);
+    }
+
+    public function stream(StudentDocumentSubmission $submission)
+    {
+        $user = Auth::user();
+
+        if ($user->isStudent() && $submission->student_user_id !== $user->id) {
+            abort(403);
+        }
+
+        if ($user->isCoordinator()) {
+            $student = \App\Models\User::find($submission->student_user_id);
+            $department = $user->coordinatorProfile?->department;
+            if ($student->studentProfile?->department !== $department) {
+                abort(403);
+            }
+        }
+
+        if (!Storage::disk('public')->exists($submission->file_path)) {
+            abort(404, 'File not found');
+        }
+
+        $relative = str_starts_with($submission->file_path, 'public/') ? substr($submission->file_path, 7) : $submission->file_path;
+        $absolute = storage_path('app/public/' . $relative);
+        $mime = $submission->mime_type ?: mime_content_type($absolute);
+
+        return response()->file($absolute, [
+            'Content-Type' => $mime,
+            'Content-Disposition' => 'inline; filename="' . $submission->original_filename . '"'
+        ]);
+    }
+
     public function review(Request $request, StudentDocumentSubmission $submission)
     {
         $user = Auth::user();
         abort_unless($user->isCoordinator(), 403);
 
         $request->validate([
-            'status' => ['required', 'in:under_review,approved,rejected'],
+            'status' => ['required', 'in:approved,rejected'],
             'feedback' => ['nullable', 'string', 'max:1000'],
         ]);
 
@@ -222,12 +304,17 @@ class DocumentController extends Controller
             'user_id' => $submission->student_user_id,
             'type' => 'document_reviewed',
             'title' => 'Document Review Update',
-            'message' => 'Your ' . $submission->requirement->name . ' has been ' . $request->status . '.',
+            'message' => 'Your ' . ($submission->requirement?->name ?? 'document') . ' has been ' . $request->status . '.',
             'data' => [
                 'submission_id' => $submission->id,
                 'status' => $request->status,
             ],
         ]);
+
+        // Check if all pre-placement requirements are now approved
+        if ($request->status === 'approved' && $submission->requirement?->type === 'pre_placement') {
+            $this->checkPrePlacementCompletion($submission->student_user_id);
+        }
 
         return back()->with('success', 'Document review updated successfully!');
     }
@@ -285,9 +372,55 @@ class DocumentController extends Controller
             ]);
 
             $updatedCount++;
+
+            // Check pre-placement completion for each approved pre-placement document
+            if ($status === 'approved' && $submission->requirement?->type === 'pre_placement') {
+                $this->checkPrePlacementCompletion($submission->student_user_id);
+            }
         }
 
         $action = $status === 'approved' ? 'approved' : 'rejected';
         return back()->with('success', "Successfully {$action} {$updatedCount} document(s)!");
+    }
+
+    /**
+     * Check if all pre-placement requirements are completed and notify student
+     */
+    private function checkPrePlacementCompletion($studentId)
+    {
+        // Get all pre-placement requirements
+        $prePlacementRequirements = \App\Models\DocumentRequirement::where('type', 'pre_placement')
+            ->where('is_required', true)
+            ->get();
+
+        if ($prePlacementRequirements->isEmpty()) {
+            return;
+        }
+
+        // Get all approved pre-placement submissions for this student
+        $approvedSubmissions = \App\Models\StudentDocumentSubmission::where('student_user_id', $studentId)
+            ->whereIn('document_requirement_id', $prePlacementRequirements->pluck('id'))
+            ->where('status', 'approved')
+            ->get();
+
+        // Check if all required pre-placement requirements are approved
+        $approvedRequirementIds = $approvedSubmissions->pluck('document_requirement_id')->toArray();
+        $allRequiredApproved = $prePlacementRequirements->every(function ($requirement) use ($approvedRequirementIds) {
+            return in_array($requirement->id, $approvedRequirementIds);
+        });
+
+        if ($allRequiredApproved) {
+            // Send special notification for pre-placement completion
+            \App\Models\Notification::create([
+                'user_id' => $studentId,
+                'type' => 'pre_placement_complete',
+                'title' => '🎉 Pre-Placement Requirements Complete!',
+                'message' => 'Congratulations! All your pre-placement requirements have been approved. You can now proceed with your placement request.',
+                'data' => [
+                    'type' => 'pre_placement_complete',
+                    'completed_at' => now()->toISOString(),
+                ],
+            ]);
+        }
     }
 }

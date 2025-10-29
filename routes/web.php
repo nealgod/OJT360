@@ -84,13 +84,14 @@ Route::middleware(['auth', 'force.password.change', 'profile.complete'])->group(
         Route::post('/reports/weekly/submit', [App\Http\Controllers\DailyReportController::class, 'submitWeeklyToDocuments'])->name('reports.submit-weekly');
     });
     
-    // Document Requirements (visible after placement starts to reduce overwhelm)
     // Document Requirements
     Route::get('/documents', [App\Http\Controllers\DocumentController::class, 'index'])->name('documents.index');
     Route::get('/documents/{requirement}', [App\Http\Controllers\DocumentController::class, 'show'])->name('documents.show');
     Route::post('/documents/{requirement}/submit', [App\Http\Controllers\DocumentController::class, 'submit'])->name('documents.submit');
     Route::delete('/documents/submissions/{submission}/cancel', [App\Http\Controllers\DocumentController::class, 'cancel'])->name('documents.cancel');
     Route::get('/documents/submissions/{submission}/download', [App\Http\Controllers\DocumentController::class, 'download'])->name('documents.download');
+    Route::get('/documents/submissions/{submission}/preview', [App\Http\Controllers\DocumentController::class, 'preview'])->name('documents.preview');
+    Route::get('/documents/submissions/{submission}/stream', [App\Http\Controllers\DocumentController::class, 'stream'])->name('documents.stream');
 });
 
 // Admin routes
@@ -153,6 +154,7 @@ Route::middleware(['auth', 'verified', 'force.password.change', 'profile.complet
     // Coordinator document review
     Route::get('/coord/documents', [App\Http\Controllers\DocumentController::class, 'index'])->name('coord.documents.index');
     Route::post('/coord/documents/submissions/{submission}/review', [App\Http\Controllers\DocumentController::class, 'review'])->name('coord.documents.review');
+    Route::post('/coord/documents/bulk-review', [App\Http\Controllers\DocumentController::class, 'bulkReview'])->name('coord.documents.bulk-review');
 
     // API route for fetching attendance data by date
     Route::get('/api/attendance/{date}', function (Request $request, $date) {
