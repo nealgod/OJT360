@@ -106,7 +106,13 @@ Route::middleware(['auth', 'verified', 'force.password.change', 'profile.complet
 
 require __DIR__.'/auth.php';
 
-// Claim-your-account routes
+// Student registration (two-step: verify ID -> complete registration)
+Route::get('/register/student', [App\Http\Controllers\ActivationController::class, 'showVerifyId'])->name('student.verify-id');
+Route::post('/register/student', [App\Http\Controllers\ActivationController::class, 'sendVerification'])->name('student.send-verification');
+Route::get('/register/student/complete/{token}', [App\Http\Controllers\ActivationController::class, 'showComplete'])->name('student.complete.show');
+Route::post('/register/student/complete', [App\Http\Controllers\ActivationController::class, 'completeRegistration'])->name('student.complete');
+
+// Legacy claim-your-account (kept temporarily; will be hidden in UI)
 Route::get('/activate', [App\Http\Controllers\ActivationController::class, 'show'])->name('activate.show');
 Route::post('/activate', [App\Http\Controllers\ActivationController::class, 'activate'])->name('activate');
 

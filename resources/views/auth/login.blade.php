@@ -101,7 +101,7 @@
 
         <!-- Register and Home Buttons -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <a href="{{ route('activate.show') }}" 
+            <a href="{{ route('student.verify-id') }}" 
                class="w-full inline-flex items-center justify-center border-2 border-ojt-primary text-ojt-primary px-4 py-3 rounded-lg font-medium hover:bg-ojt-primary hover:text-white transition-colors duration-200">
                 Activate Account
                 <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

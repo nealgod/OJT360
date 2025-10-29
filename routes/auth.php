@@ -17,7 +17,7 @@ use Illuminate\Support\Str;
 Route::middleware('guest')->group(function () {
     // Disable public registration: redirect to Activate flow
     Route::get('register', function () {
-        return redirect()->route('activate.show');
+        return redirect()->route('student.verify-id');
     })->name('register');
 
     Route::post('register', function () {

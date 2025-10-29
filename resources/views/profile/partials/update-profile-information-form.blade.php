@@ -19,7 +19,12 @@
 
         <div>
             <x-input-label for="name" :value="__('Name')" />
-            <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name', $user->name)" required autofocus autocomplete="name" />
+            @if($user->isStudent())
+                <x-text-input id="name" type="text" class="mt-1 block w-full bg-gray-50" :value="old('name', $user->name)" disabled />
+                <input type="hidden" name="name" value="{{ old('name', $user->name) }}" />
+            @else
+                <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name', $user->name)" required autofocus autocomplete="name" />
+            @endif
             <x-input-error class="mt-2" :messages="$errors->get('name')" />
         </div>
 

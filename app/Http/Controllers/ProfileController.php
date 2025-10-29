@@ -35,7 +35,12 @@ class ProfileController extends Controller
         $user = $request->user();
         
         // Update basic user information
-        $user->fill($request->only(['name', 'email']));
+        if ($user->isStudent()) {
+            // Lock name for students; allow email edits only via admin/coordinator rules
+            $user->fill($request->only(['email']));
+        } else {
+            $user->fill($request->only(['name', 'email']));
+        }
 
         if ($user->isDirty('email')) {
             $user->email_verified_at = null;
