@@ -38,20 +38,35 @@
 				<input type="hidden" name="student_id" value="{{ $studentId }}" />
 				<x-primary-button>Resend Link to Email</x-primary-button>
 			</form>
+
+			<div>
+				<p class="text-sm text-gray-600">Or enter your Student ID to request a new link:</p>
+				<form method="POST" action="{{ route('student.send-verification') }}" class="mt-2 flex gap-2">
+					@csrf
+					<input id="student_id" name="student_id" type="text" placeholder="Student ID" required class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-ojt-primary focus:border-ojt-primary" />
+					<x-primary-button>Send Link</x-primary-button>
+				</form>
+			</div>
+
+			<div>
+				<a class="underline text-sm text-ojt-primary hover:text-ojt-primary/80" href="{{ route('student.verify-id') }}">Back to Activate Account</a>
+			</div>
+		@else
+			<div class="space-y-4">
+				<div class="rounded-md bg-yellow-50 p-3 text-sm text-yellow-800">
+					@if(!empty($email))
+						<p>The coordinator invitation for <strong>{{ $email }}</strong> has {{ $reason === 'expired' ? 'expired' : 'become invalid' }}.</p>
+					@else
+						<p>This coordinator invitation link is not valid.</p>
+					@endif
+				</div>
+				<form method="POST" action="{{ route('coordinator.invite.resend') }}" class="flex gap-2">
+					@csrf
+					<input id="coord_email" name="email" type="email" value="{{ $email ?? '' }}" placeholder="Coordinator email" required class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-ojt-primary focus:border-ojt-primary" />
+					<x-primary-button>Resend Invitation</x-primary-button>
+				</form>
+			</div>
 		@endif
-
-		<div>
-			<p class="text-sm text-gray-600">Or enter your Student ID to request a new link:</p>
-			<form method="POST" action="{{ route('student.send-verification') }}" class="mt-2 flex gap-2">
-				@csrf
-				<input id="student_id" name="student_id" type="text" placeholder="Student ID" required class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-ojt-primary focus:border-ojt-primary" />
-				<x-primary-button>Send Link</x-primary-button>
-			</form>
-		</div>
-
-		<div>
-			<a class="underline text-sm text-ojt-primary hover:text-ojt-primary/80" href="{{ route('student.verify-id') }}">Back to Activate Account</a>
-		</div>
 	</div>
 </x-guest-layout>
 

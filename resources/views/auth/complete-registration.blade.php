@@ -17,24 +17,37 @@
 		@csrf
 		<input type="hidden" name="token" value="{{ $token }}" />
 
-		<div class="grid grid-cols-1 gap-4">
+		<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 			<div>
 				<label class="block text-sm font-medium text-gray-700">Student ID</label>
-				<input type="text" value="{{ $studentId }}" class="mt-1 block w-full border-gray-300 rounded-md bg-gray-100" disabled />
+				<input type="text" value="{{ $studentId }}" class="mt-1 block w-full border-gray-300 rounded-md bg-gray-100 cursor-not-allowed" disabled />
 			</div>
 			<div>
 				<label class="block text-sm font-medium text-gray-700">Name</label>
-				<input type="text" value="{{ $name }}" class="mt-1 block w-full border-gray-300 rounded-md bg-gray-100" disabled />
+				<input type="text" value="{{ $name }}" class="mt-1 block w-full border-gray-300 rounded-md bg-gray-100 cursor-not-allowed" disabled />
 			</div>
-			<div>
+			<div class="sm:col-span-2">
 				<label class="block text-sm font-medium text-gray-700">Email</label>
-				<input type="email" value="{{ $email }}" class="mt-1 block w-full border-gray-300 rounded-md bg-gray-100" disabled />
+				<input type="email" value="{{ $email }}" class="mt-1 block w-full border-gray-300 rounded-md bg-gray-100 cursor-not-allowed" disabled />
 			</div>
 		</div>
 
+		@if(!empty($department) || !empty($program))
+			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+				<div>
+					<label class="block text-sm font-medium text-gray-700">Department</label>
+					<input type="text" value="{{ $department ?? 'N/A' }}" class="mt-1 block w-full border-gray-300 rounded-md bg-gray-100 cursor-not-allowed" disabled />
+				</div>
+				<div>
+					<label class="block text-sm font-medium text-gray-700">Program</label>
+					<input type="text" value="{{ $program ?? 'N/A' }}" class="mt-1 block w-full border-gray-300 rounded-md bg-gray-100 cursor-not-allowed" disabled />
+				</div>
+			</div>
+		@endif
+
 		<div>
-			<label for="phone" class="block text-sm font-medium text-gray-700">Phone (optional)</label>
-			<input id="phone" name="phone" type="text" value="{{ old('phone') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" />
+			<label for="phone" class="block text-sm font-medium text-gray-700">Phone Number</label>
+			<input id="phone" name="phone" type="text" value="{{ old('phone') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required />
 		</div>
 
 		<div>

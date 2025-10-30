@@ -21,16 +21,36 @@
                 <form action="{{ route('admin.users.store') }}" method="POST" class="p-6">
                     @csrf
                     
-                    <!-- Name -->
+                    <!-- Role -->
+                    <div class="mb-8">
+                        <label for="role" class="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                        <select id="role" 
+                                name="role" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ojt-primary focus:border-ojt-primary @error('role') border-red-500 @enderror"
+                                required>
+                            <option value="">Select a role</option>
+                            <option value="coordinator" {{ old('role') === 'coordinator' ? 'selected' : '' }}>Coordinator</option>
+                            <option value="supervisor" {{ old('role') === 'supervisor' ? 'selected' : '' }}>Supervisor</option>
+                        </select>
+                        @error('role')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Dynamic notice -->
                     <div class="mb-6">
+                        <div id="role-notice" class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-700"></div>
+                    </div>
+
+                    <!-- Name -->
+                    <div id="name-field" class="mb-6">
                         <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
                         <input type="text" 
                                id="name" 
                                name="name" 
                                value="{{ old('name') }}"
                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ojt-primary focus:border-ojt-primary @error('name') border-red-500 @enderror"
-                               placeholder="Enter full name"
-                               required>
+                               placeholder="Enter full name">
                         @error('name')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -47,32 +67,6 @@
                                placeholder="Enter email address"
                                required>
                         @error('email')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Password auto-generated notice -->
-                    <div class="mb-6">
-                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                            <p class="text-sm text-gray-700">
-                                A temporary password will be generated automatically. The user will receive
-                                an email to verify their account and set a new password.
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Role -->
-                    <div class="mb-8">
-                        <label for="role" class="block text-sm font-medium text-gray-700 mb-2">Role</label>
-                        <select id="role" 
-                                name="role" 
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ojt-primary focus:border-ojt-primary @error('role') border-red-500 @enderror"
-                                required>
-                            <option value="">Select a role</option>
-                            <option value="coordinator" {{ old('role') === 'coordinator' ? 'selected' : '' }}>Coordinator</option>
-                            <option value="supervisor" {{ old('role') === 'supervisor' ? 'selected' : '' }}>Supervisor</option>
-                        </select>
-                        @error('role')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
@@ -106,7 +100,7 @@
 
                     <!-- Submit Button -->
                     <div class="flex flex-col sm:flex-row gap-4">
-                        <button type="submit" class="flex-1 bg-ojt-primary text-white py-3 px-6 rounded-lg font-medium hover:bg-maroon-700 transition-colors duration-200">
+                        <button id="submit-btn" type="submit" class="flex-1 bg-ojt-primary text-white py-3 px-6 rounded-lg font-medium hover:bg-maroon-700 transition-colors duration-200">
                             Create User Account
                         </button>
                         <a href="{{ route('admin.users') }}" class="flex-1 bg-white border border-gray-300 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-50 transition-colors duration-200 text-center">
@@ -119,6 +113,10 @@
                             const coordFields = document.getElementById('coordinator-fields');
                             const deptEl = document.getElementById('department_id');
                             const progEl = document.getElementById('program_id');
+                            const nameField = document.getElementById('name-field');
+                            const nameInput = document.getElementById('name');
+                            const noticeEl = document.getElementById('role-notice');
+                            const submitBtn = document.getElementById('submit-btn');
                             const departments = @json(($departments ?? []));
 
                             function setPrograms() {
@@ -132,8 +130,26 @@
                             }
 
                             function toggleRoleFields() {
-                                const show = roleEl.value === 'coordinator';
-                                coordFields.style.display = show ? '' : 'none';
+                                const role = roleEl.value;
+                                const isCoordinator = role === 'coordinator';
+
+                                // Show/hide coordinator-specific selects
+                                coordFields.style.display = isCoordinator ? '' : 'none';
+
+                                // Name required only for supervisor; hide/disable for coordinator
+                                if (isCoordinator) {
+                                    nameField.style.display = 'none';
+                                    nameInput.removeAttribute('required');
+                                    nameInput.setAttribute('disabled', 'disabled');
+                                    noticeEl.textContent = 'We will email an invitation link to complete the coordinator account (1 hour expiry).';
+                                    submitBtn.textContent = 'Send Invitation';
+                                } else {
+                                    nameField.style.display = '';
+                                    nameInput.removeAttribute('disabled');
+                                    nameInput.setAttribute('required', 'required');
+                                    noticeEl.textContent = 'A temporary password will be generated and emailed. The supervisor must verify and change it on first login.';
+                                    submitBtn.textContent = 'Create User Account';
+                                }
                             }
 
                             roleEl.addEventListener('change', toggleRoleFields);

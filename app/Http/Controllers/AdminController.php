@@ -33,8 +33,8 @@ class AdminController extends Controller
     public function storeUser(Request $request)
     {
         $rules = [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'name' => ['nullable', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255'],
             'role' => ['required', 'in:coordinator,supervisor'],
         ];
 
@@ -45,50 +45,46 @@ class AdminController extends Controller
 
         $validated = $request->validate($rules);
 
-        // Generate a temporary secure password
-        $temporaryPassword = Str::random(16);
+        // Coordinator: send invitation link and do not create user yet
+        if ($request->role === 'coordinator') {
+            if (User::where('email', $request->email)->exists()) {
+                return back()->withErrors(['email' => 'Email is already in use by another account.'])->withInput();
+            }
 
-        // Create user with unverified email
+            $token = Str::random(64);
+            $invite = \App\Models\CoordinatorInvitation::create([
+                'email' => strtolower($request->email),
+                'token' => $token,
+                'department_id' => $request->integer('department_id'),
+                'program_id' => $request->integer('program_id'),
+                'expires_at' => now()->addHour(),
+            ]);
+
+            $link = \Illuminate\Support\Facades\URL::route('coordinator.complete.show', ['token' => $invite->token]);
+            try {
+                \Illuminate\Support\Facades\Mail::to($invite->email)->send(new \App\Mail\CoordinatorInvitationMail($link));
+            } catch (\Exception $e) {
+                \Log::error('Coordinator invite email failed: ' . $e->getMessage());
+            }
+
+            return redirect()->route('admin.users')->with('success', 'Coordinator invite sent successfully.');
+        }
+
+        // Supervisor: keep temp password flow
+        $temporaryPassword = Str::random(16);
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($temporaryPassword),
-            'role' => $request->role,
+            'role' => 'supervisor',
             'must_change_password' => true,
         ]);
-
-        // Create role-specific profile
-        if ($user->role === 'coordinator') {
-            $deptName = optional(Department::find($request->integer('department_id')))->name;
-            CoordinatorProfile::create([
-                'user_id' => $user->id,
-                'department_id' => $request->integer('department_id'),
-                'program_id' => $request->integer('program_id'),
-                'department' => $deptName,
-                'status' => 'active',
-            ]);
+        try {
+            $user->notify(new VerifyWithTemporaryPassword($temporaryPassword));
+        } catch (\Exception $e) {
+            \Log::error('Email sending failed: ' . $e->getMessage());
         }
 
-        // For coordinator/supervisor: send single email with verification link and temporary password
-        if (in_array($user->role, ['coordinator', 'supervisor'])) {
-            try {
-                $user->notify(new VerifyWithTemporaryPassword($temporaryPassword));
-            } catch (\Exception $e) {
-                // If email fails, just log the error and continue
-                \Log::error('Email sending failed: ' . $e->getMessage());
-                return redirect()->route('admin.users')->with('success', 'User created successfully. Email sending failed - please check email configuration. Temporary password: ' . $temporaryPassword);
-            }
-        } else {
-            // Fallback (students/admins): use default verification
-            if (method_exists($user, 'sendEmailVerificationNotification')) {
-                try {
-                    $user->sendEmailVerificationNotification();
-                } catch (\Exception $e) {
-                    \Log::error('Email sending failed: ' . $e->getMessage());
-                }
-            }
-        }
-
-        return redirect()->route('admin.users')->with('success', 'User created. Verification email with credentials sent.');
+        return redirect()->route('admin.users')->with('success', 'Supervisor account created and credentials emailed.');
     }
 }

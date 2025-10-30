@@ -30,7 +30,7 @@
 
         <div>
             <x-input-label for="email" :value="__('Email')" />
-            @if($user->isStudent())
+            @if($user->isStudent() || $user->isCoordinator())
                 <x-text-input id="email" type="email" class="mt-1 block w-full bg-gray-50" :value="old('email', $user->email)" disabled />
                 <input type="hidden" name="email" value="{{ old('email', $user->email) }}" />
             @else

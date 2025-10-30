@@ -18,8 +18,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-// Get attendance data for a specific date
-Route::get('/attendance/{date}', function (Request $request, $date) {
+// Get attendance data for a specific date (secured)
+Route::middleware('auth:sanctum')->get('/attendance/{date}', function (Request $request, $date) {
     try {
         $user = $request->user();
         

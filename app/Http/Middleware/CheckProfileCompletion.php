@@ -52,9 +52,11 @@ class CheckProfileCompletion
 
         if ($user->isCoordinator()) {
             $profile = $user->coordinatorProfile;
-            return $profile && 
-                   $profile->employee_id && 
-                   $profile->department;
+            // Consider coordinator complete as long as assigned to a department (id or name)
+            // Employee ID can be provided later in profile
+            return $profile && (
+                $profile->department_id || $profile->department
+            );
         }
 
         if ($user->isSupervisor()) {

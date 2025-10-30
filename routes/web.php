@@ -112,6 +112,11 @@ Route::post('/register/student', [App\Http\Controllers\ActivationController::cla
 Route::get('/register/student/complete/{token}', [App\Http\Controllers\ActivationController::class, 'showComplete'])->name('student.complete.show');
 Route::post('/register/student/complete', [App\Http\Controllers\ActivationController::class, 'completeRegistration'])->name('student.complete');
 
+// Coordinator invitation (admin initiated -> email link -> complete)
+Route::get('/register/coordinator/complete/{token}', [App\Http\Controllers\ActivationController::class, 'showCompleteCoordinator'])->name('coordinator.complete.show');
+Route::post('/register/coordinator/complete', [App\Http\Controllers\ActivationController::class, 'completeCoordinator'])->name('coordinator.complete');
+Route::post('/register/coordinator/resend', [App\Http\Controllers\ActivationController::class, 'resendCoordinatorInvite'])->name('coordinator.invite.resend');
+
 // Legacy claim-your-account (kept temporarily; will be hidden in UI)
 Route::get('/activate', [App\Http\Controllers\ActivationController::class, 'show'])->name('activate.show');
 Route::post('/activate', [App\Http\Controllers\ActivationController::class, 'activate'])->name('activate');
