@@ -16,3 +16,7 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+
+# Ensure resume template assets are tracked
+!storage/app/resume-templates/
+!storage/app/resume-templates/**

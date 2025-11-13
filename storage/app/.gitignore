@@ -1,3 +1,5 @@
 *
 !public/
+!resume-templates/
+!resume-templates/**
 !.gitignore
