@@ -92,6 +92,15 @@ Route::middleware(['auth', 'force.password.change', 'profile.complete'])->group(
     Route::get('/documents/submissions/{submission}/download', [App\Http\Controllers\DocumentController::class, 'download'])->name('documents.download');
     Route::get('/documents/submissions/{submission}/preview', [App\Http\Controllers\DocumentController::class, 'preview'])->name('documents.preview');
     Route::get('/documents/submissions/{submission}/stream', [App\Http\Controllers\DocumentController::class, 'stream'])->name('documents.stream');
+    
+    // Resume Builder
+    Route::get('/resume', [App\Http\Controllers\ResumeController::class, 'index'])->name('resume.index');
+    Route::get('/resume/create', [App\Http\Controllers\ResumeController::class, 'create'])->name('resume.create');
+    Route::post('/resume', [App\Http\Controllers\ResumeController::class, 'store'])->name('resume.store');
+    Route::get('/resume/{resume}/edit', [App\Http\Controllers\ResumeController::class, 'edit'])->name('resume.edit');
+    Route::patch('/resume/{resume}', [App\Http\Controllers\ResumeController::class, 'update'])->name('resume.update');
+    Route::delete('/resume/{resume}', [App\Http\Controllers\ResumeController::class, 'destroy'])->name('resume.destroy');
+    Route::get('/resume/{resume}/download', [App\Http\Controllers\ResumeController::class, 'download'])->name('resume.download');
 });
 
 // Admin routes
