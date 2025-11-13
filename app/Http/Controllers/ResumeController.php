@@ -403,18 +403,25 @@ class ResumeController extends Controller
             }
             
             // Draw text at specified coordinates (converting inches to points)
-            // {{ name }} x 3.77 and y 1.70
+            // {{ name }} positioned at 3.49" x 1.18"
             if ($name) {
-                $pdf->SetXY($inchToMm(3.69), $inchToMm(1.12));
-                $pdf->SetFont('Times', 'B', 40); // 40pt as per template label
-                $pdf->Cell($rightColumnWidth, $pointsToMm(40), $name, 0, 1, 'L');
+                $pdf->SetXY($inchToMm(3.49), $inchToMm(1.18));
+                $pdf->SetFont('Times', 'B', 25);
+                $nameLineHeight = $pointsToMm(25 * 1.2);
+                $pdf->MultiCell($rightColumnWidth, $nameLineHeight, $name, 0, 'L');
             }
             
-            // {{ job title }} x 3.81 and y 1.74
+            // Determine baseline for job title (ensuring it appears below name if name wraps)
+            $jobTitleBaseY = $inchToMm(2.03);
+            $nextLineY = $pdf->GetY();
+            $jobTitleY = $name ? max($jobTitleBaseY, $nextLineY + $inchToMm(0.05)) : $jobTitleBaseY;
+
+            // {{ job title }} positioned at 3.49" x 2.03"
             if ($jobTitle) {
-                $pdf->SetXY($inchToMm(3.81), $inchToMm(1.74));
-                $pdf->SetFont('Times', '', 24);
-                $pdf->Cell($rightColumnWidth, $pointsToMm(24), $jobTitle, 0, 1, 'L');
+                $pdf->SetXY($inchToMm(3.49), $jobTitleY);
+                $pdf->SetFont('Times', '', 20);
+                $jobLineHeight = $pointsToMm(20 * 1.2);
+                $pdf->MultiCell($rightColumnWidth, $jobLineHeight, $jobTitle, 0, 'L');
             }
  
             $pdf->SetFont('Times', '', $bodyFontPt);
