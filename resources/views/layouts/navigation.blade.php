@@ -32,9 +32,6 @@
                         <x-nav-link :href="route('documents.index')" :active="request()->routeIs('documents.*')">
                             {{ __('Documents') }}
                         </x-nav-link>
-                        <x-nav-link :href="route('resume.index')" :active="request()->routeIs('resume.*')">
-                            {{ __('Resume Builder') }}
-                        </x-nav-link>
                         {{-- Companies/Placements only after pre-reqs complete --}}
                         @if($preReqComplete)
                             <x-nav-link :href="route('companies.index')" :active="request()->routeIs('companies.*')">
