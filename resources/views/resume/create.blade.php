@@ -31,7 +31,7 @@
                             <input type="text" id="personal_info_job_title" name="personal_info[job_title]"
                                    value="{{ old('personal_info.job_title', $defaultData['personal_info']['job_title'] ?? '') }}"
                                    class="w-full rounded-lg border-gray-300 focus:border-ojt-primary focus:ring-ojt-primary"
-                                   placeholder="e.g., Aspiring Engineer, Future Educator, Creative Professional">
+                                   placeholder="e.g., Student, Aspiring Professional, OJT Trainee">
                             @error('personal_info.job_title')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                         </div>
                         <div>
@@ -75,42 +75,164 @@
                 </div>
 
                 <!-- Education -->
-                <div class="bg-white shadow sm:rounded-lg p-6" x-data="{ educations: {{ json_encode(old('education', $defaultData['education'] ?? [['institution' => '', 'degree' => '', 'department' => '', 'year' => '']])) }} }">
+                <div class="bg-white shadow sm:rounded-lg p-6" x-data="{
+                    showSeniorHigh: {{ old('education.1.institution') ? 'true' : 'false' }},
+                    showJuniorHigh: {{ old('education.2.institution') ? 'true' : 'false' }},
+                    showElementary: {{ old('education.3.institution') ? 'true' : 'false' }},
+                    addNextEducation() {
+                        if (!this.showSeniorHigh) {
+                            this.showSeniorHigh = true;
+                        } else if (!this.showJuniorHigh) {
+                            this.showJuniorHigh = true;
+                        } else if (!this.showElementary) {
+                            this.showElementary = true;
+                        }
+                    }
+                }">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-semibold text-ojt-dark">Education</h3>
-                        <button type="button" @click="educations.push({institution: '', degree: '', department: '', year: ''})"
+                        <button type="button" @click="addNextEducation()" 
+                                x-show="!showSeniorHigh || !showJuniorHigh || !showElementary"
                                 class="text-sm text-ojt-primary hover:text-maroon-700">+ Add Education</button>
                     </div>
-                    <template x-for="(edu, index) in educations" :key="index">
-                        <div class="mb-4 p-4 border border-gray-200 rounded-lg">
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-sm font-medium text-gray-700">Education <span x-text="index + 1"></span></span>
-                                <button type="button" @click="educations.splice(index, 1)" class="text-red-500 hover:text-red-700 text-sm">Remove</button>
+                    
+                    <!-- College/University (Always visible, cannot be removed) -->
+                    <div class="mb-4 p-4 border border-gray-200 rounded-lg">
+                        <h4 class="text-md font-semibold text-gray-700 mb-3">
+                            College/University
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Institution</label>
+                                <input type="text" name="education[0][institution]" 
+                                       value="{{ old('education.0.institution', $defaultData['education'][0]['institution'] ?? 'Eastern Visayas State University') }}"
+                                       placeholder="e.g., Eastern Visayas State University"
+                                       class="w-full rounded-lg border-gray-300 focus:border-ojt-primary focus:ring-ojt-primary">
                             </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Institution</label>
-                                    <input type="text" x-model="edu.institution" :name="`education[${index}][institution]`"
-                                           class="w-full rounded-lg border-gray-300 focus:border-ojt-primary focus:ring-ojt-primary">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Degree/Course</label>
-                                    <input type="text" x-model="edu.degree" :name="`education[${index}][degree]`"
-                                           class="w-full rounded-lg border-gray-300 focus:border-ojt-primary focus:ring-ojt-primary">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Department</label>
-                                    <input type="text" x-model="edu.department" :name="`education[${index}][department]`"
-                                           class="w-full rounded-lg border-gray-300 focus:border-ojt-primary focus:ring-ojt-primary">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Year</label>
-                                    <input type="text" x-model="edu.year" :name="`education[${index}][year]`"
-                                           class="w-full rounded-lg border-gray-300 focus:border-ojt-primary focus:ring-ojt-primary">
-                                </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Degree/Course</label>
+                                <input type="text" name="education[0][degree]" 
+                                       value="{{ old('education.0.degree', $defaultData['education'][0]['degree'] ?? '') }}"
+                                       placeholder="e.g., Bachelor of Science in Information Technology"
+                                       class="w-full rounded-lg border-gray-300 focus:border-ojt-primary focus:ring-ojt-primary">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                                <input type="text" name="education[0][department]" 
+                                       value="{{ old('education.0.department', $defaultData['education'][0]['department'] ?? '') }}"
+                                       placeholder="e.g., College of Engineering"
+                                       class="w-full rounded-lg border-gray-300 focus:border-ojt-primary focus:ring-ojt-primary">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Year Level</label>
+                                <select name="education[0][year_level]" 
+                                        class="w-full rounded-lg border-gray-300 focus:border-ojt-primary focus:ring-ojt-primary">
+                                    <option value="">Select Year Level</option>
+                                    <option value="1st Year" {{ old('education.0.year_level') == '1st Year' ? 'selected' : '' }}>1st Year</option>
+                                    <option value="2nd Year" {{ old('education.0.year_level') == '2nd Year' ? 'selected' : '' }}>2nd Year</option>
+                                    <option value="3rd Year" {{ old('education.0.year_level') == '3rd Year' ? 'selected' : '' }}>3rd Year</option>
+                                    <option value="4th Year" {{ old('education.0.year_level') == '4th Year' ? 'selected' : '' }}>4th Year</option>
+                                    <option value="5th Year" {{ old('education.0.year_level') == '5th Year' ? 'selected' : '' }}>5th Year</option>
+                                </select>
                             </div>
                         </div>
-                    </template>
+                        <input type="hidden" name="education[0][type]" value="college">
+                    </div>
+
+                    <!-- Senior High School (Can be shown/hidden) -->
+                    <div x-show="showSeniorHigh" x-transition class="mb-4 p-4 border border-gray-200 rounded-lg">
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="text-md font-semibold text-gray-700">
+                                Senior High School
+                            </h4>
+                            <button type="button" @click="showSeniorHigh = false" class="text-red-500 hover:text-red-700 text-sm">Remove</button>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">School</label>
+                                <input type="text" name="education[1][institution]" 
+                                       value="{{ old('education.1.institution', '') }}"
+                                       placeholder="e.g., Tacloban National High School"
+                                       :disabled="!showSeniorHigh"
+                                       class="w-full rounded-lg border-gray-300 focus:border-ojt-primary focus:ring-ojt-primary">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Strand</label>
+                                <input type="text" name="education[1][strand]" 
+                                       value="{{ old('education.1.strand', '') }}"
+                                       placeholder="e.g., STEM, ABM, HUMSS, TVL"
+                                       :disabled="!showSeniorHigh"
+                                       class="w-full rounded-lg border-gray-300 focus:border-ojt-primary focus:ring-ojt-primary">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Year/Period</label>
+                                <input type="text" name="education[1][year_period]" 
+                                       value="{{ old('education.1.year_period', '') }}"
+                                       placeholder="e.g., 2018-2020"
+                                       :disabled="!showSeniorHigh"
+                                       class="w-full rounded-lg border-gray-300 focus:border-ojt-primary focus:ring-ojt-primary">
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" name="education[1][type]" :value="showSeniorHigh ? 'senior_high' : ''">
+
+                    <!-- Junior High School (Can be shown/hidden) -->
+                    <div x-show="showJuniorHigh" x-transition class="mb-4 p-4 border border-gray-200 rounded-lg">
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="text-md font-semibold text-gray-700">
+                                Junior High School
+                            </h4>
+                            <button type="button" @click="showJuniorHigh = false" class="text-red-500 hover:text-red-700 text-sm">Remove</button>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">School</label>
+                                <input type="text" name="education[2][institution]" 
+                                       value="{{ old('education.2.institution', '') }}"
+                                       placeholder="e.g., Tacloban City National High School"
+                                       :disabled="!showJuniorHigh"
+                                       class="w-full rounded-lg border-gray-300 focus:border-ojt-primary focus:ring-ojt-primary">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Year/Period</label>
+                                <input type="text" name="education[2][year_period]" 
+                                       value="{{ old('education.2.year_period', '') }}"
+                                       placeholder="e.g., 2014-2018"
+                                       :disabled="!showJuniorHigh"
+                                       class="w-full rounded-lg border-gray-300 focus:border-ojt-primary focus:ring-ojt-primary">
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" name="education[2][type]" :value="showJuniorHigh ? 'junior_high' : ''">
+
+                    <!-- Elementary (Can be shown/hidden) -->
+                    <div x-show="showElementary" x-transition class="mb-4 p-4 border border-gray-200 rounded-lg">
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="text-md font-semibold text-gray-700">
+                                Elementary
+                            </h4>
+                            <button type="button" @click="showElementary = false" class="text-red-500 hover:text-red-700 text-sm">Remove</button>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">School</label>
+                                <input type="text" name="education[3][institution]" 
+                                       value="{{ old('education.3.institution', '') }}"
+                                       placeholder="e.g., Tacloban Central Elementary School"
+                                       :disabled="!showElementary"
+                                       class="w-full rounded-lg border-gray-300 focus:border-ojt-primary focus:ring-ojt-primary">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Year/Period</label>
+                                <input type="text" name="education[3][year_period]" 
+                                       value="{{ old('education.3.year_period', '') }}"
+                                       placeholder="e.g., 2008-2014"
+                                       :disabled="!showElementary"
+                                       class="w-full rounded-lg border-gray-300 focus:border-ojt-primary focus:ring-ojt-primary">
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" name="education[3][type]" :value="showElementary ? 'elementary' : ''">
                 </div>
 
                 <!-- Work Experience -->
@@ -130,26 +252,31 @@
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Company</label>
                                     <input type="text" x-model="exp.company" :name="`work_experience[${index}][company]`"
+                                           placeholder="e.g., Company Name or Organization"
                                            class="w-full rounded-lg border-gray-300 focus:border-ojt-primary focus:ring-ojt-primary">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Position</label>
                                     <input type="text" x-model="exp.position" :name="`work_experience[${index}][position]`"
+                                           placeholder="e.g., Intern, Assistant, Trainee"
                                            class="w-full rounded-lg border-gray-300 focus:border-ojt-primary focus:ring-ojt-primary">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                                    <input type="text" x-model="exp.start_date" :name="`work_experience[${index}][start_date]`" placeholder="MM/YYYY"
+                                    <input type="text" x-model="exp.start_date" :name="`work_experience[${index}][start_date]`" 
+                                           placeholder="e.g., 01/2024"
                                            class="w-full rounded-lg border-gray-300 focus:border-ojt-primary focus:ring-ojt-primary">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                                    <input type="text" x-model="exp.end_date" :name="`work_experience[${index}][end_date]`" placeholder="MM/YYYY or Present"
+                                    <input type="text" x-model="exp.end_date" :name="`work_experience[${index}][end_date]`" 
+                                           placeholder="e.g., 06/2024 or Present"
                                            class="w-full rounded-lg border-gray-300 focus:border-ojt-primary focus:ring-ojt-primary">
                                 </div>
                                 <div class="md:col-span-2">
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
                                     <textarea x-model="exp.description" :name="`work_experience[${index}][description]`" rows="3"
+                                              placeholder="Describe your responsibilities and achievements..."
                                               class="w-full rounded-lg border-gray-300 focus:border-ojt-primary focus:ring-ojt-primary"></textarea>
                                 </div>
                             </div>
@@ -164,12 +291,13 @@
                         <button type="button" @click="skills.push('')"
                                 class="text-sm text-ojt-primary hover:text-maroon-700">+ Add Skill</button>
                     </div>
+                    <div class="text-xs text-gray-500 mb-3">Add your technical skills, soft skills, and languages</div>
                     <template x-for="(skill, index) in skills" :key="index">
                         <div class="flex items-center gap-2 mb-2">
                             <input type="text" x-model="skills[index]" :name="`skills[${index}]`"
                                    class="flex-1 rounded-lg border-gray-300 focus:border-ojt-primary focus:ring-ojt-primary"
-                                   placeholder="Enter a skill">
-                            <button type="button" @click="skills.splice(index, 1)" class="text-red-500 hover:text-red-700">Remove</button>
+                                   placeholder="e.g., Communication, Teamwork, Microsoft Office, English">
+                            <button type="button" @click="skills.splice(index, 1)" class="text-red-500 hover:text-red-700 text-sm">Remove</button>
                         </div>
                     </template>
                 </div>
@@ -181,12 +309,13 @@
                         <button type="button" @click="certifications.push({name: ''})"
                                 class="text-sm text-ojt-primary hover:text-maroon-700">+ Add Certification</button>
                     </div>
+                    <div class="text-xs text-gray-500 mb-3">Add professional certifications, licenses, or training programs</div>
                     <template x-for="(cert, index) in certifications" :key="index">
                         <div class="flex items-center gap-2 mb-2">
                             <input type="text" x-model="certifications[index].name" :name="`certifications[${index}][name]`"
                                    class="flex-1 rounded-lg border-gray-300 focus:border-ojt-primary focus:ring-ojt-primary"
-                                   placeholder="Enter certification name">
-                            <button type="button" @click="certifications.splice(index, 1)" class="text-red-500 hover:text-red-700">Remove</button>
+                                   placeholder="e.g., First Aid Training, TESDA NC II, Seminar Certificate">
+                            <button type="button" @click="certifications.splice(index, 1)" class="text-red-500 hover:text-red-700 text-sm">Remove</button>
                         </div>
                     </template>
                 </div>

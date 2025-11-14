@@ -65,7 +65,7 @@ class ProfileController extends Controller
      */
     private function updateStudentProfile(ProfileUpdateRequest $request, $user)
     {
-        $profileData = $request->only(['student_id', 'course', 'department', 'phone']);
+        $profileData = $request->only(['student_id', 'course', 'department', 'phone', 'address']);
         
         // Handle profile image upload
         if ($request->hasFile('profile_image')) {

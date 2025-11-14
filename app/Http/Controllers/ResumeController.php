@@ -44,7 +44,7 @@ class ResumeController extends Controller
                 'job_title' => '',
                 'email' => $user->email,
                 'phone' => $studentProfile->phone ?? '',
-                'address' => '',
+                'address' => $studentProfile->address ?? '',
             ],
             'education' => [
                 [
@@ -94,14 +94,29 @@ class ResumeController extends Controller
 
         // Collections sanitization
         $education = collect($validated['education'] ?? [])->map(function ($edu) {
-            return [
+            $type = trim($edu['type'] ?? 'college');
+            $data = [
+                'type' => $type,
                 'institution' => trim($edu['institution'] ?? ''),
-                'degree' => trim($edu['degree'] ?? ''),
-                'department' => trim($edu['department'] ?? ''),
-                'year' => trim($edu['year'] ?? ''),
             ];
+            
+            // Add type-specific fields
+            if ($type === 'college') {
+                $data['degree'] = trim($edu['degree'] ?? '');
+                $data['department'] = trim($edu['department'] ?? '');
+                $data['year_level'] = trim($edu['year_level'] ?? '');
+            } elseif ($type === 'senior_high') {
+                $data['strand'] = trim($edu['strand'] ?? '');
+                $data['year_period'] = trim($edu['year_period'] ?? '');
+            } else {
+                // junior_high or elementary
+                $data['year_period'] = trim($edu['year_period'] ?? '');
+            }
+            
+            return $data;
         })->filter(function ($edu) {
-            return $edu['institution'] !== '' || $edu['degree'] !== '' || $edu['department'] !== '' || $edu['year'] !== '';
+            // Keep entry if institution is not empty
+            return !empty($edu['institution']);
         })->values()->all();
 
         $workExperience = collect($validated['work_experience'] ?? [])->map(function ($exp) {
@@ -189,14 +204,29 @@ class ResumeController extends Controller
         $personalInfo['address'] = isset($personalInfo['address']) ? trim($personalInfo['address']) : null;
 
         $education = collect($validated['education'] ?? [])->map(function ($edu) {
-            return [
+            $type = trim($edu['type'] ?? 'college');
+            $data = [
+                'type' => $type,
                 'institution' => trim($edu['institution'] ?? ''),
-                'degree' => trim($edu['degree'] ?? ''),
-                'department' => trim($edu['department'] ?? ''),
-                'year' => trim($edu['year'] ?? ''),
             ];
+            
+            // Add type-specific fields
+            if ($type === 'college') {
+                $data['degree'] = trim($edu['degree'] ?? '');
+                $data['department'] = trim($edu['department'] ?? '');
+                $data['year_level'] = trim($edu['year_level'] ?? '');
+            } elseif ($type === 'senior_high') {
+                $data['strand'] = trim($edu['strand'] ?? '');
+                $data['year_period'] = trim($edu['year_period'] ?? '');
+            } else {
+                // junior_high or elementary
+                $data['year_period'] = trim($edu['year_period'] ?? '');
+            }
+            
+            return $data;
         })->filter(function ($edu) {
-            return $edu['institution'] !== '' || $edu['degree'] !== '' || $edu['department'] !== '' || $edu['year'] !== '';
+            // Keep entry if institution is not empty
+            return !empty($edu['institution']);
         })->values()->all();
 
         $workExperience = collect($validated['work_experience'] ?? [])->map(function ($exp) {
@@ -272,7 +302,7 @@ class ResumeController extends Controller
             abort(403);
         }
 
-        $templatePath = Storage::disk('local')->path('resume-templates/template.pdf');
+        $templatePath = Storage::disk('local')->path('resume-templates/FINALTEMPLATENAJUD.pdf');
         
         if (!file_exists($templatePath)) {
             abort(404, 'Template not found');
@@ -321,23 +351,62 @@ class ResumeController extends Controller
             $address = trim($resume->personal_info['address'] ?? '');
             $objective = trim($resume->objective ?? '');
             
-            // Format education - cleaner formatting
+            // Format education - handle new structure with types
             $educationText = '';
             if (!empty($resume->education)) {
                 foreach ($resume->education as $index => $edu) {
                     if ($index > 0) $educationText .= "\n";
-                    $institution = trim($edu['institution'] ?? '');
-                    $degree = trim($edu['degree'] ?? '');
-                    $department = trim($edu['department'] ?? '');
-                    $year = trim($edu['year'] ?? '');
                     
-                    if ($institution) $educationText .= $institution . "\n";
-                    if ($degree) {
-                        $educationText .= $degree;
-                        if ($department) $educationText .= ' - ' . $department;
-                        $educationText .= "\n";
+                    $type = trim($edu['type'] ?? '');
+                    $institution = trim($edu['institution'] ?? '');
+                    
+                    // Skip if no institution
+                    if (empty($institution)) continue;
+                    
+                    if ($type === 'college') {
+                        // College: Institution, Degree - Department, Year Level
+                        $degree = trim($edu['degree'] ?? '');
+                        $department = trim($edu['department'] ?? '');
+                        $yearLevel = trim($edu['year_level'] ?? '');
+                        
+                        $educationText .= $institution . "\n";
+                        if ($degree) {
+                            $educationText .= $degree;
+                            if ($department) $educationText .= ' - ' . $department;
+                            $educationText .= "\n";
+                        }
+                        if ($yearLevel) $educationText .= $yearLevel . "\n";
+                        
+                    } elseif ($type === 'senior_high') {
+                        // Senior High: School, Strand, Year/Period
+                        $strand = trim($edu['strand'] ?? '');
+                        $yearPeriod = trim($edu['year_period'] ?? '');
+                        
+                        $educationText .= $institution . "\n";
+                        if ($strand) $educationText .= $strand . "\n";
+                        if ($yearPeriod) $educationText .= $yearPeriod . "\n";
+                        
+                    } elseif ($type === 'junior_high' || $type === 'elementary') {
+                        // Junior High / Elementary: School, Year/Period
+                        $yearPeriod = trim($edu['year_period'] ?? '');
+                        
+                        $educationText .= $institution . "\n";
+                        if ($yearPeriod) $educationText .= $yearPeriod . "\n";
+                        
+                    } else {
+                        // Fallback for old format (backward compatibility)
+                        $degree = trim($edu['degree'] ?? '');
+                        $department = trim($edu['department'] ?? '');
+                        $year = trim($edu['year'] ?? '');
+                        
+                        $educationText .= $institution . "\n";
+                        if ($degree) {
+                            $educationText .= $degree;
+                            if ($department) $educationText .= ' - ' . $department;
+                            $educationText .= "\n";
+                        }
+                        if ($year) $educationText .= $year . "\n";
                     }
-                    if ($year) $educationText .= $year . "\n";
                 }
             }
             

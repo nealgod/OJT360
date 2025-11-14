@@ -57,8 +57,17 @@
                 <div>
                     <x-input-label for="phone" :value="__('Phone Number')" />
                     <x-text-input id="phone" name="phone" type="tel" class="mt-1 block w-full" 
-                        :value="old('phone', $profile->phone ?? '')" />
+                        :value="old('phone', $profile->phone ?? '')" 
+                        placeholder="+63 912 345 6789" />
                     <x-input-error class="mt-2" :messages="$errors->get('phone')" />
+                </div>
+
+                <div class="md:col-span-2">
+                    <x-input-label for="address" :value="__('Address')" />
+                    <x-text-input id="address" name="address" type="text" class="mt-1 block w-full" 
+                        :value="old('address', $profile->address ?? '')" 
+                        placeholder="Street, City, Postal Code, Country" />
+                    <x-input-error class="mt-2" :messages="$errors->get('address')" />
                 </div>
             </div>
 
