@@ -104,6 +104,7 @@ class ActivationController extends Controller
             'token' => ['required', 'string'],
             'password' => ['required', 'confirmed', 'min:8'],
             'phone' => ['required', 'string', 'max:20'],
+            'address' => ['required', 'string', 'max:255'],
         ]);
 
         $record = StudentVerification::where('token', $validated['token'])
@@ -138,6 +139,7 @@ class ActivationController extends Controller
             'course' => $row->program?->name,
             'department' => $row->program?->department?->name,
             'phone' => $validated['phone'] ?? $row->contact_number,
+            'address' => $validated['address'],
         ]);
 
         $row->update(['status' => 'activated']);
@@ -197,6 +199,7 @@ class ActivationController extends Controller
             'course' => $row->program?->name,
             'department' => $row->program?->department?->name,
             'phone' => $row->contact_number,
+            'address' => $row->address ?? null,
         ]);
 
         $row->update(['status' => 'activated']);

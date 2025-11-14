@@ -15,6 +15,7 @@ class StudentProfile extends Model
         'course',
         'department',
         'phone',
+        'address',
         'profile_image',
         'ojt_status',
         'required_hours',
