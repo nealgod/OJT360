@@ -9,10 +9,28 @@
 
 ---
 
-## CURRENT STATE (Student Module Complete - Ready for Adviser Presentation)
+## CURRENT STATE (Student Module + Resume Builder Complete - Ready for Adviser Presentation)
 
 ### Recently Implemented Features:
-1. **Reports Section Enhancements:**
+
+1. **Resume Builder Module (NEW):**
+   - Complete resume creation and editing system
+   - 4-level education structure (College, Senior High, Junior High, Elementary)
+   - Dynamic show/hide sections with proper form submission
+   - Auto-fill from student profile (name, email, phone, address, course, department)
+   - PDF generation using FPDI with custom template (FINALTEMPLATENAJUD.pdf)
+   - Sections: Personal Info, Objective, Education, Work Experience, Skills, Certifications
+   - Profile image upload with circular cropping for PDF
+   - General placeholders suitable for all academic programs
+   - Type-specific fields for each education level
+
+2. **Student Profile Enhancements:**
+   - Added address field to student profile
+   - Address auto-fills in resume builder
+   - Address included in profile edit form with placeholder
+   - Migration: `add_address_to_student_profiles_table`
+
+3. **Reports Section Enhancements:**
    - Dynamic attendance display based on selected work date
    - Consistent formatting across all attendance displays
    - PDF generation for weekly reports using DomPDF
@@ -20,7 +38,7 @@
    - Removed feedback system (simplified workflow)
    - Auto-generated report templates from attendance data
 
-2. **Documents Section Improvements:**
+4. **Documents Section Improvements:**
    - Enhanced UI with grid layout (3 columns responsive)
    - Added search and filter capabilities
    - Added cancel submission feature (like Google Classroom)
@@ -29,23 +47,25 @@
    - Photo Documentation: up to 50 files
    - Weekly Accomplishment Report: up to 4 files
 
-3. **Program Management Features:**
+5. **Program Management Features:**
    - Coordinators can modify required OJT hours for their programs
    - BSIT program updated to 486 hours (from 460)
    - Program-specific hours override default department config
    - Automatic notifications to students when hours change
 
-4. **Supervisor Management Enhancements:**
+6. **Supervisor Management Enhancements:**
    - Auto-creation of supervisor accounts from placement requests
    - Email notifications with temporary passwords for new supervisors
    - Support for both external and listed company supervisors
    - Improved supervisor assignment workflow
 
-5. **Database Changes:**
+7. **Database Changes:**
+   - Added `address` to student_profiles table
    - Added `max_files_per_submission` to document_requirements
    - Added `required_hours` to programs table
    - Added supervisor fields to placement_requests table
-   - Migration for flexible file upload limits
+   - Created `resumes` table with JSON fields for flexible data storage
+   - Added `profile_image` to resumes table
 
 ---
 
@@ -75,6 +95,147 @@
 - `force.password.change` - Forces password change for temp passwords
 - `profile.complete` - Ensures user completed profile before accessing features
 - `placement.started` - Students can only access some features after OJT approval
+
+---
+
+## COMPLETE SYSTEM FLOW
+
+### Phase 1: Account Setup
+
+**Coordinator Account Creation:**
+1. Admin creates coordinator account
+2. System generates invitation token (expires in 1 hour)
+3. Email sent to coordinator with registration link
+4. Coordinator clicks link → fills registration form (Name, Employee ID, Phone, Password)
+5. Account created → Auto-verified email → Auto-login → Dashboard
+
+**Student Account Activation:**
+1. Coordinator uploads Class List (CSV/XLSX: Student ID, Name, Email, Phone, Program)
+2. System validates and creates whitelist entries (status: pending)
+3. Student goes to `/register/student` and enters Student ID
+4. System sends verification email with token link
+5. Student clicks email link → Registration form (pre-filled: ID, Name, Email, Department, Program)
+6. Student fills: Phone, Address, Password
+7. Account created → Whitelist marked "activated" → Auto-verified email → Auto-login → Dashboard
+
+### Phase 2: Profile Completion
+- **Student:** Student ID, Course, Department, Phone, Address (required)
+- **Coordinator:** Employee ID, Department, Program, Phone (required)
+- Middleware blocks access until profile complete
+
+### Phase 3: Pre-OJT Documents (NEW FLOW)
+
+**Student Dashboard (After Login):**
+- Status: `ojt_status = 'pending'`
+- **Can Access:**
+  - ✅ Dashboard
+  - ✅ Profile
+  - ✅ Documents (Pre-placement only)
+  - ✅ Resume Builder
+  - ✅ Messages
+- **Cannot Access (Locked):**
+  - ❌ Placement Requests
+  - ❌ Attendance
+  - ❌ Reports
+
+**Pre-Required Documents Submission:**
+1. Student goes to Documents
+2. Sees Pre-Placement Requirements (Letter of Acceptance, Medical Certificate, etc.)
+3. Uploads documents → Status: "submitted"
+4. Coordinator reviews and approves all required pre-documents
+5. **System unlocks:** Placement Requests (now accessible)
+
+### Phase 4: Placement Request (After Pre-Docs Approved)
+
+**Student Submits Placement Request:**
+1. Student can now see "Placement Requests" in navigation
+2. Chooses company (listed or external)
+3. Fills placement details (position, dates, shift, break time, supervisor)
+4. Submits request → Status: "pending"
+5. Coordinator notified
+
+**Coordinator Reviews & Approves:**
+1. Coordinator sees request in inbox
+2. Reviews and can edit details (start date, shift times, working days, break minutes)
+3. Approves → Student's `ojt_status` changes to **"active"**
+4. Other pending requests auto-voided
+5. **System unlocks:**
+   - ✅ Attendance
+   - ✅ Reports
+   - ✅ Documents (Ongoing & Post-placement)
+
+### Phase 5: Active OJT (After Placement Approved)
+
+**Attendance Tracking:**
+- Time in/out with photo proof and geolocation
+- Auto-calculates: `minutes_worked = total_time - break_minutes`
+- Recovery feature for missed time-out
+
+**Daily Reports:**
+- Submit daily report (work date, summary min 50 chars, optional attachment)
+- Auto-template generated from attendance data
+- Cannot edit after submission (delete & resubmit only)
+
+**Weekly Reports:**
+- Generate weekly report from daily reports
+- PDF generated via DomPDF
+- Can download or submit directly to Documents
+
+**Document Submissions:**
+- Ongoing: Photo Documentation (up to 50 files)
+- Post-placement: Weekly Reports (up to 4 files)
+- Can cancel before coordinator reviews
+
+### Phase 6: Resume Builder (Available Anytime)
+
+**Create Resume:**
+1. Student navigates to Resume Builder
+2. Clicks "Create New Resume"
+3. Form auto-fills: Name, Email, Phone, Address, Institution, Degree, Department
+4. Student fills sections:
+   - **Personal Info:** Job Title, Profile Image
+   - **Objective/Summary:** Career objectives
+   - **Education (4 Levels):**
+     - College/University (always visible): Institution, Degree, Department, Year Level (1st-5th)
+     - Senior High School (click "+ Add Education"): School, Strand, Year/Period
+     - Junior High School (click "+ Add Education"): School, Year/Period
+     - Elementary (click "+ Add Education"): School, Year/Period
+   - **Work Experience:** Company, Position, Dates, Description
+   - **Skills:** List of skills
+   - **Certifications:** Certification names
+5. Saves Resume → Stored in database
+
+**Edit Resume:**
+- Opens existing resume
+- All sections editable
+- Education sections show/hide based on saved data
+- Updates saved
+
+**Download Resume PDF:**
+- Clicks "Download"
+- System uses FINALTEMPLATENAJUD.pdf template
+- Fills template with data using FPDI library
+- Places text at specific X/Y coordinates
+- Adds circular profile image
+- Downloads as `resume_[name].pdf`
+
+---
+
+## NAVIGATION GATES SUMMARY
+
+| Feature | Pending (After Registration) | Pre-Docs Approved | OJT Active |
+|---------|------------------------------|-------------------|------------|
+| Dashboard | ✅ | ✅ | ✅ |
+| Profile | ✅ | ✅ | ✅ |
+| Documents (Pre) | ✅ | ✅ | ✅ |
+| Resume Builder | ✅ | ✅ | ✅ |
+| Messages | ✅ | ✅ | ✅ |
+| **Placement Requests** | ❌ | ✅ | ✅ |
+| **Attendance** | ❌ | ❌ | ✅ |
+| **Reports** | ❌ | ❌ | ✅ |
+| **Documents (Ongoing/Post)** | ❌ | ❌ | ✅ |
+
+**Note:** This flow may be adjusted based on adviser feedback.
 
 ---
 
@@ -214,6 +375,45 @@
 - Student statistics
 - Recent activity
 
+### 8. **ResumeController** (`app/Http/Controllers/ResumeController.php`)
+**Purpose:** Resume builder and PDF generation
+
+**Key Methods:**
+- `index()` - Lists student's resumes with preview cards
+- `create()` - Shows resume creation form with auto-filled data from student profile
+- `store()` - Saves resume with new education structure (type-specific fields)
+- `edit()` - Shows resume edit form with existing data
+- `update()` - Updates resume with new education structure
+- `destroy()` - Deletes resume and associated profile image
+- `download()` - Generates filled PDF using FPDI library
+
+**Important Logic:**
+- Auto-fills: name, email, phone, address, institution, degree, department from student profile
+- Education structure supports 4 types: college, senior_high, junior_high, elementary
+- Each type has specific fields:
+  - College: institution, degree, department, year_level
+  - Senior High: institution, strand, year_period
+  - Junior High: institution, year_period
+  - Elementary: institution, year_period
+- PDF generation uses FINALTEMPLATENAJUD.pdf template
+- Text placed at specific X/Y coordinates (inches converted to mm)
+- Profile image cropped to circle and embedded in PDF
+- Filters empty education entries (no institution = skip)
+- Backward compatible with old resume format
+
+**PDF Coordinates:**
+- Name: x=3.49", y=1.18"
+- Job Title: x=3.49", y=2.03"
+- Email: x=0.62", y=4.08"
+- Phone: x=0.62", y=4.58"
+- Address: x=0.62", y=5.08"
+- Objective: x=3.76", y=3.01"
+- Education: x=3.71", y=5.14"
+- Experience: x=3.71", y=9.08"
+- Skills: x=0.64", y=6.65"
+- Certifications: x=0.82", y=10.13"
+- Profile Image: x=0.68", y=0.69" (2.45" diameter)
+
 ---
 
 ## DATABASE MODELS & RELATIONSHIPS
@@ -256,6 +456,19 @@
 **AttendanceLog**
 - Links to student and company
 - Tracks: time_in, time_out, minutes_worked, photo_path
+
+**Resume** (app/Models/Resume.php)
+- Links to User (student)
+- JSON fields for flexible data storage:
+  - `personal_info` (name, job_title, email, phone, address)
+  - `objective` (text)
+  - `education` (array of education entries with type-specific fields)
+  - `work_experience` (array of work entries)
+  - `skills` (array of skill strings)
+  - `certifications` (array of certification objects)
+- `profile_image` - Path to uploaded profile photo
+- `template_path` - Reserved for future template selection feature
+- Casts JSON fields to arrays automatically
 
 ---
 
