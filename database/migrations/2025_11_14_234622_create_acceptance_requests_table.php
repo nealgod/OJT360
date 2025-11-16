@@ -17,7 +17,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('student_user_id')->constrained('users')->onDelete('cascade');
             $table->string('company_name');
-            $table->string('supervisor_name');
+            $table->string('supervisor_name')->nullable(); // Filled when supervisor registers
             $table->string('supervisor_email');
             $table->string('position');
             $table->string('token')->unique();

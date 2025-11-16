@@ -19,6 +19,7 @@ class DocumentRequirement extends Model
         'max_files_per_submission',
         'instructions',
         'is_active',
+        'display_order',
     ];
 
     protected $casts = [

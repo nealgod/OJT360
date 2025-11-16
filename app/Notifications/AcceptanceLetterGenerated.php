@@ -32,7 +32,7 @@ class AcceptanceLetterGenerated extends Notification
      */
     public function via($notifiable)
     {
-        return ['mail'];
+        return ['mail']; // Only send email, not database notification (we use custom notifications table)
     }
 
     /**
@@ -67,16 +67,22 @@ class AcceptanceLetterGenerated extends Notification
      */
     public function toArray($notifiable)
     {
+        // Different message for coordinator vs student
+        $isCoordinator = $notifiable->isCoordinator();
+        
         return [
             'title' => '✅ Acceptance Letter Generated',
-            'message' => 'Your supervisor has generated your OJT Acceptance Letter for ' . $this->letter->job_title . ' at ' . $this->letter->company->name . '. The letter is now available in your documents.',
+            'message' => $isCoordinator 
+                ? 'A supervisor has generated an acceptance letter for ' . $this->letter->student->name . ' (' . $this->letter->job_title . ' at ' . $this->letter->company->name . ').'
+                : 'Your supervisor has generated your OJT Acceptance Letter for ' . $this->letter->job_title . ' at ' . $this->letter->company->name . '. The letter is now available in your documents.',
             'letter_id' => $this->letter->id,
             'document_id' => $this->letter->document_id,
             'company' => $this->letter->company->name,
             'position' => $this->letter->job_title,
+            'student_name' => $this->letter->student->name,
             'start_date' => $this->letter->start_date->format('M d, Y'),
-            'action_url' => route('documents.index'),
-            'action_text' => 'View Documents',
+            'action_url' => route('acceptance-letters.download', $this->letter),
+            'action_text' => 'View Letter',
         ];
     }
 }

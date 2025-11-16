@@ -27,9 +27,9 @@ class DocumentController extends Controller
     {
         $user = Auth::user();
         
-        // Get all active document requirements
+        // Get all active document requirements ordered by display_order
         $requirements = DocumentRequirement::active()
-            ->orderBy('type')
+            ->orderBy('display_order')
             ->orderBy('name')
             ->get();
 
@@ -89,19 +89,40 @@ class DocumentController extends Controller
                 ->orderByDesc('created_at')
                 ->get();
 
-            // Check if student has resume and application (for Letter of Acceptance validation)
-            // Only check for pre-placement application letter
-            // Cancelled submissions are deleted, so they won't be found
-            $hasResume = \App\Models\Resume::where('user_id', $user->id)->exists();
-            $hasApplication = StudentDocumentSubmission::where('student_user_id', $user->id)
+            // Check if student has submitted required documents (for Letter of Acceptance validation)
+            // BOTH Application Letter and PDS/Resume are required
+            // Resume Builder and Application Letter Builder are optional (not checked)
+            
+            // Check for Application Letter (REQUIRED)
+            $hasApplicationLetter = StudentDocumentSubmission::where('student_user_id', $user->id)
                 ->whereHas('requirement', function($q) {
-                    $q->where('name', 'LIKE', '%Application Letter%')
+                    $q->where('name', 'Application Letter')
                       ->where('type', 'pre_placement');
                 })
-                ->whereIn('status', ['submitted', 'approved', 'rejected']) // Only active submissions
+                ->whereIn('status', ['submitted', 'approved', 'rejected'])
                 ->exists();
+            
+            // Check for PDS/Resume (REQUIRED)
+            $hasPDS = StudentDocumentSubmission::where('student_user_id', $user->id)
+                ->whereHas('requirement', function($q) {
+                    $q->where('name', 'LIKE', '%Personal Data Sheet%')
+                      ->where('type', 'pre_placement');
+                })
+                ->whereIn('status', ['submitted', 'approved', 'rejected'])
+                ->exists();
+            
+            // Both Application Letter and PDS/Resume must be submitted
+            $hasApplication = $hasApplicationLetter && $hasPDS;
+            
+            // Get requirement IDs for direct links
+            $appLetterReq = \App\Models\DocumentRequirement::where('name', 'Application Letter')
+                ->where('type', 'pre_placement')
+                ->first();
+            $pdsReq = \App\Models\DocumentRequirement::where('name', 'LIKE', '%Personal Data Sheet%')
+                ->where('type', 'pre_placement')
+                ->first();
 
-            return view('documents.show', compact('requirement', 'submission', 'submissionsAll', 'hasResume', 'hasApplication'));
+            return view('documents.show', compact('requirement', 'submission', 'submissionsAll', 'hasApplication', 'hasApplicationLetter', 'hasPDS', 'appLetterReq', 'pdsReq'));
         }
         
         abort(403);

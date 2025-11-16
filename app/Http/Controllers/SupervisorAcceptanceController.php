@@ -28,8 +28,16 @@ class SupervisorAcceptanceController extends Controller
             ]);
         }
 
+        // Check if already completed
+        if ($request->status === 'completed') {
+            return view('supervisor.acceptance.error', [
+                'error' => 'Request Already Completed',
+                'message' => 'This acceptance letter has already been generated. Please check your dashboard for the letter details.'
+            ]);
+        }
+
         // Check if expired
-        if ($request->expires_at->isPast() || $request->status !== 'pending') {
+        if ($request->expires_at->isPast() || $request->status === 'expired') {
             return view('supervisor.acceptance.expired', compact('request', 'token'));
         }
 
@@ -77,6 +85,11 @@ class SupervisorAcceptanceController extends Controller
             return back()->withErrors(['email' => 'Email cannot be changed.']);
         }
 
+        // Update acceptance request with supervisor's name
+        $acceptanceRequest->update([
+            'supervisor_name' => $validated['name'],
+        ]);
+
         // Create user account
         $user = User::create([
             'name' => $validated['name'],
@@ -91,7 +104,7 @@ class SupervisorAcceptanceController extends Controller
             ['name' => $validated['company_name']],
             [
                 'address' => $validated['company_address'] ?? '',
-                'contact_person' => $acceptanceRequest->supervisor_name,
+                'contact_person' => $validated['name'], // Use supervisor's entered name
                 'contact_email' => $acceptanceRequest->supervisor_email,
                 'contact_phone' => $validated['company_phone'] ?? '',
             ]
@@ -110,8 +123,31 @@ class SupervisorAcceptanceController extends Controller
         // Log them in
         Auth::login($user);
 
-        // Redirect to acceptance letter form
-        return redirect()->route('supervisor.acceptance.create', $token);
+        // Create notification for the new supervisor about their pending request
+        try {
+            \App\Models\Notification::create([
+                'user_id' => $user->id,
+                'type' => 'acceptance_letter_request',
+                'title' => '📝 Pending Acceptance Letter Request',
+                'message' => $acceptanceRequest->student->name . ' is waiting for an acceptance letter for ' . $acceptanceRequest->position . ' at ' . $acceptanceRequest->company_name . '.',
+                'data' => [
+                    'request_id' => $acceptanceRequest->id,
+                    'student_id' => $acceptanceRequest->student_user_id,
+                    'student_name' => $acceptanceRequest->student->name,
+                    'company' => $acceptanceRequest->company_name,
+                    'position' => $acceptanceRequest->position,
+                    'token' => $acceptanceRequest->token,
+                    'action_url' => route('supervisor.acceptance.create', $acceptanceRequest->token),
+                    'action_text' => 'Generate Letter',
+                ],
+                'read' => false,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to create notification for supervisor: ' . $e->getMessage());
+        }
+
+        // Redirect to dashboard with success message
+        return redirect()->route('dashboard')->with('success', 'Account created successfully! You have a pending acceptance letter request. Click "Acceptance Letters" to generate it.');
     }
 
 
@@ -119,10 +155,21 @@ class SupervisorAcceptanceController extends Controller
     public function create($token)
     {
         $acceptanceRequest = AcceptanceRequest::where('token', $token)
-            ->where('status', 'pending')
-            ->where('expires_at', '>', now())
             ->with('student.studentProfile')
-            ->firstOrFail();
+            ->first();
+        
+        // Check if request exists
+        if (!$acceptanceRequest) {
+            return view('supervisor.acceptance.error')->with('error', 'Invalid or expired link.');
+        }
+        
+        // Check if already completed
+        if ($acceptanceRequest->status !== 'pending') {
+            return view('supervisor.acceptance.error')->with('error', 'This request has already been processed.');
+        }
+        
+        // Skip expiration check if supervisor is logged in - they can generate anytime
+        // Only check expiration for non-authenticated access (initial registration flow)
 
         // Must be logged in as supervisor
         if (!Auth::check() || !Auth::user()->isSupervisor()) {
@@ -218,10 +265,14 @@ class SupervisorAcceptanceController extends Controller
         // Send notification to student
         $student = $acceptanceRequest->student;
         
-        // Send email notification
-        $student->notify(new \App\Notifications\AcceptanceLetterGenerated($letter));
+        // Send email notification to student
+        try {
+            $student->notify(new \App\Notifications\AcceptanceLetterGenerated($letter));
+        } catch (\Exception $e) {
+            \Log::error('Failed to send email notification: ' . $e->getMessage());
+        }
         
-        // Create in-app notification in custom notifications table
+        // Create in-app notification in custom notifications table for student
         \App\Models\Notification::create([
             'user_id' => $student->id,
             'type' => 'acceptance_letter_generated',
@@ -234,11 +285,51 @@ class SupervisorAcceptanceController extends Controller
                 'position' => $letter->job_title,
                 'supervisor' => $letter->immediate_supervisor,
                 'start_date' => $letter->start_date->format('M d, Y'),
-                'action_url' => route('documents.index'),
-                'action_text' => 'View Documents',
+                'action_url' => route('acceptance-letters.download', $letter),
+                'action_text' => 'View Letter',
             ],
             'read' => false,
         ]);
+        
+        // Notify coordinator of student's department AND program
+        if ($student->studentProfile && $student->studentProfile->department && $student->studentProfile->course) {
+            $coordinator = \App\Models\User::whereHas('coordinatorProfile', function($query) use ($student) {
+                $query->where('department', $student->studentProfile->department)
+                      ->whereHas('program', function($q) use ($student) {
+                          $q->where('name', $student->studentProfile->course);
+                      });
+            })->first();
+            
+            if ($coordinator) {
+                // Send email notification to coordinator
+                try {
+                    $coordinator->notify(new \App\Notifications\AcceptanceLetterGenerated($letter));
+                } catch (\Exception $e) {
+                    \Log::error('Failed to send email notification to coordinator: ' . $e->getMessage());
+                }
+                
+                // Create in-app notification for coordinator
+                \App\Models\Notification::create([
+                    'user_id' => $coordinator->id,
+                    'type' => 'acceptance_letter_generated',
+                    'title' => '✅ Acceptance Letter Generated',
+                    'message' => 'A supervisor has generated an acceptance letter for ' . $student->name . ' (' . $letter->job_title . ' at ' . $letter->company->name . ').',
+                    'data' => [
+                        'letter_id' => $letter->id,
+                        'document_id' => $letter->document_id,
+                        'student_name' => $student->name,
+                        'student_id' => $student->studentProfile->student_id,
+                        'company' => $letter->company->name,
+                        'position' => $letter->job_title,
+                        'supervisor' => $letter->immediate_supervisor,
+                        'start_date' => $letter->start_date->format('M d, Y'),
+                        'action_url' => route('acceptance-letters.download', $letter),
+                        'action_text' => 'View Letter',
+                    ],
+                    'read' => false,
+                ]);
+            }
+        }
 
         return view('supervisor.acceptance.success', compact('letter', 'acceptanceRequest'));
     }
@@ -256,76 +347,75 @@ class SupervisorAcceptanceController extends Controller
         
         if (file_exists($templatePath)) {
             // Use template overlay method
-            $pdf->AddPage('P', [215.9, 330.2]); // Long bond in mm
+            // 8.5" x 13" = 215.9mm x 330.2mm (Legal/Long bond size)
+            $pdf->AddPage('P', [215.9, 330.2]);
             $pdf->setSourceFile($templatePath);
             $tplId = $pdf->importPage(1);
             $pdf->useTemplate($tplId);
             
-            // Set font
-            $pdf->SetFont('Arial', '', 10);
-            $pdf->SetTextColor(0, 0, 0);
+            // Set font to Arial 13pt (Calibri not available in FPDF, Arial is similar)
+            $pdf->SetFont('Arial', '', 13); // Regular weight
+            $pdf->SetTextColor(0, 0, 0); // Black text
             
-            // Fill in fields (coordinates need adjustment based on actual template)
-            // DATE
-            $pdf->SetXY(140, 50);
+            // Fill in fields - Corrected with actual margins (Left: 0.43", Top: 0.34")
+            
+            // Date: x=0.57+0.43=1.00" (25.4mm), y=1.49+0.34=1.83" (46.48mm)
+            $pdf->SetXY(25.4, 46.48);
             $pdf->Write(0, now()->format('F d, Y'));
             
-            // Student Name
-            $pdf->SetXY(30, 75);
+            // Name: x=0.79+0.43=1.22" (30.99mm), y=2.32+0.34=2.66" (67.56mm)
+            $pdf->SetXY(30.99, 67.56);
             $pdf->Write(0, $student->name);
             
-            // Course
-            $pdf->SetXY(30, 82);
+            // Program: x=4.92+0.43=5.35" (135.89mm), y=2.67+0.34=3.01" (76.45mm)
+            $pdf->SetXY(135.89, 76.45);
             $pdf->Write(0, $studentProfile->course ?? 'Information Technology');
             
-            // Company Name
-            $pdf->SetXY(30, 95);
+            // Company: x=3.16+0.43=3.59" (91.19mm), y=3.14+0.34=3.48" (88.39mm)
+            $pdf->SetXY(91.19, 88.39);
             $pdf->Write(0, $acceptanceRequest->company_name);
             
-            // Company Location
-            $pdf->SetXY(30, 102);
+            // Location: x=0.63+0.43=1.06" (26.92mm), y=3.57+0.34=3.91" (99.31mm)
+            $pdf->SetXY(26.92, 99.31);
             $pdf->Write(0, Auth::user()->supervisorProfile->company->address ?? '');
             
-            // Job Title
-            $pdf->SetXY(120, 120);
+            // Job Title: x=3.90+0.43=4.33" (109.98mm), y=4.75+0.34=5.09" (129.29mm)
+            $pdf->SetXY(109.98, 129.29);
             $pdf->Write(0, $data['job_title']);
             
-            // Department
-            $pdf->SetXY(120, 130);
+            // Branch/Department: x=3.90+0.43=4.33" (109.98mm), y=5.07+0.34=5.41" (137.41mm)
+            $pdf->SetXY(109.98, 137.41);
             $pdf->Write(0, $data['department'] ?? '');
             
-            // Supervisor
-            $pdf->SetXY(120, 140);
-            $pdf->Write(0, $data['immediate_supervisor']);
-            
-            // Work Schedule
+            // Working hours: x=3.90+0.43=4.33" (109.98mm), y=5.39+0.34=5.73" (145.54mm)
             $schedule = $this->formatWorkSchedule($data['work_schedule']);
-            $pdf->SetXY(120, 150);
+            $pdf->SetXY(109.98, 145.54);
             $pdf->Write(0, $schedule);
             
-            // Total Hours
-            $pdf->SetXY(120, 160);
+            // Total hours: x=3.90+0.43=4.33" (109.98mm), y=6.03+0.34=6.37" (161.80mm)
+            $pdf->SetXY(109.98, 161.80);
             $pdf->Write(0, $data['total_hours'] . ' hours');
             
-            // Effective Date
-            $pdf->SetXY(120, 170);
+            // Effective Date: x=3.90+0.43=4.33" (109.98mm), y=6.35+0.34=6.69" (169.93mm)
+            $pdf->SetXY(109.98, 169.93);
             $effectiveDate = date('M d, Y', strtotime($data['effective_date']));
             $pdf->Write(0, $effectiveDate);
             
-            // Company Representative Name
-            $pdf->SetXY(30, 220);
+            // Bottom section - Company Representative details
+            // Company Representative Name (under "Noted by:")
+            $pdf->SetXY(30, 222);
             $pdf->Write(0, Auth::user()->name);
             
             // Position
-            $pdf->SetXY(30, 235);
+            $pdf->SetXY(30, 252);
             $pdf->Write(0, Auth::user()->supervisorProfile->position ?? '');
             
             // Department
-            $pdf->SetXY(30, 245);
+            $pdf->SetXY(30, 277);
             $pdf->Write(0, $data['department'] ?? '');
             
             // Contact
-            $pdf->SetXY(30, 255);
+            $pdf->SetXY(30, 295);
             $pdf->Write(0, Auth::user()->email);
             
         } else {
@@ -429,13 +519,15 @@ class SupervisorAcceptanceController extends Controller
     {
         $supervisor = Auth::user();
         
-        // Get pending requests
+        // Get all pending requests (ignore expiration for logged-in supervisors)
         $pendingRequests = AcceptanceRequest::where('supervisor_email', $supervisor->email)
             ->where('status', 'pending')
-            ->where('expires_at', '>', now())
             ->with('student.studentProfile')
             ->latest()
             ->get();
+        
+        // No expired requests section needed - supervisors can always generate letters once logged in
+        $expiredRequests = collect();
         
         // Get generated letters
         $generatedLetters = AcceptanceLetter::where('supervisor_user_id', $supervisor->id)
@@ -443,7 +535,7 @@ class SupervisorAcceptanceController extends Controller
             ->latest()
             ->paginate(10);
         
-        return view('supervisor.acceptance.index', compact('pendingRequests', 'generatedLetters'));
+        return view('supervisor.acceptance.index', compact('pendingRequests', 'expiredRequests', 'generatedLetters'));
     }
 
     public function students()

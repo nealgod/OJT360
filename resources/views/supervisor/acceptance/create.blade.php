@@ -175,7 +175,7 @@
                                 <label class="block text-sm font-medium text-gray-700 mb-1">
                                     Immediate Supervisor <span class="text-red-500">*</span>
                                 </label>
-                                <input type="text" name="immediate_supervisor" value="{{ old('immediate_supervisor', $acceptanceRequest->supervisor_name) }}" 
+                                <input type="text" name="immediate_supervisor" value="{{ old('immediate_supervisor', Auth::user()->name) }}" 
                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ojt-primary focus:border-ojt-primary"
                                        placeholder="Lastname, Firstname Middlename" required>
                                 @error('immediate_supervisor')

@@ -52,6 +52,7 @@
                                         @elseif($notification->type === 'pre_placement_complete') bg-green-100 text-green-800
                                         @elseif($notification->type === 'placement_request') bg-purple-100 text-purple-800
                                         @elseif($notification->type === 'placement_decision') bg-green-100 text-green-800
+                                        @elseif($notification->type === 'acceptance_letter_request') bg-yellow-100 text-yellow-800
                                         @else bg-gray-100 text-gray-800
                                         @endif">
                                         @if($notification->type === 'ojt_acceptance') OJT Acceptance
@@ -61,6 +62,7 @@
                                         @elseif($notification->type === 'pre_placement_complete') Pre-Placement Complete
                                         @elseif($notification->type === 'placement_request') Placement Request
                                         @elseif($notification->type === 'placement_decision') Placement Decision
+                                        @elseif($notification->type === 'acceptance_letter_request') Acceptance Letter
                                         @else General Inquiry
                                         @endif
                                     </span>
@@ -77,14 +79,10 @@
                             </div>
                             
                             <div class="flex items-center space-x-2 ml-4">
-                                @if(!$notification->read)
-                                    <form method="POST" action="{{ route('notifications.read', $notification) }}" class="inline">
-                                        @csrf
-                                        @method('PATCH')
-                                        <button type="submit" class="text-sm text-blue-600 hover:text-blue-800 font-medium">
-                                            Mark as Read
-                                        </button>
-                                    </form>
+                                @if($notification->type === 'acceptance_letter_request')
+                                    <a href="{{ route('supervisor.acceptance.index') }}" class="text-sm text-ojt-primary hover:text-maroon-700 font-medium">
+                                        View
+                                    </a>
                                 @endif
                                 
                                 @if(Auth::user()->isCoordinator() && $notification->type === 'ojt_acceptance')

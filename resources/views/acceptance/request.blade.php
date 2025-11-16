@@ -26,8 +26,7 @@
                         <div class="flex-1">
                             <h3 class="text-sm font-medium text-yellow-900 mb-2">Pending Request</h3>
                             <p class="text-sm text-yellow-800 mb-3">
-                                You have a pending acceptance letter request sent to <strong>{{ $pendingRequest->supervisor_name }}</strong> 
-                                ({{ $pendingRequest->supervisor_email }}) at {{ $pendingRequest->company_name }}.
+                                You have a pending acceptance letter request sent to your supervisor at <strong>{{ $pendingRequest->company_name }}</strong>.
                             </p>
                             <div class="text-xs text-yellow-700 space-y-1">
                                 <p>• Sent: {{ $pendingRequest->created_at->format('M d, Y g:i A') }}</p>
@@ -93,21 +92,6 @@
                                    placeholder="e.g., TechStart Inc">
                         </div>
 
-                        <!-- Supervisor Name -->
-                        <div>
-                            <label for="supervisor_name" class="block text-sm font-medium text-gray-700 mb-2">
-                                Supervisor Name <span class="text-red-500">*</span>
-                            </label>
-                            <input type="text" 
-                                   id="supervisor_name" 
-                                   name="supervisor_name" 
-                                   value="{{ old('supervisor_name') }}"
-                                   required
-                                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-ojt-primary focus:border-ojt-primary"
-                                   placeholder="Lastname, Firstname Middlename">
-                            <p class="mt-1 text-xs text-gray-500">The person who accepted you for the internship</p>
-                        </div>
-
                         <!-- Supervisor Email -->
                         <div>
                             <label for="supervisor_email" class="block text-sm font-medium text-gray-700 mb-2">
@@ -120,7 +104,7 @@
                                    required
                                    class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-ojt-primary focus:border-ojt-primary"
                                    placeholder="e.g., john.doe@techstart.com">
-                            <p class="mt-1 text-xs text-gray-500">They will receive the request at this email</p>
+                            <p class="mt-1 text-xs text-gray-500">Your supervisor will receive the request at this email and enter their name during registration</p>
                         </div>
 
                         <!-- Position -->

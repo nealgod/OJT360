@@ -44,15 +44,15 @@
                 <form method="POST" action="{{ route('supervisor.acceptance.register', $token) }}" class="space-y-6">
                     @csrf
 
-                    <!-- Your Name (Editable) -->
+                    <!-- Your Name -->
                     <div>
                         <label for="name" class="block text-sm font-medium text-gray-700">
-                            Your Name <span class="text-red-500">*</span>
+                            Your Full Name <span class="text-red-500">*</span>
                         </label>
-                        <input type="text" id="name" name="name" value="{{ old('name', $request->supervisor_name) }}" required
+                        <input type="text" id="name" name="name" value="{{ old('name') }}" required
                                placeholder="Lastname, Firstname Middlename"
                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-ojt-primary focus:border-ojt-primary">
-                        <p class="mt-1 text-xs text-gray-500">You can edit this if needed</p>
+                        <p class="mt-1 text-xs text-gray-500">Enter your complete name as it should appear on the acceptance letter</p>
                     </div>
 
                     <!-- Email (Read-only) -->

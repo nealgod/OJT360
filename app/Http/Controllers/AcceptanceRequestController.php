@@ -14,21 +14,39 @@ class AcceptanceRequestController extends Controller
     {
         $user = Auth::user();
         
-        // Check if student has submitted resume and application (active submissions only)
-        // Only check for pre-placement application letter
-        // Cancelled submissions are deleted, so they won't be found
-        $hasResume = \App\Models\Resume::where('user_id', $user->id)->exists();
-        $hasApplication = \App\Models\StudentDocumentSubmission::where('student_user_id', $user->id)
+        // Check if student has submitted required documents (active submissions only)
+        // BOTH Application Letter and PDS/Resume are required
+        // Resume Builder and Application Letter Builder are optional (not checked)
+        
+        // Check for Application Letter (REQUIRED)
+        $hasApplicationLetter = \App\Models\StudentDocumentSubmission::where('student_user_id', $user->id)
             ->whereHas('requirement', function($q) {
-                $q->where('name', 'LIKE', '%Application Letter%')
+                $q->where('name', 'Application Letter')
                   ->where('type', 'pre_placement');
             })
-            ->whereIn('status', ['submitted', 'approved', 'rejected']) // Only active submissions
+            ->whereIn('status', ['submitted', 'approved', 'rejected'])
             ->exists();
         
-        if (!$hasResume || !$hasApplication) {
+        // Check for PDS/Resume (REQUIRED)
+        $hasPDS = \App\Models\StudentDocumentSubmission::where('student_user_id', $user->id)
+            ->whereHas('requirement', function($q) {
+                $q->where('name', 'LIKE', '%Personal Data Sheet%')
+                  ->where('type', 'pre_placement');
+            })
+            ->whereIn('status', ['submitted', 'approved', 'rejected'])
+            ->exists();
+        
+        if (!$hasApplicationLetter || !$hasPDS) {
+            $missingItems = [];
+            if (!$hasApplicationLetter) {
+                $missingItems[] = 'Application Letter';
+            }
+            if (!$hasPDS) {
+                $missingItems[] = 'Personal Data Sheet (PDS) / Resume';
+            }
+            
             return redirect()->route('documents.index')
-                ->withErrors(['error' => 'You must submit your Resume and Application Letter before requesting an acceptance letter.']);
+                ->withErrors(['error' => 'You must submit the following before requesting an acceptance letter: ' . implode(', ', $missingItems)]);
         }
         
         // Check if there's already a pending request
@@ -56,16 +74,15 @@ class AcceptanceRequestController extends Controller
         
         $validated = $request->validate([
             'company_name' => 'required|string|max:255',
-            'supervisor_name' => 'required|string|max:255',
             'supervisor_email' => 'required|email|max:255',
             'position' => 'required|string|max:255',
         ]);
 
-        // Create acceptance request
+        // Create acceptance request (supervisor will enter their name during registration)
         $acceptanceRequest = AcceptanceRequest::create([
             'student_user_id' => $user->id,
             'company_name' => $validated['company_name'],
-            'supervisor_name' => $validated['supervisor_name'],
+            'supervisor_name' => null, // Will be filled when supervisor registers
             'supervisor_email' => $validated['supervisor_email'],
             'position' => $validated['position'],
             'token' => Str::random(64),
@@ -107,7 +124,7 @@ class AcceptanceRequestController extends Controller
         }
 
         return redirect()->route('documents.index')
-            ->with('success', 'Acceptance letter request sent to ' . $validated['supervisor_name'] . '! They will receive an email with instructions.');
+            ->with('success', 'Acceptance letter request sent to your supervisor! They will receive an email with instructions to create an account and generate your acceptance letter.');
     }
 
     public function cancel(AcceptanceRequest $request)

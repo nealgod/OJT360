@@ -166,7 +166,7 @@
                             </div>
                         </div>
 
-                        @if(!$hasResume || !$hasApplication)
+                        @if(!$hasApplication)
                             <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
                                 <div class="flex items-start">
                                     <svg class="w-5 h-5 text-yellow-600 mt-0.5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -178,16 +178,28 @@
                                             You must submit the following before requesting an acceptance letter:
                                         </p>
                                         <ul class="text-sm text-yellow-800 list-decimal list-inside mt-2 space-y-1">
-                                            @if(!$hasResume)
-                                                <li><strong>Resume</strong> - <a href="{{ route('resume.index') }}" class="underline font-medium hover:text-yellow-900">Create your resume using the Resume Builder</a></li>
+                                            @if(!isset($hasApplicationLetter) || !$hasApplicationLetter)
+                                                <li><strong>Application Letter</strong> - 
+                                                    @if(isset($appLetterReq))
+                                                        <a href="{{ route('documents.show', $appLetterReq) }}" class="underline font-medium hover:text-yellow-900">Click here to submit</a>
+                                                    @else
+                                                        <a href="{{ route('documents.index') }}" class="underline font-medium hover:text-yellow-900">Go to Documents</a>
+                                                    @endif
+                                                </li>
                                             @endif
-                                            @if(!$hasApplication)
-                                                <li><strong>Application Letter and PDS/Resume</strong> - <a href="{{ route('documents.index') }}" class="underline font-medium hover:text-yellow-900">Submit in Documents section</a></li>
+                                            @if(!isset($hasPDS) || !$hasPDS)
+                                                <li><strong>Personal Data Sheet (PDS) / Resume</strong> - 
+                                                    @if(isset($pdsReq))
+                                                        <a href="{{ route('documents.show', $pdsReq) }}" class="underline font-medium hover:text-yellow-900">Click here to submit</a>
+                                                    @else
+                                                        <a href="{{ route('documents.index') }}" class="underline font-medium hover:text-yellow-900">Go to Documents</a>
+                                                    @endif
+                                                </li>
                                             @endif
                                         </ul>
-                                        @if(!$hasResume || !$hasApplication)
+                                        @if(!$hasApplication)
                                             <p class="text-xs text-yellow-700 mt-3 italic">
-                                                Note: Both requirements must be completed before you can request an acceptance letter from your supervisor.
+                                                <strong>Note:</strong> You must submit both Application Letter and PDS/Resume before requesting an acceptance letter.
                                             </p>
                                         @endif
                                     </div>
@@ -226,25 +238,46 @@
                             @csrf
                         
                         <div>
-                            <label for="files" class="block text-sm font-medium text-gray-700 mb-2">
-                                Select Files (up to {{ $requirement->max_files_per_submission ?? 2 }})
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                @if($requirement->max_files_per_submission == 1)
+                                    Select File
+                                @else
+                                    Select Files (up to {{ $requirement->max_files_per_submission }})
+                                @endif
                             </label>
+                            
+                            <!-- Hidden file input -->
                             <input type="file" 
-                                   id="files" 
-                                   name="files[]" 
-                                   multiple
+                                   id="fileInput" 
                                    accept="{{ $requirement->file_types ? '.' . implode(',.', $requirement->file_types) : '' }}"
-                                   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-ojt-primary file:text-white hover:file:bg-maroon-700"
-                                   required>
-                            <p class="mt-1 text-sm text-gray-500">
+                                   class="hidden">
+                            
+                            <!-- Custom button to trigger file selection -->
+                            <button type="button" 
+                                    id="addFilesBtn"
+                                    class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-ojt-primary rounded-lg hover:bg-maroon-700 transition-colors">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                </svg>
+                                Add Files
+                            </button>
+                            
+                            <p class="mt-2 text-sm text-gray-500">
                                 Accepted formats: {{ $requirement->file_types_string }} | 
-                                Max size: {{ $requirement->max_file_size_string }} |
-                                Max files: {{ $requirement->max_files_per_submission ?? 2 }} per requirement
+                                Max size: {{ $requirement->max_file_size_string }}
+                                @if($requirement->max_files_per_submission > 1)
+                                    | Max files: {{ $requirement->max_files_per_submission }}
+                                @endif
                             </p>
+                            @if($requirement->max_files_per_submission > 1)
+                                <p class="mt-1 text-xs text-blue-600">
+                                    💡 Tip: You can add files from different folders by clicking "Add Files" multiple times
+                                </p>
+                            @endif
                             
                             <!-- Selected Files Preview -->
-                            <div id="selectedFiles" class="mt-3 hidden">
-                                <h4 class="text-sm font-medium text-gray-700 mb-2">Selected Files:</h4>
+                            <div id="selectedFiles" class="mt-4 hidden">
+                                <h4 class="text-sm font-medium text-gray-700 mb-2">Selected Files (<span id="fileCount">0</span>/{{ $requirement->max_files_per_submission ?? 2 }}):</h4>
                                 <div id="fileList" class="space-y-2"></div>
                             </div>
                             
@@ -275,66 +308,158 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const fileInput = document.getElementById('files');
+            const fileInput = document.getElementById('fileInput');
+            const addFilesBtn = document.getElementById('addFilesBtn');
             
             // Only run if file input exists (not on Letter of Acceptance page)
-            if (!fileInput) return;
+            if (!fileInput || !addFilesBtn) return;
             
             const selectedFilesDiv = document.getElementById('selectedFiles');
             const fileListDiv = document.getElementById('fileList');
-            const maxFiles = 2;
-
-            fileInput.addEventListener('change', function() {
-                const files = Array.from(this.files);
-                
-                if (files.length > maxFiles) {
+            const fileCountSpan = document.getElementById('fileCount');
+            const maxFiles = {{ $requirement->max_files_per_submission ?? 2 }};
+            const maxFileSize = {{ $requirement->max_file_size ?? 5 }} * 1024 * 1024; // Convert MB to bytes
+            
+            // Store selected files
+            let selectedFiles = [];
+            
+            // Click "Add Files" button to trigger file input
+            addFilesBtn.addEventListener('click', function() {
+                if (selectedFiles.length >= maxFiles) {
                     alert(`You can only select up to ${maxFiles} files.`);
-                    this.value = '';
-                    selectedFilesDiv.classList.add('hidden');
                     return;
                 }
-
-                if (files.length > 0) {
+                fileInput.click();
+            });
+            
+            // Handle file selection
+            fileInput.addEventListener('change', function() {
+                const newFiles = Array.from(this.files);
+                
+                newFiles.forEach(file => {
+                    // Check if we've reached max files
+                    if (selectedFiles.length >= maxFiles) {
+                        alert(`Maximum ${maxFiles} files allowed. Cannot add more files.`);
+                        return;
+                    }
+                    
+                    // Check file size
+                    if (file.size > maxFileSize) {
+                        alert(`File "${file.name}" is too large. Maximum size is {{ $requirement->max_file_size ?? 5 }}MB.`);
+                        return;
+                    }
+                    
+                    // Check for duplicates
+                    const isDuplicate = selectedFiles.some(f => f.name === file.name && f.size === file.size);
+                    if (isDuplicate) {
+                        alert(`File "${file.name}" is already selected.`);
+                        return;
+                    }
+                    
+                    // Add file to selected files
+                    selectedFiles.push(file);
+                });
+                
+                // Clear the file input so same file can be selected again if removed
+                this.value = '';
+                
+                // Update display
+                updateFileList();
+            });
+            
+            // Update file list display
+            function updateFileList() {
+                if (selectedFiles.length > 0) {
                     selectedFilesDiv.classList.remove('hidden');
+                    fileCountSpan.textContent = selectedFiles.length;
                     fileListDiv.innerHTML = '';
-
-                    files.forEach((file, index) => {
+                    
+                    selectedFiles.forEach((file, index) => {
                         const fileItem = document.createElement('div');
-                        fileItem.className = 'flex items-center justify-between bg-gray-50 p-3 rounded-lg';
+                        fileItem.className = 'flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-200';
                         fileItem.innerHTML = `
                             <div class="flex items-center space-x-3">
                                 <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
-                                <div>
+                                <div class="flex-1">
                                     <p class="text-sm font-medium text-gray-900">${file.name}</p>
-                                    <p class="text-xs text-gray-500">${(file.size / 1024).toFixed(2)} KB</p>
+                                    <p class="text-xs text-gray-500">${(file.size / 1024 / 1024).toFixed(2)} MB</p>
                                 </div>
                             </div>
-                            <button type="button" onclick="removeFile(${index})" class="text-red-500 hover:text-red-700">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <button type="button" onclick="removeFile(${index})" class="text-red-500 hover:text-red-700 p-1">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </button>
                         `;
                         fileListDiv.appendChild(fileItem);
                     });
+                    
+                    // Update button text
+                    if (selectedFiles.length >= maxFiles) {
+                        addFilesBtn.disabled = true;
+                        addFilesBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                        addFilesBtn.innerHTML = `
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            Maximum Files Selected
+                        `;
+                    } else {
+                        addFilesBtn.disabled = false;
+                        addFilesBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                        addFilesBtn.innerHTML = `
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                            Add More Files
+                        `;
+                    }
                 } else {
                     selectedFilesDiv.classList.add('hidden');
+                    addFilesBtn.disabled = false;
+                    addFilesBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    addFilesBtn.innerHTML = `
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Add Files
+                    `;
                 }
-            });
-
+            }
+            
+            // Remove file function
             window.removeFile = function(index) {
-                const dt = new DataTransfer();
-                const files = Array.from(fileInput.files);
-                files.splice(index, 1);
-                
-                files.forEach(file => dt.items.add(file));
-                fileInput.files = dt.files;
-                
-                // Trigger change event to update preview
-                fileInput.dispatchEvent(new Event('change'));
+                selectedFiles.splice(index, 1);
+                updateFileList();
             };
+            
+            // Before form submission, add files to a hidden input
+            const form = document.getElementById('resubmitForm');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    if (selectedFiles.length === 0) {
+                        e.preventDefault();
+                        alert('Please select at least one file to upload.');
+                        return false;
+                    }
+                    
+                    // Create DataTransfer object to hold files
+                    const dt = new DataTransfer();
+                    selectedFiles.forEach(file => dt.items.add(file));
+                    
+                    // Create a new file input with the selected files
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'file';
+                    hiddenInput.name = 'files[]';
+                    hiddenInput.multiple = true;
+                    hiddenInput.files = dt.files;
+                    hiddenInput.style.display = 'none';
+                    
+                    form.appendChild(hiddenInput);
+                });
+            }
         });
     </script>
 </x-app-layout>
