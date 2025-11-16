@@ -58,6 +58,20 @@ class MessageController extends Controller
             $selectedRecipient = User::find(request('recipient'));
         }
         
+        // Handle reply_to parameter (for reply button)
+        if (request()->has('reply_to')) {
+            $selectedRecipient = User::find(request('reply_to'));
+            // Get the original message to prefill subject
+            if (request()->has('message_id')) {
+                $originalMessage = Message::find(request('message_id'));
+                if ($originalMessage) {
+                    $prefilledSubject = str_starts_with($originalMessage->subject, 'Re: ') 
+                        ? $originalMessage->subject 
+                        : 'Re: ' . $originalMessage->subject;
+                }
+            }
+        }
+        
         if (request()->has('subject')) {
             $prefilledSubject = request('subject');
         }
@@ -91,6 +105,32 @@ class MessageController extends Controller
                 ->get();
             
             $recipients = $students;
+        } elseif ($user->isSupervisor()) {
+            // Supervisors can message their supervised students
+            $students = User::where('role', 'intern')
+                ->whereHas('studentProfile', function($query) use ($user) {
+                    $query->where('supervisor_id', $user->id);
+                })
+                ->with('studentProfile')
+                ->get();
+            
+            // Supervisors can also message coordinators of their students
+            $coordinatorIds = $students->pluck('studentProfile.department')
+                ->unique()
+                ->map(function($department) {
+                    return User::where('role', 'coordinator')
+                        ->whereHas('coordinatorProfile', function($query) use ($department) {
+                            $query->where('department', $department);
+                        })
+                        ->first();
+                })
+                ->filter()
+                ->pluck('id')
+                ->unique();
+            
+            $coordinators = User::whereIn('id', $coordinatorIds)->get();
+            
+            $recipients = $students->merge($coordinators);
         }
 
         return view('messages.create', compact('recipients', 'selectedRecipient', 'prefilledSubject'));
@@ -208,6 +248,22 @@ class MessageController extends Controller
             // Coordinators can message students in their department
             if ($recipient->isStudent()) {
                 return $sender->coordinatorProfile?->department === $recipient->studentProfile?->department;
+            }
+        } elseif ($sender->isSupervisor()) {
+            // Supervisors can message their supervised students
+            if ($recipient->isStudent()) {
+                return $recipient->studentProfile?->supervisor_id === $sender->id;
+            }
+            // Supervisors can message coordinators of their students
+            if ($recipient->isCoordinator()) {
+                // Check if supervisor has any student in this coordinator's department
+                $hasStudentInDepartment = User::where('role', 'intern')
+                    ->whereHas('studentProfile', function($query) use ($sender, $recipient) {
+                        $query->where('supervisor_id', $sender->id)
+                              ->where('department', $recipient->coordinatorProfile?->department);
+                    })
+                    ->exists();
+                return $hasStudentInDepartment;
             }
         }
 

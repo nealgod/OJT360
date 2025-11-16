@@ -88,8 +88,15 @@ Route::middleware(['auth', 'force.password.change', 'profile.complete'])->group(
     Route::post('/documents/{requirement}/submit', [App\Http\Controllers\DocumentController::class, 'submit'])->name('documents.submit');
     Route::delete('/documents/submissions/{submission}/cancel', [App\Http\Controllers\DocumentController::class, 'cancel'])->name('documents.cancel');
     Route::get('/documents/submissions/{submission}/download', [App\Http\Controllers\DocumentController::class, 'download'])->name('documents.download');
-    Route::get('/documents/submissions/{submission}/preview', [App\Http\Controllers\DocumentController::class, 'preview'])->name('documents.preview');
     Route::get('/documents/submissions/{submission}/stream', [App\Http\Controllers\DocumentController::class, 'stream'])->name('documents.stream');
+    
+    // Acceptance Letter Request (integrated with documents)
+    Route::get('/acceptance/request', [App\Http\Controllers\AcceptanceRequestController::class, 'create'])->name('acceptance.request.create');
+    Route::post('/acceptance/request', [App\Http\Controllers\AcceptanceRequestController::class, 'store'])->name('acceptance.request.store');
+    Route::delete('/acceptance/request/{request}/cancel', [App\Http\Controllers\AcceptanceRequestController::class, 'cancel'])->name('acceptance.request.cancel');
+    
+    // Acceptance Letter Download (auth required)
+    Route::get('/acceptance-letters/{letter}/download', [App\Http\Controllers\AcceptanceLetterController::class, 'download'])->name('acceptance-letters.download');
     
     // Resume Builder
     Route::get('/resume', [App\Http\Controllers\ResumeController::class, 'index'])->name('resume.index');
@@ -127,6 +134,19 @@ Route::post('/register/coordinator/resend', [App\Http\Controllers\ActivationCont
 // Legacy claim-your-account (kept temporarily; will be hidden in UI)
 Route::get('/activate', [App\Http\Controllers\ActivationController::class, 'show'])->name('activate.show');
 Route::post('/activate', [App\Http\Controllers\ActivationController::class, 'activate'])->name('activate');
+
+// Supervisor Acceptance (public routes - token-based, no auth required initially)
+Route::get('/supervisor/accept/{token}', [App\Http\Controllers\SupervisorAcceptanceController::class, 'show'])->name('supervisor.acceptance.show');
+Route::post('/supervisor/accept/{token}/register', [App\Http\Controllers\SupervisorAcceptanceController::class, 'register'])->name('supervisor.acceptance.register');
+Route::post('/supervisor/accept/resend/{requestId}', [App\Http\Controllers\SupervisorAcceptanceController::class, 'resend'])->name('supervisor.acceptance.resend');
+
+// Supervisor Acceptance (auth required for form and generation)
+Route::middleware(['auth'])->group(function () {
+    Route::get('/supervisor/acceptance-letters', [App\Http\Controllers\SupervisorAcceptanceController::class, 'index'])->name('supervisor.acceptance.index');
+    Route::get('/supervisor/students', [App\Http\Controllers\SupervisorAcceptanceController::class, 'students'])->name('supervisor.students');
+    Route::get('/supervisor/accept/{token}/create', [App\Http\Controllers\SupervisorAcceptanceController::class, 'create'])->name('supervisor.acceptance.create');
+    Route::post('/supervisor/accept/{token}/generate', [App\Http\Controllers\SupervisorAcceptanceController::class, 'store'])->name('supervisor.acceptance.store');
+});
 
 // Coordinator placement inbox
 Route::middleware(['auth', 'verified', 'force.password.change', 'profile.complete'])->group(function () {

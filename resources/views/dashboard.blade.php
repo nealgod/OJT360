@@ -371,6 +371,33 @@
                     </div>
                 </div>
             @elseif(Auth::user()->isSupervisor())
+                @php
+                    $supervisor = Auth::user();
+                    
+                    // Count supervised students
+                    $supervisedStudents = \App\Models\User::where('role', 'intern')
+                        ->whereHas('studentProfile', function($q) use ($supervisor) {
+                            $q->where('supervisor_id', $supervisor->id);
+                        })
+                        ->count();
+                    
+                    // Count pending acceptance requests
+                    $pendingRequests = \App\Models\AcceptanceRequest::where('supervisor_email', $supervisor->email)
+                        ->where('status', 'pending')
+                        ->where('expires_at', '>', now())
+                        ->count();
+                    
+                    // Count generated acceptance letters
+                    $generatedLetters = \App\Models\AcceptanceLetter::where('supervisor_user_id', $supervisor->id)
+                        ->count();
+                    
+                    // Count this month's letters
+                    $thisMonthLetters = \App\Models\AcceptanceLetter::where('supervisor_user_id', $supervisor->id)
+                        ->whereMonth('created_at', now()->month)
+                        ->whereYear('created_at', now()->year)
+                        ->count();
+                @endphp
+                
                 <!-- Supervisor Dashboard Stats -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <!-- Supervised Students -->
@@ -378,7 +405,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-ojt-accent/80 text-sm font-medium">Supervised Students</p>
-                                <p class="text-2xl font-bold">8</p>
+                                <p class="text-2xl font-bold">{{ $supervisedStudents }}</p>
                             </div>
                             <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -388,12 +415,12 @@
                         </div>
                     </div>
 
-                    <!-- Pending Evaluations -->
+                    <!-- Pending Requests -->
                     <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-gray-600 text-sm font-medium">Pending Evaluations</p>
-                                <p class="text-2xl font-bold text-ojt-dark">3</p>
+                                <p class="text-gray-600 text-sm font-medium">Pending Requests</p>
+                                <p class="text-2xl font-bold text-ojt-dark">{{ $pendingRequests }}</p>
                             </div>
                             <div class="w-12 h-12 bg-ojt-warning/10 rounded-lg flex items-center justify-center">
                                 <svg class="w-6 h-6 text-ojt-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -403,12 +430,12 @@
                         </div>
                     </div>
 
-                    <!-- Completed Evaluations -->
+                    <!-- Generated Letters -->
                     <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-gray-600 text-sm font-medium">Completed Evaluations</p>
-                                <p class="text-2xl font-bold text-ojt-dark">15</p>
+                                <p class="text-gray-600 text-sm font-medium">Generated Letters</p>
+                                <p class="text-2xl font-bold text-ojt-dark">{{ $generatedLetters }}</p>
                             </div>
                             <div class="w-12 h-12 bg-ojt-success/10 rounded-lg flex items-center justify-center">
                                 <svg class="w-6 h-6 text-ojt-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -418,21 +445,22 @@
                         </div>
                     </div>
 
-                    <!-- Company Rating -->
+                    <!-- This Month -->
                     <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-gray-600 text-sm font-medium">Company Rating</p>
-                                <p class="text-2xl font-bold text-ojt-dark">4.8</p>
+                                <p class="text-gray-600 text-sm font-medium">This Month</p>
+                                <p class="text-2xl font-bold text-ojt-dark">{{ $thisMonthLetters }}</p>
                             </div>
                             <div class="w-12 h-12 bg-ojt-accent/10 rounded-lg flex items-center justify-center">
                                 <svg class="w-6 h-6 text-ojt-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
                             </div>
                         </div>
                     </div>
                 </div>
+
             @elseif(Auth::user()->isAdmin())
                 <!-- Admin Dashboard Stats -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -496,7 +524,7 @@
                         </div>
                     </div>
                 </div>
-            @endif
+            @endif  {{-- End of role-based stats --}}
 
             <!-- Main Content -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -759,24 +787,24 @@
                             @elseif(Auth::user()->isSupervisor())
                                 <!-- Supervisor Quick Actions -->
                                 <div class="space-y-3">
-                                    <button class="w-full bg-ojt-primary text-white py-3 px-4 rounded-lg font-medium hover:bg-maroon-700 transition-colors duration-200 flex items-center justify-center">
-                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                                        </svg>
-                                        Evaluate Students
-                                    </button>
-                                    <button class="w-full bg-white border border-ojt-primary text-ojt-primary py-3 px-4 rounded-lg font-medium hover:bg-ojt-primary hover:text-white transition-colors duration-200 flex items-center justify-center">
+                                    <a href="{{ route('supervisor.acceptance.index') }}" class="w-full bg-ojt-primary text-white py-3 px-4 rounded-lg font-medium hover:bg-maroon-700 transition-colors duration-200 flex items-center justify-center">
                                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                         </svg>
-                                        Submit Feedback
-                                    </button>
-                                    <button class="w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center">
+                                        Acceptance Letters
+                                    </a>
+                                    <a href="{{ route('supervisor.students') }}" class="w-full bg-white border border-ojt-primary text-ojt-primary py-3 px-4 rounded-lg font-medium hover:bg-ojt-primary hover:text-white transition-colors duration-200 flex items-center justify-center">
                                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                                         </svg>
-                                        Company Profile
-                                    </button>
+                                        My Students
+                                    </a>
+                                    <a href="{{ route('profile.edit') }}" class="w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center">
+                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                        </svg>
+                                        My Profile
+                                    </a>
                                 </div>
                             @elseif(Auth::user()->isAdmin())
                                 <!-- Admin Quick Actions -->

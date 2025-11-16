@@ -18,6 +18,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'password',
         'role',
         'must_change_password',
+        'email_verified_at',
     ];
 
     protected $hidden = [
@@ -191,5 +192,46 @@ class User extends Authenticatable implements MustVerifyEmail
     // Get remaining hours
     public function getRemainingHours() {
         return $this->getRequiredHours() - $this->getCompletedHours();
+    }
+
+    /**
+     * Get user's profile image URL from their profile settings
+     */
+    public function getProfileImageAttribute()
+    {
+        // For students, check StudentProfile
+        if ($this->isStudent() && $this->studentProfile && $this->studentProfile->profile_image) {
+            return asset('storage/' . $this->studentProfile->profile_image);
+        }
+        
+        // For coordinators, check CoordinatorProfile
+        if ($this->isCoordinator() && $this->coordinatorProfile && $this->coordinatorProfile->profile_image) {
+            return asset('storage/' . $this->coordinatorProfile->profile_image);
+        }
+        
+        // For supervisors, check SupervisorProfile
+        if ($this->isSupervisor() && $this->supervisorProfile && $this->supervisorProfile->profile_image) {
+            return asset('storage/' . $this->supervisorProfile->profile_image);
+        }
+        
+        return null;
+    }
+
+    /**
+     * Get user's avatar (profile image or initials)
+     */
+    public function getAvatarHtml($size = 'w-10 h-10')
+    {
+        $profileImage = $this->profile_image;
+        $initials = strtoupper(substr($this->name, 0, 1));
+        $colors = ['bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500'];
+        $colorIndex = ord($initials) % count($colors);
+        $avatarColor = $colors[$colorIndex];
+        
+        if ($profileImage) {
+            return '<img src="' . $profileImage . '" alt="' . $this->name . '" class="' . $size . ' rounded-full object-cover">';
+        } else {
+            return '<div class="' . $size . ' ' . $avatarColor . ' rounded-full flex items-center justify-center text-white font-bold">' . $initials . '</div>';
+        }
     }
 }

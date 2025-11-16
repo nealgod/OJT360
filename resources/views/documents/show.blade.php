@@ -144,12 +144,86 @@
             <!-- Resubmit / First Submission Form -->
             @php($latest = isset($submissionsAll) ? $submissionsAll->first() : null)
             @if(!$latest || $latest->status === 'rejected')
-                <!-- Submission Form -->
-                <div class="bg-white rounded-lg border border-gray-200 p-6">
-                    <h2 class="text-lg font-semibold text-ojt-dark mb-4">Submit Document</h2>
-                    
-                    <form id="resubmitForm" method="POST" action="{{ route('documents.submit', $requirement) }}" enctype="multipart/form-data" class="space-y-6">
-                        @csrf
+                <!-- Check if this is Letter of Acceptance -->
+                @if($requirement->name === 'Letter of Acceptance')
+                    <!-- Special: Request Acceptance Letter from Supervisor -->
+                    <div class="bg-white rounded-lg border border-gray-200 p-6">
+                        <h2 class="text-lg font-semibold text-ojt-dark mb-4">Request OJT Acceptance Letter</h2>
+                        
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <div>
+                                    <h3 class="text-sm font-medium text-blue-900 mb-1">Digital Process</h3>
+                                    <p class="text-sm text-blue-800">
+                                        Request your supervisor to generate an official OJT Acceptance Letter digitally. 
+                                        Your supervisor will receive an email with a link to fill out the form and generate 
+                                        the letter automatically. The letter will be submitted to your documents once completed.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if(!$hasResume || !$hasApplication)
+                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                                <div class="flex items-start">
+                                    <svg class="w-5 h-5 text-yellow-600 mt-0.5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                    <div>
+                                        <h4 class="text-sm font-medium text-yellow-900 mb-1">Requirements Not Met</h4>
+                                        <p class="text-sm text-yellow-800">
+                                            You must submit the following before requesting an acceptance letter:
+                                        </p>
+                                        <ul class="text-sm text-yellow-800 list-decimal list-inside mt-2 space-y-1">
+                                            @if(!$hasResume)
+                                                <li><strong>Resume</strong> - <a href="{{ route('resume.index') }}" class="underline font-medium hover:text-yellow-900">Create your resume using the Resume Builder</a></li>
+                                            @endif
+                                            @if(!$hasApplication)
+                                                <li><strong>Application Letter and PDS/Resume</strong> - <a href="{{ route('documents.index') }}" class="underline font-medium hover:text-yellow-900">Submit in Documents section</a></li>
+                                            @endif
+                                        </ul>
+                                        @if(!$hasResume || !$hasApplication)
+                                            <p class="text-xs text-yellow-700 mt-3 italic">
+                                                Note: Both requirements must be completed before you can request an acceptance letter from your supervisor.
+                                            </p>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        @else
+                            <div class="flex items-center justify-center py-8">
+                                <a href="{{ route('acceptance.request.create') }}" 
+                                   class="inline-flex items-center px-6 py-3 text-base font-medium text-white bg-ojt-primary rounded-lg hover:bg-maroon-700 transition-colors shadow-sm">
+                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                    </svg>
+                                    Request Acceptance Letter from Supervisor
+                                </a>
+                            </div>
+                        @endif
+
+                        <div class="bg-gray-50 rounded-lg p-4 mt-6">
+                            <h4 class="text-sm font-medium text-gray-900 mb-2">How it works:</h4>
+                            <ol class="text-sm text-gray-700 space-y-1 list-decimal list-inside">
+                                <li>Click the button above and fill out the request form</li>
+                                <li>Your supervisor receives an email with a secure link</li>
+                                <li>Supervisor creates an account (one-time setup)</li>
+                                <li>Supervisor fills out the acceptance letter details</li>
+                                <li>Letter is automatically generated and submitted to your documents</li>
+                                <li>Coordinator reviews and approves the letter</li>
+                            </ol>
+                        </div>
+                    </div>
+                @else
+                    <!-- Regular Document Submission Form -->
+                    <div class="bg-white rounded-lg border border-gray-200 p-6">
+                        <h2 class="text-lg font-semibold text-ojt-dark mb-4">Submit Document</h2>
+                        
+                        <form id="resubmitForm" method="POST" action="{{ route('documents.submit', $requirement) }}" enctype="multipart/form-data" class="space-y-6">
+                            @csrf
                         
                         <div>
                             <label for="files" class="block text-sm font-medium text-gray-700 mb-2">
@@ -193,7 +267,8 @@
                             </button>
                         </div>
                     </form>
-                </div>
+                    </div>
+                @endif
             @endif
         </div>
     </div>
@@ -201,6 +276,10 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const fileInput = document.getElementById('files');
+            
+            // Only run if file input exists (not on Letter of Acceptance page)
+            if (!fileInput) return;
+            
             const selectedFilesDiv = document.getElementById('selectedFiles');
             const fileListDiv = document.getElementById('fileList');
             const maxFiles = 2;

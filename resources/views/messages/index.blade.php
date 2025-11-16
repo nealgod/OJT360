@@ -41,19 +41,27 @@
             <!-- Messages List -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200">
                 @forelse($messages as $message)
-                    <div class="p-6 border-b border-gray-200 last:border-b-0 {{ !$message->is_read && $message->recipient_id === Auth::id() ? 'bg-blue-50' : '' }}">
-                        <div class="flex items-start justify-between">
-                            <div class="flex-1">
+                    @php
+                        $displayUser = $message->sender_id === Auth::id() ? $message->recipient : $message->sender;
+                    @endphp
+                    <div class="p-6 border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors {{ !$message->is_read && $message->recipient_id === Auth::id() ? 'bg-blue-50 hover:bg-blue-100' : '' }}">
+                        <div class="flex items-start space-x-4">
+                            <!-- Avatar -->
+                            <div class="flex-shrink-0">
+                                <x-user-avatar :user="$displayUser" size="w-10 h-10" />
+                            </div>
+                            
+                            <div class="flex-1 min-w-0">
                                 <div class="flex items-center space-x-3 mb-2">
-                                    <h3 class="text-lg font-semibold text-ojt-dark">
+                                    <h3 class="text-lg font-semibold text-ojt-dark truncate">
                                         {{ $message->subject }}
                                     </h3>
                                     @if(!$message->is_read && $message->recipient_id === Auth::id())
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 flex-shrink-0">
                                             New
                                         </span>
                                     @endif
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium 
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0
                                         @if($message->sender_id === Auth::id()) bg-green-100 text-green-800
                                         @else bg-gray-100 text-gray-800
                                         @endif">
@@ -65,14 +73,15 @@
                                 
                                 <div class="flex items-center space-x-4 mb-3">
                                     <div class="flex items-center text-sm text-gray-600">
-                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                        </svg>
-                                        @if($message->sender_id === Auth::id())
-                                            To: {{ $message->recipient->name }}
-                                        @else
-                                            From: {{ $message->sender->name }}
-                                        @endif
+                                        <span class="font-medium">
+                                            @if($message->sender_id === Auth::id())
+                                                To:
+                                            @else
+                                                From:
+                                            @endif
+                                        </span>
+                                        <span class="ml-1">{{ $displayUser->name }}</span>
+                                        <span class="ml-1 text-xs text-gray-500">({{ ucfirst($displayUser->role) }})</span>
                                     </div>
                                     <div class="flex items-center text-sm text-gray-500">
                                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

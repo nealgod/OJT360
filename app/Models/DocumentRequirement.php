@@ -30,7 +30,7 @@ class DocumentRequirement extends Model
     // Relationships
     public function submissions()
     {
-        return $this->hasMany(StudentDocumentSubmission::class);
+        return $this->hasMany(StudentDocumentSubmission::class, 'document_requirement_id');
     }
 
     // Scopes

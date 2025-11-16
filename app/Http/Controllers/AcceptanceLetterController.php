@@ -1,0 +1,36 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\AcceptanceLetter;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+
+class AcceptanceLetterController extends Controller
+{
+    public function download(AcceptanceLetter $letter)
+    {
+        // Check authorization
+        $user = auth()->user();
+        
+        if (!$user) {
+            abort(403, 'Unauthorized');
+        }
+        
+        // Allow student, supervisor, or coordinator to download
+        if ($user->id !== $letter->student_user_id && 
+            $user->id !== $letter->supervisor_user_id && 
+            !$user->isCoordinator()) {
+            abort(403, 'Unauthorized');
+        }
+        
+        // Check if file exists
+        if (!Storage::disk('public')->exists($letter->letter_path)) {
+            abort(404, 'File not found');
+        }
+        
+        $filename = 'acceptance_letter_' . $letter->document_id . '.pdf';
+        
+        return Storage::disk('public')->download($letter->letter_path, $filename);
+    }
+}

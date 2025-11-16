@@ -20,19 +20,28 @@
             <div class="bg-white rounded-lg shadow-sm border border-gray-200">
                 <!-- Message Header -->
                 <div class="p-6 border-b border-gray-200">
-                    <div class="flex items-start justify-between">
-                        <div class="flex-1">
+                    <div class="flex items-start space-x-4">
+                        <!-- Avatar -->
+                        @php
+                            $displayUser = $message->sender_id === Auth::id() ? $message->recipient : $message->sender;
+                        @endphp
+                        <div class="flex-shrink-0">
+                            <x-user-avatar :user="$displayUser" size="w-12 h-12 text-lg" />
+                        </div>
+                        
+                        <div class="flex-1 min-w-0">
                             <h1 class="text-2xl font-bold text-ojt-dark mb-2">{{ $message->subject }}</h1>
                             
                             <div class="flex items-center space-x-6 text-sm text-gray-600">
                                 <div class="flex items-center">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                    </svg>
                                     @if($message->sender_id === Auth::id())
-                                        To: {{ $message->recipient->name }}
+                                        <span class="font-medium">To:</span>
+                                        <span class="ml-1">{{ $message->recipient->name }}</span>
+                                        <span class="ml-1 text-xs text-gray-500">({{ ucfirst($message->recipient->role) }})</span>
                                     @else
-                                        From: {{ $message->sender->name }}
+                                        <span class="font-medium">From:</span>
+                                        <span class="ml-1">{{ $message->sender->name }}</span>
+                                        <span class="ml-1 text-xs text-gray-500">({{ ucfirst($message->sender->role) }})</span>
                                     @endif
                                 </div>
                                 
@@ -112,7 +121,7 @@
                                 @endif
                             @endif
                             
-                            <a href="{{ route('messages.create') }}?reply_to={{ $message->sender_id }}" 
+                            <a href="{{ route('messages.create') }}?reply_to={{ $message->sender_id }}&message_id={{ $message->id }}" 
                                class="inline-flex items-center px-4 py-2 bg-ojt-primary text-white font-medium rounded-lg hover:bg-maroon-700 transition-colors duration-200">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
@@ -143,9 +152,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Sender Info -->
                     <div class="flex items-center space-x-4">
-                        <div class="w-12 h-12 bg-ojt-primary rounded-full flex items-center justify-center text-white font-bold">
-                            {{ substr($message->sender->name, 0, 1) }}
-                        </div>
+                        <x-user-avatar :user="$message->sender" size="w-12 h-12" />
                         <div>
                             <h4 class="font-medium text-gray-900">{{ $message->sender->name }}</h4>
                             <p class="text-sm text-gray-600 capitalize">{{ $message->sender->role }}</p>
@@ -159,9 +166,7 @@
                     
                     <!-- Recipient Info -->
                     <div class="flex items-center space-x-4">
-                        <div class="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center text-white font-bold">
-                            {{ substr($message->recipient->name, 0, 1) }}
-                        </div>
+                        <x-user-avatar :user="$message->recipient" size="w-12 h-12" />
                         <div>
                             <h4 class="font-medium text-gray-900">{{ $message->recipient->name }}</h4>
                             <p class="text-sm text-gray-600 capitalize">{{ $message->recipient->role }}</p>

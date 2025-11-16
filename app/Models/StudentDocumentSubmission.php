@@ -34,7 +34,7 @@ class StudentDocumentSubmission extends Model
 
     public function requirement()
     {
-        return $this->belongsTo(DocumentRequirement::class);
+        return $this->belongsTo(DocumentRequirement::class, 'document_requirement_id');
     }
 
     public function reviewer()

@@ -89,7 +89,19 @@ class DocumentController extends Controller
                 ->orderByDesc('created_at')
                 ->get();
 
-            return view('documents.show', compact('requirement', 'submission', 'submissionsAll'));
+            // Check if student has resume and application (for Letter of Acceptance validation)
+            // Only check for pre-placement application letter
+            // Cancelled submissions are deleted, so they won't be found
+            $hasResume = \App\Models\Resume::where('user_id', $user->id)->exists();
+            $hasApplication = StudentDocumentSubmission::where('student_user_id', $user->id)
+                ->whereHas('requirement', function($q) {
+                    $q->where('name', 'LIKE', '%Application Letter%')
+                      ->where('type', 'pre_placement');
+                })
+                ->whereIn('status', ['submitted', 'approved', 'rejected']) // Only active submissions
+                ->exists();
+
+            return view('documents.show', compact('requirement', 'submission', 'submissionsAll', 'hasResume', 'hasApplication'));
         }
         
         abort(403);
@@ -204,16 +216,35 @@ class DocumentController extends Controller
         $user = Auth::user();
         
         // Check permissions
-        if ($user->isStudent() && $submission->student_user_id !== $user->id) {
-            abort(403);
-        }
+        $canDownload = false;
         
-        if ($user->isCoordinator()) {
+        if ($user->isStudent() && $submission->student_user_id === $user->id) {
+            $canDownload = true;
+        } elseif ($user->isSupervisor()) {
+            // Check if this supervisor supervises this student OR has a pending acceptance request
+            $student = \App\Models\User::find($submission->student_user_id);
+            if ($student && $student->studentProfile && $student->studentProfile->supervisor_id === $user->id) {
+                $canDownload = true;
+            } else {
+                // Check if supervisor has a pending acceptance request for this student
+                $hasPendingRequest = \App\Models\AcceptanceRequest::where('student_user_id', $submission->student_user_id)
+                    ->where('supervisor_email', $user->email)
+                    ->where('status', 'pending')
+                    ->exists();
+                if ($hasPendingRequest) {
+                    $canDownload = true;
+                }
+            }
+        } elseif ($user->isCoordinator()) {
             $student = \App\Models\User::find($submission->student_user_id);
             $department = $user->coordinatorProfile?->department;
-            if ($student->studentProfile?->department !== $department) {
-                abort(403);
+            if ($student->studentProfile?->department === $department) {
+                $canDownload = true;
             }
+        }
+        
+        if (!$canDownload) {
+            abort(403);
         }
 
         if (!Storage::disk('public')->exists($submission->file_path)) {
@@ -221,35 +252,6 @@ class DocumentController extends Controller
         }
 
         return Storage::disk('public')->download($submission->file_path, $submission->original_filename);
-    }
-
-    public function preview(StudentDocumentSubmission $submission)
-    {
-        $user = Auth::user();
-
-        if ($user->isStudent() && $submission->student_user_id !== $user->id) {
-            abort(403);
-        }
-
-        if ($user->isCoordinator()) {
-            $student = \App\Models\User::find($submission->student_user_id);
-            $department = $user->coordinatorProfile?->department;
-            if ($student->studentProfile?->department !== $department) {
-                abort(403);
-            }
-        }
-
-        if (!Storage::disk('public')->exists($submission->file_path)) {
-            abort(404, 'File not found');
-        }
-
-        // Return the file directly for inline viewing (like Google Classroom)
-        $mime = $submission->mime_type ?: Storage::disk('public')->mimeType($submission->file_path);
-        
-        return Storage::disk('public')->response($submission->file_path, $submission->original_filename, [
-            'Content-Type' => $mime,
-            'Content-Disposition' => 'inline'
-        ]);
     }
 
     public function stream(StudentDocumentSubmission $submission)

@@ -157,7 +157,11 @@
                                     
                                     <a href="{{ route('documents.show', $requirement) }}" 
                                        class="block w-full text-center px-4 py-2 text-sm font-medium text-white bg-ojt-primary rounded-lg hover:bg-maroon-700 transition-colors">
-                                        {{ $submission ? 'View Details' : 'Submit Now' }}
+                                        @if($requirement->name === 'Letter of Acceptance')
+                                            {{ $submission ? 'View Details' : 'Request Now' }}
+                                        @else
+                                            {{ $submission ? 'View Details' : 'Submit Now' }}
+                                        @endif
                                     </a>
                                 </div>
                             </div>

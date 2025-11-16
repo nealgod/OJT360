@@ -20,3 +20,12 @@ yarn-error.log
 # Ensure resume template assets are tracked
 !storage/app/resume-templates/
 !storage/app/resume-templates/**
+
+# Development documentation (optional - uncomment to exclude from repo)
+# *_IMPLEMENTATION.md
+# *_ANALYSIS.md
+# *_HANDOFF.md
+# *_FLOW.md
+# *_STRUCTURE.md
+# CLEANUP_REPORT.md
+# PRE_COMMIT_CHECKLIST.md
