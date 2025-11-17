@@ -303,28 +303,6 @@ class PlacementRequestController extends Controller
         return response()->json(['success' => true]);
     }
 
-    public function myPlacement()
-    {
-        $user = Auth::user();
-        abort_unless($user && $user->isStudent(), 403);
-
-        $placement = $user->placementRequests()
-            ->where('status', 'approved')
-            ->latest('decided_at')
-            ->with('company')
-            ->first();
-
-        // Check if student already has an assigned supervisor
-        $hasAssignedSupervisor = $user->studentProfile && $user->studentProfile->supervisor_id;
-        $assignedSupervisor = null;
-        
-        if ($hasAssignedSupervisor) {
-            $assignedSupervisor = $user->studentProfile->supervisor;
-        }
-
-        return view('placements.my', compact('placement', 'hasAssignedSupervisor', 'assignedSupervisor'));
-    }
-
     public function proposeSupervisor(PlacementRequest $placementRequest, Request $request)
     {
         $user = Auth::user();

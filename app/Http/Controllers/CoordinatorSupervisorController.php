@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\SupervisorVerificationEmail;
+use App\Models\SupervisorRegistration;
 use App\Models\User;
-use App\Models\Company;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class CoordinatorSupervisorController extends Controller
 {
@@ -14,74 +16,87 @@ class CoordinatorSupervisorController extends Controller
     {
         $coordinator = Auth::user();
         $department = $coordinator->coordinatorProfile?->department;
+        $programName = optional($coordinator->coordinatorProfile?->program)->name;
+        $programFilter = $programName ? strtolower($programName) : null;
         
-        // Get all supervisors that have students from this coordinator's department
         $supervisors = User::where('role', 'supervisor')
-            ->whereHas('studentProfiles', function($query) use ($department) {
+            ->whereHas('studentProfiles', function ($query) use ($department, $programFilter) {
                 $query->where('department', $department);
+                if ($programFilter) {
+                    $query->whereRaw('LOWER(course) = ?', [$programFilter]);
+                }
             })
-            ->with(['supervisorProfile.company', 'studentProfiles.user'])
+            ->with([
+                'supervisorProfile.company',
+                'studentProfiles' => function ($query) use ($department, $programFilter) {
+                    $query->where('department', $department);
+                    if ($programFilter) {
+                        $query->whereRaw('LOWER(course) = ?', [$programFilter]);
+                    }
+                    $query->with('user');
+                },
+            ])
+            ->withCount([
+                'studentProfiles as managed_students_count' => function ($query) use ($department, $programFilter) {
+                    $query->where('department', $department);
+                    if ($programFilter) {
+                        $query->whereRaw('LOWER(course) = ?', [$programFilter]);
+                    }
+                },
+            ])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
             
-        return view('coord.supervisors.index', compact('supervisors'));
+        return view('coord.supervisors.index', compact('supervisors', 'department', 'programName'));
     }
 
     public function create()
     {
         $coordinator = Auth::user();
-        $department = $coordinator->coordinatorProfile?->department;
-        
-        // Get companies from the coordinator's department
-        $companies = \App\Models\Company::where('department', $department)
-            ->where('status', 'active')
-            ->get();
-            
-        return view('coord.supervisors.create', compact('companies'));
+        $programName = optional($coordinator->coordinatorProfile?->program)->name;
+
+        return view('coord.supervisors.create', compact('programName'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'company_id' => ['required', 'exists:companies,id'],
-            'employee_id' => ['nullable', 'string', 'max:255'],
-            'position' => ['nullable', 'string', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:255'],
+            'email' => ['required', 'email'],
         ]);
 
-        // Generate temporary password
-        $temporaryPassword = Str::random(12);
-        $hashedPassword = bcrypt($temporaryPassword);
+        $email = strtolower($request->email);
 
-        // Create supervisor user
-        $supervisor = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'role' => 'supervisor',
-            'password' => $hashedPassword,
-            'must_change_password' => true,
-            'email_verified_at' => now(),
-        ]);
+        if (User::whereRaw('LOWER(email) = ?', [$email])->where('role', 'supervisor')->exists()) {
+            return back()->withErrors([
+                'email' => 'This email is already associated with a supervisor account.',
+            ])->withInput();
+        }
 
-        // Create supervisor profile
-        $supervisor->supervisorProfile()->create([
-            'company_id' => $request->company_id,
-            'employee_id' => $request->employee_id ?? 'SUP-' . $supervisor->id,
-            'position' => $request->position,
-            'phone' => $request->phone,
-        ]);
+        $registration = SupervisorRegistration::where('email', $email)->first();
 
-        // Send email with credentials
+        if ($registration) {
+            $registration->update([
+                'token' => SupervisorRegistration::generateToken(),
+                'expires_at' => now()->addHours(24),
+                'verified_at' => null,
+            ]);
+        } else {
+            $registration = SupervisorRegistration::create([
+                'email' => $email,
+                'token' => SupervisorRegistration::generateToken(),
+                'expires_at' => now()->addHours(24),
+            ]);
+        }
+
         try {
-            $supervisor->notify(new \App\Notifications\VerifyWithTemporaryPassword($temporaryPassword));
+            Mail::to($email)->send(new SupervisorVerificationEmail($registration));
         } catch (\Exception $e) {
-            \Log::error('Supervisor email failed: ' . $e->getMessage());
+            Log::error('Coordinator supervisor invite failed: ' . $e->getMessage());
+
+            return back()->with('error', 'Failed to send the invitation email. Please try again.')->withInput();
         }
 
         return redirect()->route('coord.supervisors.index')
-            ->with('success', 'Supervisor account created successfully. An email with login credentials has been sent.');
+            ->with('success', 'Supervisor invitation sent successfully. The link will expire in 24 hours.');
     }
-
 }

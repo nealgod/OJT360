@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\DocumentRequirement;
 use App\Models\StudentDocumentSubmission;
+use App\Services\PrePlacementService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -206,6 +207,8 @@ class DocumentController extends Controller
                 ],
             ]);
         }
+
+        PrePlacementService::recalculateForStudent($user->id);
         
         return redirect()->route('documents.index')->with('success', $message);
     }
@@ -228,6 +231,8 @@ class DocumentController extends Controller
 
         // Delete the submission record
         $submission->delete();
+
+        PrePlacementService::recalculateForStudent($user->id);
 
         return redirect()->route('documents.index')->with('success', 'Document submission cancelled successfully!');
     }
@@ -327,7 +332,7 @@ class DocumentController extends Controller
 
         // Check if all pre-placement requirements are now approved
         if ($request->status === 'approved' && $submission->requirement?->type === 'pre_placement') {
-            $this->checkPrePlacementCompletion($submission->student_user_id);
+            PrePlacementService::recalculateForStudent($submission->student_user_id);
         }
 
         return back()->with('success', 'Document review updated successfully!');
@@ -389,7 +394,7 @@ class DocumentController extends Controller
 
             // Check pre-placement completion for each approved pre-placement document
             if ($status === 'approved' && $submission->requirement?->type === 'pre_placement') {
-                $this->checkPrePlacementCompletion($submission->student_user_id);
+                PrePlacementService::recalculateForStudent($submission->student_user_id);
             }
         }
 
@@ -397,44 +402,4 @@ class DocumentController extends Controller
         return back()->with('success', "Successfully {$action} {$updatedCount} document(s)!");
     }
 
-    /**
-     * Check if all pre-placement requirements are completed and notify student
-     */
-    private function checkPrePlacementCompletion($studentId)
-    {
-        // Get all pre-placement requirements
-        $prePlacementRequirements = \App\Models\DocumentRequirement::where('type', 'pre_placement')
-            ->where('is_required', true)
-            ->get();
-
-        if ($prePlacementRequirements->isEmpty()) {
-            return;
-        }
-
-        // Get all approved pre-placement submissions for this student
-        $approvedSubmissions = \App\Models\StudentDocumentSubmission::where('student_user_id', $studentId)
-            ->whereIn('document_requirement_id', $prePlacementRequirements->pluck('id'))
-            ->where('status', 'approved')
-            ->get();
-
-        // Check if all required pre-placement requirements are approved
-        $approvedRequirementIds = $approvedSubmissions->pluck('document_requirement_id')->toArray();
-        $allRequiredApproved = $prePlacementRequirements->every(function ($requirement) use ($approvedRequirementIds) {
-            return in_array($requirement->id, $approvedRequirementIds);
-        });
-
-        if ($allRequiredApproved) {
-            // Send special notification for pre-placement completion
-            \App\Models\Notification::create([
-                'user_id' => $studentId,
-                'type' => 'pre_placement_complete',
-                'title' => '🎉 Pre-Placement Requirements Complete!',
-                'message' => 'Congratulations! All your pre-placement requirements have been approved. You can now proceed with your placement request.',
-                'data' => [
-                    'type' => 'pre_placement_complete',
-                    'completed_at' => now()->toISOString(),
-                ],
-            ]);
-        }
-    }
 }

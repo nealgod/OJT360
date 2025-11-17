@@ -6,6 +6,7 @@ use App\Models\AcceptanceLetter;
 use App\Models\User;
 use App\Models\StudentDocumentSubmission;
 use App\Models\DocumentRequirement;
+use App\Services\PrePlacementService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -36,29 +37,35 @@ class SupervisorAcceptanceController extends Controller
     }
 
     /**
-     * Show list of supervised students
-     */
-    public function students()
-    {
-        $supervisor = Auth::user();
-        
-        // Get all students supervised by this supervisor
-        $students = User::where('role', 'intern')
-            ->whereHas('studentProfile', function($q) use ($supervisor) {
-                $q->where('supervisor_id', $supervisor->id);
-            })
-            ->with('studentProfile.company')
-            ->paginate(15);
-        
-        return view('supervisor.students', compact('students'));
-    }
-
-    /**
      * Show student search form
      */
     public function searchForm()
     {
         return view('supervisor.students.search');
+    }
+
+    /**
+     * List all students supervised by the authenticated supervisor
+     */
+    public function students()
+    {
+        $supervisor = Auth::user();
+
+        $students = User::where('role', 'intern')
+            ->whereHas('studentProfile', function ($query) use ($supervisor) {
+                $query->where('supervisor_id', $supervisor->id);
+            })
+            ->with([
+                'studentProfile.company',
+                'acceptanceLetters' => function ($query) use ($supervisor) {
+                    $query->where('supervisor_user_id', $supervisor->id)
+                        ->latest('generated_at');
+                },
+            ])
+            ->orderBy('name')
+            ->paginate(10);
+
+        return view('supervisor.students.index', compact('students'));
     }
 
     /**
@@ -260,6 +267,8 @@ class SupervisorAcceptanceController extends Controller
                 'mime_type' => 'application/pdf',
                 'status' => 'submitted',
             ]);
+
+            PrePlacementService::recalculateForStudent($student->id);
         }
 
         // Link supervisor to student
@@ -350,75 +359,96 @@ class SupervisorAcceptanceController extends Controller
         // Create PDF using FPDI
         $pdf = new \setasign\Fpdi\Fpdi();
         
-        $templatePath = resource_path('templates/OJT ACCEPTANCE FORMtemplate.pdf');
+        $templatePath = resource_path('templates/BSITacceptancelettertemplate.pdf');
         
         if (file_exists($templatePath)) {
-            $pdf->AddPage('P', [215.9, 330.2]);
             $pdf->setSourceFile($templatePath);
             $tplId = $pdf->importPage(1);
+            
+            // Get page dimensions from template
+            $size = $pdf->getTemplateSize($tplId);
+            $pdf->addPage($size['orientation'], [$size['width'], $size['height']]);
             $pdf->useTemplate($tplId);
-            
-            $pdf->SetFont('Arial', '', 13);
+            $pdf->SetMargins(0, 0, 0);
+            $pdf->SetAutoPageBreak(false);
             $pdf->SetTextColor(0, 0, 0);
-            
-            // Date
-            $pdf->SetXY(25.4, 46.48);
-            $pdf->Write(0, now()->format('F d, Y'));
-            
-            // Name
-            $pdf->SetXY(30.99, 67.56);
-            $pdf->Write(0, $student->name);
-            
-            // Program
-            $pdf->SetXY(135.89, 76.45);
-            $pdf->Write(0, $studentProfile->course ?? 'Information Technology');
-            
-            // Company
-            $pdf->SetXY(91.19, 88.39);
-            $pdf->Write(0, $company->name ?? '');
-            
-            // Location
-            $pdf->SetXY(26.92, 99.31);
-            $pdf->Write(0, $company->address ?? '');
-            
-            // Job Title
-            $pdf->SetXY(109.98, 129.29);
-            $pdf->Write(0, $data['job_title']);
-            
-            // Department
-            $pdf->SetXY(109.98, 137.41);
-            $pdf->Write(0, $data['department'] ?? '');
-            
-            // Working hours
+
+            $program = $studentProfile?->course ?? '';
+            $studentDepartment = $studentProfile?->department ?? '';
+            $companyName = $company->name ?? '';
+            $companyAddress = $company->address ?? '';
+            $immediateSupervisor = trim($data['immediate_supervisor'] ?? '') ?: $supervisor->name;
+            $supervisorPosition = $supervisor->supervisorProfile->position ?? '';
+            $supervisorDepartment = $data['department'] ?? ($supervisor->supervisorProfile->department ?? '');
+            $supervisorContact = $supervisor->supervisorProfile->phone ?: $supervisor->email;
             $schedule = $this->formatWorkSchedule($data['work_schedule']);
-            $pdf->SetXY(109.98, 145.54);
-            $pdf->Write(0, $schedule);
-            
-            // Total hours
-            $pdf->SetXY(109.98, 161.80);
-            $pdf->Write(0, $data['total_hours'] . ' hours');
-            
-            // Effective Date
-            $pdf->SetXY(109.98, 169.93);
+            $totalHours = $data['total_hours'] . ' hours';
             $effectiveDate = date('M d, Y', strtotime($data['effective_date']));
-            $pdf->Write(0, $effectiveDate);
-            
-            // Company Representative details (Left side - "Noted by:")
-            $pdf->SetXY(30, 222);
-            $pdf->Write(0, $supervisor->name);
-            
-            $pdf->SetXY(30, 252);
-            $pdf->Write(0, $supervisor->supervisorProfile->position ?? '');
-            
-            $pdf->SetXY(30, 277);
-            $pdf->Write(0, $data['department'] ?? '');
-            
-            $pdf->SetXY(30, 295);
-            $pdf->Write(0, $supervisor->email);
-            
-            // Student Conforme section (Right side - "CONFORME:")
-            $pdf->SetXY(135, 222);
-            $pdf->Write(0, $student->name);
+
+            $writeField = function (float $x, float $y, ?string $text, array $options = []) use ($pdf) {
+                $content = trim((string) ($text ?? ''));
+                if ($content === '') {
+                    return;
+                }
+                $defaults = [
+                    'width' => 80,
+                    'lineHeight' => 5,
+                    'align' => 'L',
+                    'font' => ['Arial', '', 11],
+                ];
+                $options = array_merge($defaults, $options);
+                [$family, $style, $size] = $options['font'];
+                $pdf->SetFont($family, $style, $size);
+                $pdf->SetXY($x, $y);
+                $pdf->MultiCell($options['width'], $options['lineHeight'], $content, 0, $options['align']);
+            };
+
+            // Header section
+            $writeField(1.23 * 25.4, 1.97 * 25.4, ': ' . now()->format('F d, Y'), ['width' => 70]);
+            $writeField(0.76 * 25.4, 2.70 * 25.4, $student->name, ['width' => 95, 'font' => ['Arial', 'B', 13]]);
+            $writeField(3.21 * 25.4, 3.55 * 25.4, $companyName, [
+                'width' => 80,
+                'align' => 'C',
+                'font' => ['Arial', 'B', 12],
+            ]);
+            $writeField(0.72 * 25.4, 4.00 * 25.4, $companyAddress, [
+                'width' => 120,
+                'font' => ['Arial', '', 12],
+            ]);
+
+            // Assignment table (right column)
+            $tableX = 4.00 * 25.4;
+            $tableWidth = 90;
+            $writeField($tableX, 5.18 * 25.4, $data['job_title'] ?? '', ['width' => $tableWidth]);
+            $writeField($tableX, 5.51 * 25.4, $data['department'] ?? '', ['width' => $tableWidth]);
+            $writeField($tableX, 5.85 * 25.4, $immediateSupervisor, ['width' => $tableWidth]);
+            $writeField($tableX, 6.14 * 25.4, $schedule, ['width' => $tableWidth]);
+            $writeField($tableX, 6.45 * 25.4, $totalHours, ['width' => $tableWidth]);
+            $writeField($tableX, 6.76 * 25.4, $effectiveDate, ['width' => $tableWidth]);
+
+            // Signature section
+            $writeField(0.62 * 25.4, 7.99 * 25.4, $immediateSupervisor, [
+                'width' => 85,
+                'font' => ['Arial', 'B', 12],
+            ]);
+            $writeField(0.72 * 25.4, 9.34 * 25.4, $supervisorPosition, [
+                'width' => 85,
+                'font' => ['Arial', 'B', 11],
+            ]);
+            $writeField(0.54 * 25.4, 10.30 * 25.4, $supervisorDepartment, [
+                'width' => 85,
+                'font' => ['Arial', 'B', 11],
+            ]);
+            $writeField(0.73 * 25.4, 11.05 * 25.4, $supervisorContact, [
+                'width' => 85,
+                'font' => ['Arial', 'B', 11],
+            ]);
+
+            $writeField(4.55 * 25.4, 7.93 * 25.4, $student->name, [
+                'width' => 60,
+                'align' => 'L',
+                'font' => ['Arial', 'B', 12],
+            ]);
             
         } else {
             // Fallback: Generate simple PDF without template

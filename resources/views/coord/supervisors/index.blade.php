@@ -1,7 +1,14 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-ojt-dark leading-tight">Manage Supervisors</h2>
+            <div>
+                <h2 class="font-semibold text-xl text-ojt-dark leading-tight">Manage Supervisors</h2>
+                @if(isset($programName) && $programName)
+                    <p class="text-sm text-gray-500 mt-1">Showing supervisors handling {{ $programName }} students.</p>
+                @elseif(isset($department) && $department)
+                    <p class="text-sm text-gray-500 mt-1">Showing supervisors handling {{ $department }} students.</p>
+                @endif
+            </div>
             <a href="{{ route('coord.supervisors.create') }}" class="bg-ojt-primary text-white px-4 py-2 rounded-lg hover:bg-maroon-700">
                 Add Supervisor
             </a>
@@ -10,6 +17,18 @@
 
     <div class="py-6 sm:py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            @if (session('success'))
+                <div class="mb-6 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800">
+                    {{ session('success') }}
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+                    {{ session('error') }}
+                </div>
+            @endif
+
             @if($supervisors->count() > 0)
                 <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                     @foreach($supervisors as $supervisor)
@@ -84,13 +103,13 @@
                                 <!-- Assigned Students Count -->
                                 <div class="mb-4">
                                     <h4 class="text-sm font-medium text-gray-900 mb-2">Assigned Students</h4>
-                                    <div class="bg-blue-50 rounded-lg p-3">
+                                <div class="bg-blue-50 rounded-lg p-3">
                                         <div class="flex items-center space-x-2">
                                             <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                                             </svg>
                                             <span class="text-sm font-medium text-blue-800">
-                                                {{ $supervisor->studentProfiles()->count() }} Student(s)
+                                            {{ $supervisor->managed_students_count ?? 0 }} Student(s)
                                             </span>
                                         </div>
                                     </div>
@@ -134,12 +153,12 @@
                             </svg>
                         </div>
                         <h3 class="text-lg font-medium text-gray-900 mb-2">No Supervisors Found</h3>
-                        <p class="text-gray-500 mb-4">Supervisors will appear here when students submit placement requests with supervisor information and you approve them.</p>
+                        <p class="text-gray-500 mb-4">Supervisors will appear here after they complete registration or when you add them manually.</p>
                         <div class="space-y-2">
-                            <a href="{{ route('coord.placements.inbox') }}" class="block text-ojt-primary hover:text-maroon-700 font-medium">
-                                Review Placement Requests →
+                            <a href="{{ route('coord.supervisors.create') }}" class="block text-ojt-primary hover:text-maroon-700 font-medium">
+                                Add Supervisor →
                             </a>
-                            <p class="text-xs text-gray-400">Students need to provide supervisor name and email in their placement requests</p>
+                            <p class="text-xs text-gray-400">Use this form to invite a new supervisor or link them to a company.</p>
                         </div>
                     </div>
                 </div>
