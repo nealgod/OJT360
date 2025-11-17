@@ -303,6 +303,38 @@ class PlacementRequestController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function studentPlacement()
+    {
+        $user = Auth::user();
+        abort_unless($user && $user->isStudent(), 403);
+
+        $profile = $user->studentProfile;
+        $placement = $user->placementRequests()
+            ->where('status', 'approved')
+            ->latest('decided_at')
+            ->with(['company'])
+            ->first();
+
+        $acceptance = \App\Models\AcceptanceLetter::where('student_user_id', $user->id)
+            ->latest()
+            ->first();
+
+        $company = $profile?->company ?? $acceptance?->company ?? $placement?->company;
+        $externalCompanyName = $placement?->external_company_name;
+        $externalCompanyAddress = $placement?->external_company_address;
+        $supervisor = $profile?->supervisor;
+
+        return view('students.placement', compact(
+            'profile',
+            'placement',
+            'acceptance',
+            'company',
+            'externalCompanyName',
+            'externalCompanyAddress',
+            'supervisor'
+        ));
+    }
+
     public function proposeSupervisor(PlacementRequest $placementRequest, Request $request)
     {
         $user = Auth::user();

@@ -62,14 +62,6 @@ Route::middleware(['auth', 'force.password.change', 'profile.complete'])->group(
     Route::patch('/messages/{message}/unread', [App\Http\Controllers\MessageController::class, 'markAsUnread'])->name('messages.unread');
     Route::delete('/messages/{message}', [App\Http\Controllers\MessageController::class, 'destroy'])->name('messages.destroy');
 
-    // Placement requests (students)
-    Route::get('/placements', [App\Http\Controllers\PlacementRequestController::class, 'index'])->name('placements.index');
-    Route::get('/placements/create', [App\Http\Controllers\PlacementRequestController::class, 'create'])->name('placements.create');
-    Route::post('/placements', [App\Http\Controllers\PlacementRequestController::class, 'store'])->name('placements.store');
-    Route::post('/placements/{placementRequest}/dismiss', [App\Http\Controllers\PlacementRequestController::class, 'dismiss'])->name('placements.dismiss');
-    Route::get('/placements/my', [App\Http\Controllers\PlacementRequestController::class, 'myPlacement'])->name('placements.my');
-    Route::post('/placements/{placementRequest}/propose-supervisor', [App\Http\Controllers\PlacementRequestController::class, 'proposeSupervisor'])->name('placements.propose-supervisor');
-
     // Attendance & Reports (students)
     Route::middleware(['placement.started'])->group(function () {
         Route::get('/attendance', [App\Http\Controllers\AttendanceController::class, 'index'])->name('attendance.index');
@@ -139,6 +131,10 @@ Route::post('/register/coordinator/resend', [App\Http\Controllers\ActivationCont
 Route::get('/activate', [App\Http\Controllers\ActivationController::class, 'show'])->name('activate.show');
 Route::post('/activate', [App\Http\Controllers\ActivationController::class, 'activate'])->name('activate');
 
+Route::middleware(['auth', 'verified', 'force.password.change', 'profile.complete'])->group(function () {
+    Route::get('/my-placement', [App\Http\Controllers\PlacementRequestController::class, 'studentPlacement'])->name('student.placement.show');
+});
+
 // Supervisor Routes (auth required)
 Route::middleware(['auth'])->group(function () {
     // Acceptance Letters Management
@@ -157,11 +153,6 @@ Route::middleware(['auth'])->group(function () {
 
 // Coordinator placement inbox
 Route::middleware(['auth', 'verified', 'force.password.change', 'profile.complete'])->group(function () {
-    Route::get('/coord/placements', [App\Http\Controllers\PlacementRequestController::class, 'inbox'])->name('coord.placements.inbox');
-    Route::post('/coord/placements/{placementRequest}/approve', [App\Http\Controllers\PlacementRequestController::class, 'approve'])->name('coord.placements.approve');
-    Route::post('/coord/placements/{placementRequest}/decline', [App\Http\Controllers\PlacementRequestController::class, 'decline'])->name('coord.placements.decline');
-    Route::get('/coord/placements/{placementRequest}/supervisors', [App\Http\Controllers\PlacementRequestController::class, 'getSupervisors'])->name('coord.placements.supervisors');
-
     // Coordinator manage companies
     Route::get('/coord/companies/create', [App\Http\Controllers\CompanyController::class, 'create'])->name('coord.companies.create');
     Route::post('/coord/companies', [App\Http\Controllers\CompanyController::class, 'store'])->name('coord.companies.store');

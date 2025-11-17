@@ -66,72 +66,158 @@
                 </div>
             </div>
 
+            @php
+                $milestones = [
+                    ['label' => 'Pre-Placement', 'complete' => (bool) $student->studentProfile?->preplacement_complete, 'note' => $student->studentProfile?->preplacement_complete ? 'Checklist done' : 'Waiting submissions'],
+                    ['label' => 'Company', 'complete' => (bool) $derivedCompanyName, 'note' => $derivedCompanyName ?? 'Not assigned'],
+                    ['label' => 'Supervisor', 'complete' => (bool) $student->studentProfile?->supervisor_id, 'note' => $student->studentProfile?->supervisor?->name ?? 'Not assigned'],
+                    ['label' => 'Activation', 'complete' => $student->studentProfile?->ojt_status === 'active', 'note' => ucfirst($student->studentProfile?->ojt_status ?? 'Pending')],
+                ];
+            @endphp
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                @foreach($milestones as $milestone)
+                    <div class="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs uppercase tracking-wide text-gray-500">{{ $milestone['label'] }}</p>
+                            <p class="text-sm font-semibold text-ojt-dark">
+                                {{ $milestone['complete'] ? 'Complete' : 'Pending' }}
+                            </p>
+                            @if(!empty($milestone['note']))
+                                <p class="text-xs text-gray-500 mt-1">{{ $milestone['note'] }}</p>
+                            @endif
+                        </div>
+                        <div class="flex items-center justify-center w-10 h-10 rounded-full {{ $milestone['complete'] ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}">
+                            @if($milestone['complete'])
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                            @else
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                </svg>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- Main Content -->
                 <div class="lg:col-span-2 space-y-8">
-                    <!-- OJT Progress (computed from attendance) -->
-                    @if($student->studentProfile && $student->studentProfile->ojt_status === 'active')
-                        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">OJT Progress</h3>
-                            @php
-                                $completedMinutes = $student->attendanceLogs()->sum('minutes_worked');
-                                $completed = round(($completedMinutes ?? 0) / 60, 1);
-                                $required = $student->getRequiredHours();
-                                $percentage = $required > 0 ? round(($completed / $required) * 100, 1) : 0;
-                            @endphp
-                            <div class="space-y-4">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-sm font-medium text-gray-700">Progress</span>
-                                    <span class="text-sm font-bold text-ojt-primary">{{ $percentage }}%</span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-3">
-                                    <div class="bg-gradient-to-r from-ojt-primary to-ojt-accent h-3 rounded-full transition-all duration-300" 
-                                         style="width: {{ $percentage }}%"></div>
-                                </div>
-                                <div class="flex justify-between text-sm text-gray-600">
-                                    <span>{{ $completed }} hours completed</span>
-                                    <span>{{ $required }} hours required</span>
-                                </div>
+                    <!-- Attendance Overview -->
+                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900">Attendance Overview</h3>
+                                <p class="text-sm text-gray-500">Latest logs with photos and punctuality checks.</p>
+                            </div>
+                            <div class="flex items-center gap-4 text-xs text-gray-600">
+                                <div><span class="font-semibold text-ojt-dark">{{ $attendanceStats['total_days'] }}</span> days logged</div>
+                                <div><span class="font-semibold text-green-600">{{ $attendanceStats['completed_days'] }}</span> completed</div>
+                                <div><span class="font-semibold text-yellow-600">{{ $attendanceStats['missing_checkout'] }}</span> pending out</div>
                             </div>
                         </div>
-                    @endif
-
-                    <!-- Recent Activity -->
-                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
-                        <div class="space-y-4">
-                            @if($student->attendanceLogs->count() > 0)
-                                <div>
-                                    <h4 class="text-sm font-medium text-gray-700 mb-2">Recent Attendance</h4>
-                                    <div class="space-y-2">
-                                        @foreach($student->attendanceLogs->take(5) as $attendance)
-                                            <div class="flex items-center justify-between text-sm">
-                                                <span class="text-gray-600">{{ $attendance->work_date?->format('M d, Y') ?? 'N/A' }}</span>
-                                                <span class="text-gray-900">
-                                                    {{ $attendance->time_in_formatted ?? 'No time-in' }}
-                                                    @if($attendance->time_out)
-                                                        - {{ $attendance->time_out_formatted }}
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Date</th>
+                                        <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Time In</th>
+                                        <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Time Out</th>
+                                        <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Photos</th>
+                                        <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    @forelse($student->attendanceLogs as $log)
+                                        @php
+                                            $shiftStart = $placementRequest?->shift_start;
+                                            $late = false;
+                                            if ($shiftStart && $log->time_in) {
+                                                try {
+                                                    $late = \Carbon\Carbon::createFromFormat('H:i:s', $log->time_in)
+                                                        ->gt(\Carbon\Carbon::createFromFormat('H:i:s', $shiftStart));
+                                                } catch (\Exception $e) {
+                                                    $late = false;
+                                                }
+                                            }
+                                        @endphp
+                                        <tr>
+                                            <td class="px-3 py-2 text-gray-900">{{ $log->work_date?->format('M d, Y') ?? '—' }}</td>
+                                            <td class="px-3 py-2 text-gray-700">{{ $log->time_in_formatted ?? '—' }}</td>
+                                            <td class="px-3 py-2 text-gray-700">{{ $log->time_out_formatted ?? '—' }}</td>
+                                            <td class="px-3 py-2">
+                                                <div class="flex items-center gap-2">
+                                                    @if($log->photo_in_path)
+                                                        <a href="{{ Storage::url($log->photo_in_path) }}" target="_blank" class="inline-flex items-center px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200">Time In</a>
                                                     @endif
-                                                </span>
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            @endif
+                                                    @if($log->photo_out_path)
+                                                        <a href="{{ Storage::url($log->photo_out_path) }}" target="_blank" class="inline-flex items-center px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200">Time Out</a>
+                                                    @endif
+                                                </div>
+                                            </td>
+                                            <td class="px-3 py-2">
+                                                @if(!$log->time_in)
+                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">Missing Time-In</span>
+                                                @elseif(!$log->time_out)
+                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">Needs Time-Out</span>
+                                                @elseif($late)
+                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700">Late</span>
+                                                @else
+                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">On Time</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="5" class="px-3 py-4 text-center text-sm text-gray-500">No attendance logs yet.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
 
-                            @if($student->dailyReports->count() > 0)
-                                <div>
-                                    <h4 class="text-sm font-medium text-gray-700 mb-2">Recent Reports</h4>
-                                    <div class="space-y-2">
-                                        @foreach($student->dailyReports->take(5) as $report)
-                                            <div class="flex items-center justify-between text-sm">
-                                                <span class="text-gray-600">{{ $report->work_date?->format('M d, Y') ?? 'N/A' }}</span>
-                                                <span class="text-gray-900">{{ Str::limit($report->summary, 50) }}</span>
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            @endif
+                    <!-- Reports Overview -->
+                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900">Reports Overview</h3>
+                                <p class="text-sm text-gray-500">Recent submissions with quick access.</p>
+                            </div>
+                            <div class="flex items-center gap-4 text-xs text-gray-600">
+                                <div><span class="font-semibold text-ojt-dark">{{ $reportStats['total_reports'] }}</span> total</div>
+                                <div><span class="font-semibold text-ojt-dark">{{ $reportStats['this_week'] }}</span> this week</div>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Date</th>
+                                        <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Summary</th>
+                                        <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    @forelse($student->dailyReports as $report)
+                                        <tr>
+                                            <td class="px-3 py-2 text-gray-900">{{ $report->work_date?->format('M d, Y') ?? '—' }}</td>
+                                            <td class="px-3 py-2 text-gray-700">{{ Str::limit($report->summary, 80) ?: 'No summary provided' }}</td>
+                                            <td class="px-3 py-2">
+                                                <a href="{{ route('reports.show', $report) }}" target="_blank" class="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-xs font-medium">
+                                                    View Report
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="3" class="px-3 py-4 text-center text-sm text-gray-500">No reports submitted yet.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -139,22 +225,63 @@
                 <!-- Sidebar -->
                 <div class="space-y-6">
                     <!-- Company & Supervisor Summary -->
-                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Placement Summary</h3>
-                        <div class="space-y-2 text-sm text-gray-700">
-                            <p><span class="font-medium">Company:</span> 
-                                @if($student->studentProfile?->company?->name)
-                                    {{ $student->studentProfile->company->name }}
-                                @elseif($externalCompanyName)
-                                    {{ $externalCompanyName }} <span class="text-xs text-gray-500">(External)</span>
-                                @else
-                                    Not assigned
-                                @endif
-                            </p>
-                            <p><span class="font-medium">Supervisor:</span> {{ $student->studentProfile?->supervisor?->name ?? 'Not assigned' }}</p>
-                            @if($student->studentProfile?->supervisor)
-                                <p class="text-xs text-gray-500">Email: {{ $student->studentProfile?->supervisor?->email }}</p>
+                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-6">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-gray-900">Placement Summary</h3>
+                            @if($companySource)
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                    {{ ucfirst($companySource) }}
+                                </span>
                             @endif
+                        </div>
+                        <div class="space-y-4 text-sm text-gray-700">
+                            <div>
+                                <p class="text-xs uppercase tracking-wide text-gray-500">Company</p>
+                                <p class="mt-1 font-medium text-ojt-dark">
+                                    {{ $derivedCompanyName ?? 'Not assigned' }}
+                                </p>
+                                @if($derivedCompanyAddress)
+                                    <p class="text-xs text-gray-500">{{ $derivedCompanyAddress }}</p>
+                                @endif
+                            </div>
+                            <div class="grid grid-cols-1 gap-3 text-xs text-gray-500 border-t border-gray-100 pt-4">
+                                <div class="flex items-center justify-between">
+                                    <span class="uppercase tracking-wide">Hours Completed</span>
+                                    <span class="text-sm text-ojt-dark font-semibold">
+                                        {{ number_format($student->studentProfile?->completed_hours ?? 0) }}
+                                    </span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="uppercase tracking-wide">Required Hours</span>
+                                    <span class="text-sm text-ojt-dark font-semibold">
+                                        @if($acceptance?->total_hours)
+                                            {{ number_format($acceptance->total_hours) }}
+                                        @elseif($student->studentProfile?->required_hours)
+                                            {{ number_format($student->studentProfile->required_hours) }}
+                                        @else
+                                            —
+                                        @endif
+                                    </span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="uppercase tracking-wide">Activation</span>
+                                    <span class="text-sm text-ojt-dark font-semibold">
+                                        {{ ucfirst($student->studentProfile?->ojt_status ?? 'pending') }}
+                                    </span>
+                                </div>
+                            </div>
+                            @if($student->studentProfile?->supervisor)
+                                <div class="border-t border-gray-100 pt-4">
+                                    <p class="text-xs uppercase tracking-wide text-gray-500">Supervisor</p>
+                                    <p class="mt-1 font-medium text-ojt-dark">{{ $student->studentProfile->supervisor->name }}</p>
+                                    <p class="text-xs text-gray-500">{{ $student->studentProfile->supervisor->email }}</p>
+                                @else
+                                    <div class="border-t border-gray-100 pt-4">
+                                        <p class="text-xs uppercase tracking-wide text-gray-500">Supervisor</p>
+                                        <p class="mt-1 text-gray-400">Not assigned</p>
+                                    </div>
+                                @endif
+                            </div>
                         </div>
                     </div>
 
@@ -182,7 +309,7 @@
                             </div>
 
                     <!-- Supervisor Assignment Section -->
-                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6" x-data="{ open: {{ $student->studentProfile?->supervisor ? 'false' : 'true' }} }">
+                    <div id="supervisor-assignment" class="bg-white rounded-xl border border-gray-200 shadow-sm p-6" x-data="{ open: {{ $student->studentProfile?->supervisor ? 'false' : 'true' }} }">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-lg font-semibold text-gray-900">Supervisor Assignment</h3>
                             <div class="flex items-center gap-2">
@@ -200,12 +327,22 @@
 
                         <!-- Current assignment -->
                         <div class="mb-4" x-show="open">
-                            @if($student->studentProfile?->supervisor)
-                        <div class="bg-ojt-accent/10 border border-ojt-accent/30 rounded-lg p-3">
-                            <p class="text-sm text-ojt-accent"><span class="font-medium">Assigned Supervisor:</span></p>
-                            <p class="text-sm text-ojt-dark">{{ $student->studentProfile->supervisor->name }}</p>
-                            <p class="text-xs text-ojt-dark/70">{{ $student->studentProfile->supervisor->email }}</p>
+                        @if($student->studentProfile?->supervisor)
+                            <div class="bg-ojt-accent/10 border border-ojt-accent/30 rounded-lg p-3">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm text-ojt-accent font-medium">Supervisor:</p>
+                                        <p class="text-sm text-ojt-dark">{{ $student->studentProfile->supervisor->name }}</p>
+                                        <p class="text-xs text-ojt-dark/70">{{ $student->studentProfile->supervisor->email }}</p>
+                                    </div>
+                                    @if($student->studentProfile->supervisor->supervisorProfile?->company)
+                                        <div class="text-right text-xs text-ojt-dark/70">
+                                            <p class="font-medium">{{ $student->studentProfile->supervisor->supervisorProfile->company->name }}</p>
+                                            <p>{{ $student->studentProfile->supervisor->supervisorProfile->company->address }}</p>
+                                        </div>
+                                    @endif
                                 </div>
+                            </div>
                             @else
                                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
                                     <p class="text-sm text-gray-600">No supervisor assigned yet</p>

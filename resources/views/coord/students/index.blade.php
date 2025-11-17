@@ -137,9 +137,7 @@
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Program</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Supervisor</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
@@ -182,20 +180,6 @@
                                             </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm text-gray-900">
-                                                @php
-                                                    $approvedPlacement = $student->placementRequests->first();
-                                                @endphp
-                                                @if($student->studentProfile?->company?->name)
-                                                    {{ $student->studentProfile->company->name }}
-                                                @elseif($approvedPlacement && $approvedPlacement->external_company_name)
-                                                    {{ $approvedPlacement->external_company_name }} <span class="text-xs text-gray-500">(External)</span>
-                                                @else
-                                                    Not Assigned
-                                                @endif
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
                                             @if($student->studentProfile?->supervisor)
                                                 <div class="flex items-center space-x-2">
                                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Assigned</span>
@@ -205,28 +189,22 @@
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Pending</span>
                                             @endif
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            @if($student->studentProfile && $student->studentProfile->ojt_status === 'active')
-                                                @php
-                                                    $completed = $student->getCompletedHours();
-                                                    $required = $student->getRequiredHours();
-                                                    $percentage = $required > 0 ? round(($completed / $required) * 100, 1) : 0;
-                                                @endphp
-                                                <div class="flex items-center">
-                                                    <div class="w-16 bg-gray-200 rounded-full h-2 mr-2">
-                                                        <div class="bg-ojt-primary h-2 rounded-full" style="width: {{ $percentage }}%"></div>
-                                                    </div>
-                                                    <span class="text-sm text-gray-600">{{ $percentage }}%</span>
-                                                </div>
-                                            @else
-                                                <span class="text-sm text-gray-400">N/A</span>
-                                            @endif
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <a href="{{ route('coord.students.show', $student) }}" 
-                                               class="text-ojt-primary hover:text-maroon-700 mr-3">
-                                                View Details
-                                            </a>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                            <div class="flex flex-col sm:flex-row gap-2">
+                                                <a href="{{ route('coord.students.show', $student) }}" 
+                                                   class="inline-flex items-center justify-center px-4 py-2 bg-ojt-primary text-white rounded-md text-xs font-semibold tracking-wide hover:bg-maroon-700 transition-colors">
+                                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m6 4H9m3 4v-4m0-8V4m9 8a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                    View Student
+                                                </a>
+                                                @if(!$student->studentProfile?->supervisor)
+                                                    <a href="{{ route('coord.students.show', $student) }}#supervisor-assignment" 
+                                                       class="inline-flex items-center justify-center px-3 py-2 border border-dashed border-yellow-400 text-yellow-700 rounded-md text-xs font-medium hover:bg-yellow-50 transition-colors">
+                                                        Assign Supervisor
+                                                    </a>
+                                                @endif
+                                            </div>
                                         </td>
                                     </tr>
                                 @endforeach

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Company;
 use App\Models\SupervisorAssignmentRequest;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
@@ -132,6 +133,7 @@ class CoordinatorStudentController extends Controller
         $student->load([
             'studentProfile.company',
             'studentProfile.supervisor',
+            'studentProfile.supervisor.supervisorProfile.company',
             'placementRequests' => function($q) {
                 $q->orderBy('created_at', 'desc');
             },
@@ -142,6 +144,37 @@ class CoordinatorStudentController extends Controller
                 $q->orderBy('work_date', 'desc')->limit(10);
             }
         ]);
+
+        $attendanceStats = [
+            'total_days' => $student->attendanceLogs()->count(),
+            'completed_days' => $student->attendanceLogs()->whereNotNull('time_in')->whereNotNull('time_out')->count(),
+            'missing_checkout' => $student->attendanceLogs()->whereNotNull('time_in')->whereNull('time_out')->count(),
+        ];
+
+        $reportStats = [
+            'total_reports' => $student->dailyReports()->count(),
+            'this_week' => $student->dailyReports()->whereBetween('work_date', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])->count(),
+        ];
+
+        $acceptance = \App\Models\AcceptanceLetter::where('student_user_id', $student->id)->latest()->with('company')->first();
+
+        $derivedCompanyName = $student->studentProfile?->company?->name
+            ?? $acceptance?->company?->name;
+        $derivedCompanyAddress = $student->studentProfile?->company?->address
+            ?? $acceptance?->company?->address;
+        $companySource = null;
+
+        if ($derivedCompanyName) {
+            $companySource = 'assigned';
+        } elseif (!empty($externalCompanyName)) {
+            $derivedCompanyName = $externalCompanyName;
+            $derivedCompanyAddress = $placementRequest?->external_company_address;
+            $companySource = 'external';
+        } elseif ($student->studentProfile?->supervisor?->supervisorProfile?->company?->name) {
+            $derivedCompanyName = $student->studentProfile->supervisor->supervisorProfile->company->name;
+            $derivedCompanyAddress = $student->studentProfile->supervisor->supervisorProfile->company->address;
+            $companySource = 'supervisor';
+        }
 
         // Get available companies for assignment
         $availableCompanies = Company::where('department', $department)
@@ -188,7 +221,22 @@ class CoordinatorStudentController extends Controller
             ];
         }
 
-        return view('coord.students.show', compact('student', 'availableCompanies', 'eligibleSupervisors', 'latestProposal', 'placementSupervisorInfo', 'studentCompanyId', 'externalCompanyName', 'placementRequest'));
+        return view('coord.students.show', compact(
+            'student',
+            'availableCompanies',
+            'eligibleSupervisors',
+            'latestProposal',
+            'placementSupervisorInfo',
+            'studentCompanyId',
+            'externalCompanyName',
+            'placementRequest',
+            'attendanceStats',
+            'reportStats',
+            'derivedCompanyName',
+            'derivedCompanyAddress',
+            'companySource',
+            'acceptance'
+        ));
     }
 
     public function updateCompany(Request $request, User $student)

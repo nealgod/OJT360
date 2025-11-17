@@ -75,7 +75,13 @@ class DailyReportController extends Controller
     public function show(DailyReport $report)
     {
         $user = Auth::user();
-        abort_unless($report->student_user_id === $user->id, 403);
+        $isOwner = $report->student_user_id === $user->id;
+        $isCoordinator = $user->isCoordinator() && $report->student->studentProfile?->department === $user->coordinatorProfile?->department && (
+            empty(optional($user->coordinatorProfile?->program)->name) ||
+            optional($user->coordinatorProfile?->program)->name === $report->student->studentProfile?->course
+        );
+
+        abort_unless($isOwner || $isCoordinator, 403);
 
         // Load attendance data for this report's work date
         $attendance = \App\Models\AttendanceLog::where('student_user_id', $user->id)
