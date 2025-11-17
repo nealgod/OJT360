@@ -342,8 +342,8 @@ class SupervisorAcceptanceController extends Controller
         // Create PDF using FPDI
         $pdf = new \setasign\Fpdi\Fpdi();
         
-        // Check if template exists
-        $templatePath = storage_path('app/templates/OJT ACCEPTANCE FORMtemplate.pdf');
+        // Check if template exists (now in resources/templates, tracked by Git)
+        $templatePath = resource_path('templates/OJT ACCEPTANCE FORMtemplate.pdf');
         
         if (file_exists($templatePath)) {
             // Use template overlay method
