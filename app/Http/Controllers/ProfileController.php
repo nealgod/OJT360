@@ -38,6 +38,9 @@ class ProfileController extends Controller
         if ($user->isStudent()) {
             // Lock name for students; allow email edits only via admin/coordinator rules
             $user->fill($request->only(['email']));
+        } elseif ($user->isSupervisor()) {
+            // Supervisors can update name but not email (set during registration)
+            $user->fill($request->only(['name']));
         } else {
             $user->fill($request->only(['name', 'email']));
         }
@@ -103,7 +106,7 @@ class ProfileController extends Controller
      */
     private function updateSupervisorProfile(ProfileUpdateRequest $request, $user)
     {
-        $profileData = $request->only(['employee_id', 'position', 'phone']);
+        $profileData = $request->only(['position', 'phone']);
         
         // Handle profile image upload
         if ($request->hasFile('profile_image')) {

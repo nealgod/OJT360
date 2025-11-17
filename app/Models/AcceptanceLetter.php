@@ -37,11 +37,6 @@ class AcceptanceLetter extends Model
     ];
 
     // Relationships
-    public function acceptanceRequest()
-    {
-        return $this->belongsTo(AcceptanceRequest::class);
-    }
-
     public function student()
     {
         return $this->belongsTo(User::class, 'student_user_id');

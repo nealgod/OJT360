@@ -99,8 +99,11 @@
                             @endif
                         </x-nav-link>
                     @elseif(Auth::user()->isSupervisor())
+                        <x-nav-link :href="route('supervisor.students.search')" :active="request()->routeIs('supervisor.students.search*')">
+                            {{ __('Accept Student') }}
+                        </x-nav-link>
                         <x-nav-link :href="route('supervisor.acceptance.index')" :active="request()->routeIs('supervisor.acceptance.*')">
-                            {{ __('Acceptance Letters') }}
+                            {{ __('My Letters') }}
                         </x-nav-link>
                         <x-nav-link :href="route('supervisor.students')" :active="request()->routeIs('supervisor.students')">
                             {{ __('My Students') }}
@@ -308,11 +311,17 @@
                     @endif
                 </x-responsive-nav-link>
             @elseif(Auth::user()->isSupervisor())
+                <x-responsive-nav-link :href="route('supervisor.students.search')" :active="request()->routeIs('supervisor.students.search*')">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    {{ __('Accept Student') }}
+                </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('supervisor.acceptance.index')" :active="request()->routeIs('supervisor.acceptance.*')">
                     <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    {{ __('Acceptance Letters') }}
+                    {{ __('My Letters') }}
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('supervisor.students')" :active="request()->routeIs('supervisor.students')">
                     <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

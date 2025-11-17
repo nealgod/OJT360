@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('acceptance_letters', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('acceptance_request_id')->constrained('acceptance_requests')->onDelete('cascade');
+            $table->foreignId('acceptance_request_id')->nullable()->constrained('acceptance_requests')->onDelete('cascade');
             $table->foreignId('student_user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('supervisor_user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('company_id')->nullable()->constrained('companies')->onDelete('set null');

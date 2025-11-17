@@ -2,25 +2,26 @@
 
 namespace App\Mail;
 
-use App\Models\AcceptanceRequest;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use App\Models\SupervisorRegistration;
 
-class SupervisorAcceptanceInvitation extends Mailable
+class SupervisorVerificationEmail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $acceptanceRequest;
+    public $registration;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(AcceptanceRequest $acceptanceRequest)
+    public function __construct(SupervisorRegistration $registration)
     {
-        $this->acceptanceRequest = $acceptanceRequest;
+        $this->registration = $registration;
     }
 
     /**
@@ -29,7 +30,7 @@ class SupervisorAcceptanceInvitation extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'OJT Acceptance Letter Request - ' . $this->acceptanceRequest->student->name,
+            subject: 'Verify Your OJT360 Supervisor Account',
         );
     }
 
@@ -39,12 +40,19 @@ class SupervisorAcceptanceInvitation extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.supervisor-acceptance-invitation',
+            view: 'emails.supervisor-verification',
+            with: [
+                'verificationUrl' => route('supervisor.register.verify', $this->registration->token),
+                'email' => $this->registration->email,
+                'expiresAt' => $this->registration->expires_at,
+            ]
         );
     }
 
     /**
      * Get the attachments for the message.
+     *
+     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
      */
     public function attachments(): array
     {

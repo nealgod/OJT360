@@ -136,18 +136,24 @@
                                 // Show/hide coordinator-specific selects
                                 coordFields.style.display = isCoordinator ? '' : 'none';
 
-                                // Name required only for supervisor; hide/disable for coordinator
+                                // Hide name field for both coordinator and supervisor (invitation flow)
                                 if (isCoordinator) {
                                     nameField.style.display = 'none';
                                     nameInput.removeAttribute('required');
                                     nameInput.setAttribute('disabled', 'disabled');
                                     noticeEl.textContent = 'We will email an invitation link to complete the coordinator account (1 hour expiry).';
-                                    submitBtn.textContent = 'Send Invitation';
+                                    submitBtn.textContent = 'Send Coordinator Invitation';
+                                } else if (role === 'supervisor') {
+                                    nameField.style.display = 'none';
+                                    nameInput.removeAttribute('required');
+                                    nameInput.setAttribute('disabled', 'disabled');
+                                    noticeEl.textContent = 'We will email a registration link to complete the supervisor account (24 hour expiry). They will provide their name, company details, and set their password.';
+                                    submitBtn.textContent = 'Send Supervisor Invitation';
                                 } else {
                                     nameField.style.display = '';
                                     nameInput.removeAttribute('disabled');
                                     nameInput.setAttribute('required', 'required');
-                                    noticeEl.textContent = 'A temporary password will be generated and emailed. The supervisor must verify and change it on first login.';
+                                    noticeEl.textContent = '';
                                     submitBtn.textContent = 'Create User Account';
                                 }
                             }

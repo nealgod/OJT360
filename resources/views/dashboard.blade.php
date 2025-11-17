@@ -381,12 +381,6 @@
                         })
                         ->count();
                     
-                    // Count pending acceptance requests
-                    $pendingRequests = \App\Models\AcceptanceRequest::where('supervisor_email', $supervisor->email)
-                        ->where('status', 'pending')
-                        ->where('expires_at', '>', now())
-                        ->count();
-                    
                     // Count generated acceptance letters
                     $generatedLetters = \App\Models\AcceptanceLetter::where('supervisor_user_id', $supervisor->id)
                         ->count();
@@ -410,21 +404,6 @@
                             <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Pending Requests -->
-                    <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-gray-600 text-sm font-medium">Pending Requests</p>
-                                <p class="text-2xl font-bold text-ojt-dark">{{ $pendingRequests }}</p>
-                            </div>
-                            <div class="w-12 h-12 bg-ojt-warning/10 rounded-lg flex items-center justify-center">
-                                <svg class="w-6 h-6 text-ojt-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             </div>
                         </div>
@@ -787,23 +766,23 @@
                             @elseif(Auth::user()->isSupervisor())
                                 <!-- Supervisor Quick Actions -->
                                 <div class="space-y-3">
-                                    <a href="{{ route('supervisor.acceptance.index') }}" class="w-full bg-ojt-primary text-white py-3 px-4 rounded-lg font-medium hover:bg-maroon-700 transition-colors duration-200 flex items-center justify-center">
+                                    <a href="{{ route('supervisor.students.search') }}" class="w-full bg-ojt-primary text-white py-3 px-4 rounded-lg font-medium hover:bg-maroon-700 transition-colors duration-200 flex items-center justify-center">
+                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                        </svg>
+                                        Accept Student
+                                    </a>
+                                    <a href="{{ route('supervisor.acceptance.index') }}" class="w-full bg-white border border-ojt-primary text-ojt-primary py-3 px-4 rounded-lg font-medium hover:bg-ojt-primary hover:text-white transition-colors duration-200 flex items-center justify-center">
                                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                         </svg>
-                                        Acceptance Letters
+                                        My Letters
                                     </a>
-                                    <a href="{{ route('supervisor.students') }}" class="w-full bg-white border border-ojt-primary text-ojt-primary py-3 px-4 rounded-lg font-medium hover:bg-ojt-primary hover:text-white transition-colors duration-200 flex items-center justify-center">
+                                    <a href="{{ route('supervisor.students') }}" class="w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center">
                                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                                         </svg>
                                         My Students
-                                    </a>
-                                    <a href="{{ route('profile.edit') }}" class="w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center">
-                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                        </svg>
-                                        My Profile
                                     </a>
                                 </div>
                             @elseif(Auth::user()->isAdmin())

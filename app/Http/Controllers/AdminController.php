@@ -70,21 +70,38 @@ class AdminController extends Controller
             return redirect()->route('admin.users')->with('success', 'Coordinator invite sent successfully.');
         }
 
-        // Supervisor: keep temp password flow
-        $temporaryPassword = Str::random(16);
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($temporaryPassword),
-            'role' => 'supervisor',
-            'must_change_password' => true,
-        ]);
-        try {
-            $user->notify(new VerifyWithTemporaryPassword($temporaryPassword));
-        } catch (\Exception $e) {
-            \Log::error('Email sending failed: ' . $e->getMessage());
+        // Supervisor: send registration invitation (like coordinator flow)
+        if (User::where('email', $request->email)->exists()) {
+            return back()->withErrors(['email' => 'Email is already in use by another account.'])->withInput();
         }
 
-        return redirect()->route('admin.users')->with('success', 'Supervisor account created and credentials emailed.');
+        // Check if there's already a pending registration
+        $existingRegistration = \App\Models\SupervisorRegistration::where('email', strtolower($request->email))->first();
+        
+        if ($existingRegistration) {
+            // Update existing registration with new token and expiration
+            $existingRegistration->update([
+                'token' => \App\Models\SupervisorRegistration::generateToken(),
+                'expires_at' => \Carbon\Carbon::now()->addHours(24),
+                'verified_at' => null,
+            ]);
+            $registration = $existingRegistration;
+        } else {
+            // Create new registration
+            $registration = \App\Models\SupervisorRegistration::create([
+                'email' => strtolower($request->email),
+                'token' => \App\Models\SupervisorRegistration::generateToken(),
+                'expires_at' => \Carbon\Carbon::now()->addHours(24),
+            ]);
+        }
+
+        // Send verification email
+        try {
+            \Illuminate\Support\Facades\Mail::to($registration->email)->send(new \App\Mail\SupervisorVerificationEmail($registration));
+        } catch (\Exception $e) {
+            \Log::error('Supervisor invite email failed: ' . $e->getMessage());
+        }
+
+        return redirect()->route('admin.users')->with('success', 'Supervisor registration invitation sent successfully.');
     }
 }

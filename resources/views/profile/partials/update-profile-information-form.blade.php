@@ -30,9 +30,12 @@
 
         <div>
             <x-input-label for="email" :value="__('Email')" />
-            @if($user->isStudent() || $user->isCoordinator())
+            @if($user->isStudent() || $user->isCoordinator() || $user->isSupervisor())
                 <x-text-input id="email" type="email" class="mt-1 block w-full bg-gray-50" :value="old('email', $user->email)" disabled />
                 <input type="hidden" name="email" value="{{ old('email', $user->email) }}" />
+                @if($user->isSupervisor())
+                    <p class="mt-1 text-xs text-gray-500">Email cannot be changed</p>
+                @endif
             @else
                 <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="old('email', $user->email)" required autocomplete="username" />
             @endif

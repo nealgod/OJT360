@@ -68,7 +68,7 @@
                         :value="old('address', $profile->address ?? '')" 
                         placeholder="Street, City, Postal Code, Country" />
                     <x-input-error class="mt-2" :messages="$errors->get('address')" />
-                </div>
+           
             </div>
 
         @elseif($user->isCoordinator())
@@ -106,26 +106,46 @@
         @elseif($user->isSupervisor())
             <!-- Supervisor Profile Fields -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <x-input-label for="employee_id" :value="__('Employee ID')" />
-                    <x-text-input id="employee_id" name="employee_id" type="text" class="mt-1 block w-full" 
-                        :value="old('employee_id', $profile->employee_id ?? '')" />
-                    <x-input-error class="mt-2" :messages="$errors->get('employee_id')" />
-                </div>
-
+                <!-- Position (Read-only) & Phone (Editable) on same row -->
                 <div>
                     <x-input-label for="position" :value="__('Position')" />
-                    <x-text-input id="position" name="position" type="text" class="mt-1 block w-full" 
-                        :value="old('position', $profile->position ?? '')" />
-                    <x-input-error class="mt-2" :messages="$errors->get('position')" />
+                    <x-text-input id="position" type="text" class="mt-1 block w-full bg-gray-50" 
+                        :value="old('position', $profile->position ?? '')" disabled />
+                    <input type="hidden" name="position" value="{{ old('position', $profile->position ?? '') }}" />
                 </div>
 
                 <div>
                     <x-input-label for="phone" :value="__('Phone Number')" />
                     <x-text-input id="phone" name="phone" type="tel" class="mt-1 block w-full" 
-                        :value="old('phone', $profile->phone ?? '')" />
+                        :value="old('phone', $profile->phone ?? '')" 
+                        placeholder="+63 912 345 6789" />
                     <x-input-error class="mt-2" :messages="$errors->get('phone')" />
                 </div>
+
+                <!-- Company Information (Read-only) -->
+                @if($profile && $profile->company)
+                <div class="md:col-span-2 border-t pt-4">
+                    <h3 class="text-sm font-medium text-gray-900 mb-3">Company Information</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <x-input-label :value="__('Company Name')" />
+                            <div class="mt-1 block w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-700">
+                                {{ $profile->company->name }}
+                            </div>
+                        </div>
+
+                        <div>
+                            <x-input-label :value="__('Company Address')" />
+                            <div class="mt-1 block w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-700">
+                                {{ $profile->company->address }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <p class="mt-2 text-xs text-gray-500">Company information is set during registration and cannot be changed here.</p>
+                </div>
+                @endif
             </div>
         @endif
 

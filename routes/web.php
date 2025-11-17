@@ -20,6 +20,15 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// Supervisor Registration Routes (Public)
+Route::prefix('register/supervisor')->name('supervisor.register')->group(function () {
+    Route::get('/', [App\Http\Controllers\SupervisorRegistrationController::class, 'showEmailForm']);
+    Route::post('/send', [App\Http\Controllers\SupervisorRegistrationController::class, 'sendVerification'])->name('.send');
+    Route::get('/verify/{token}', [App\Http\Controllers\SupervisorRegistrationController::class, 'verify'])->name('.verify');
+    Route::post('/complete', [App\Http\Controllers\SupervisorRegistrationController::class, 'complete'])->name('.complete');
+    Route::post('/resend', [App\Http\Controllers\SupervisorRegistrationController::class, 'resendVerification'])->name('.resend');
+});
+
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified', 'profile.complete', 'force.password.change'])->name('dashboard');
@@ -90,11 +99,6 @@ Route::middleware(['auth', 'force.password.change', 'profile.complete'])->group(
     Route::get('/documents/submissions/{submission}/download', [App\Http\Controllers\DocumentController::class, 'download'])->name('documents.download');
     Route::get('/documents/submissions/{submission}/stream', [App\Http\Controllers\DocumentController::class, 'stream'])->name('documents.stream');
     
-    // Acceptance Letter Request (integrated with documents)
-    Route::get('/acceptance/request', [App\Http\Controllers\AcceptanceRequestController::class, 'create'])->name('acceptance.request.create');
-    Route::post('/acceptance/request', [App\Http\Controllers\AcceptanceRequestController::class, 'store'])->name('acceptance.request.store');
-    Route::delete('/acceptance/request/{request}/cancel', [App\Http\Controllers\AcceptanceRequestController::class, 'cancel'])->name('acceptance.request.cancel');
-    
     // Acceptance Letter Download (auth required)
     Route::get('/acceptance-letters/{letter}/download', [App\Http\Controllers\AcceptanceLetterController::class, 'download'])->name('acceptance-letters.download');
     
@@ -135,17 +139,20 @@ Route::post('/register/coordinator/resend', [App\Http\Controllers\ActivationCont
 Route::get('/activate', [App\Http\Controllers\ActivationController::class, 'show'])->name('activate.show');
 Route::post('/activate', [App\Http\Controllers\ActivationController::class, 'activate'])->name('activate');
 
-// Supervisor Acceptance (public routes - token-based, no auth required initially)
-Route::get('/supervisor/accept/{token}', [App\Http\Controllers\SupervisorAcceptanceController::class, 'show'])->name('supervisor.acceptance.show');
-Route::post('/supervisor/accept/{token}/register', [App\Http\Controllers\SupervisorAcceptanceController::class, 'register'])->name('supervisor.acceptance.register');
-Route::post('/supervisor/accept/resend/{requestId}', [App\Http\Controllers\SupervisorAcceptanceController::class, 'resend'])->name('supervisor.acceptance.resend');
-
-// Supervisor Acceptance (auth required for form and generation)
+// Supervisor Routes (auth required)
 Route::middleware(['auth'])->group(function () {
+    // Acceptance Letters Management
     Route::get('/supervisor/acceptance-letters', [App\Http\Controllers\SupervisorAcceptanceController::class, 'index'])->name('supervisor.acceptance.index');
     Route::get('/supervisor/students', [App\Http\Controllers\SupervisorAcceptanceController::class, 'students'])->name('supervisor.students');
-    Route::get('/supervisor/accept/{token}/create', [App\Http\Controllers\SupervisorAcceptanceController::class, 'create'])->name('supervisor.acceptance.create');
-    Route::post('/supervisor/accept/{token}/generate', [App\Http\Controllers\SupervisorAcceptanceController::class, 'store'])->name('supervisor.acceptance.store');
+    
+    // Student Search & Direct Acceptance (NEW FLOW)
+    Route::get('/supervisor/students/search', [App\Http\Controllers\SupervisorAcceptanceController::class, 'searchForm'])->name('supervisor.students.search');
+    Route::get('/api/supervisor/students/autocomplete', [App\Http\Controllers\SupervisorAcceptanceController::class, 'autocomplete'])->name('supervisor.students.autocomplete');
+    Route::post('/supervisor/students/search', [App\Http\Controllers\SupervisorAcceptanceController::class, 'search'])->name('supervisor.students.search.post');
+    Route::get('/supervisor/students/{student}', [App\Http\Controllers\SupervisorAcceptanceController::class, 'viewStudent'])->name('supervisor.students.view');
+    Route::get('/supervisor/students/{student}/accept', [App\Http\Controllers\SupervisorAcceptanceController::class, 'acceptStudent'])->name('supervisor.students.accept');
+    Route::post('/supervisor/students/{student}/generate-letter', [App\Http\Controllers\SupervisorAcceptanceController::class, 'generateLetter'])->name('supervisor.students.generate');
+    Route::get('/supervisor/students/success/{letter}', [App\Http\Controllers\SupervisorAcceptanceController::class, 'showSuccess'])->name('supervisor.students.success');
 });
 
 // Coordinator placement inbox

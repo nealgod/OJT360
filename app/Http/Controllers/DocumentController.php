@@ -242,19 +242,10 @@ class DocumentController extends Controller
         if ($user->isStudent() && $submission->student_user_id === $user->id) {
             $canDownload = true;
         } elseif ($user->isSupervisor()) {
-            // Check if this supervisor supervises this student OR has a pending acceptance request
+            // Check if this supervisor supervises this student
             $student = \App\Models\User::find($submission->student_user_id);
             if ($student && $student->studentProfile && $student->studentProfile->supervisor_id === $user->id) {
                 $canDownload = true;
-            } else {
-                // Check if supervisor has a pending acceptance request for this student
-                $hasPendingRequest = \App\Models\AcceptanceRequest::where('student_user_id', $submission->student_user_id)
-                    ->where('supervisor_email', $user->email)
-                    ->where('status', 'pending')
-                    ->exists();
-                if ($hasPendingRequest) {
-                    $canDownload = true;
-                }
             }
         } elseif ($user->isCoordinator()) {
             $student = \App\Models\User::find($submission->student_user_id);
