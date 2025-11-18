@@ -173,16 +173,23 @@
                                 @endforeach
                             </div>
                             
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-3 border-t border-gray-200">
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 pt-3 border-t border-gray-200">
                                 <div>
-                                    <label for="shift_start" class="block text-sm text-gray-600 mb-1">Shift Start</label>
+                                    <label for="shift_start" class="block text-sm text-gray-600 mb-1">Shift Start *</label>
                                     <input type="time" name="shift_start" id="shift_start" value="{{ old('shift_start', '08:00') }}" required
                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ojt-primary focus:border-ojt-primary">
                                 </div>
                                 <div>
-                                    <label for="shift_end" class="block text-sm text-gray-600 mb-1">Shift End</label>
+                                    <label for="shift_end" class="block text-sm text-gray-600 mb-1">Shift End *</label>
                                     <input type="time" name="shift_end" id="shift_end" value="{{ old('shift_end', '17:00') }}" required
                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ojt-primary focus:border-ojt-primary">
+                                </div>
+                                <div>
+                                    <label for="break_minutes" class="block text-sm text-gray-600 mb-1">Break Time (minutes) *</label>
+                                    <input type="number" name="break_minutes" id="break_minutes" value="{{ old('break_minutes', 60) }}" required min="0" max="240"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ojt-primary focus:border-ojt-primary"
+                                           placeholder="60">
+                                    <p class="mt-1 text-xs text-gray-500">e.g., 60 for 1 hour</p>
                                 </div>
                                 <div>
                                     <label class="block text-sm text-gray-600 mb-1">Hours per Day</label>
@@ -194,19 +201,8 @@
                         </div>
                     </div>
 
-                    <!-- Signature -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-3">
-                            Signature *
-                        </label>
-                        <div class="space-y-3">
-                            <label class="flex items-center">
-                                <input type="radio" name="signature_type" value="typed" checked
-                                       class="border-gray-300 text-ojt-primary focus:ring-ojt-primary">
-                                <span class="ml-2 text-sm text-gray-700">Use my name as signature</span>
-                            </label>
-                        </div>
-                    </div>
+                    <!-- Signature (Hidden - automatically uses supervisor's name) -->
+                    <input type="hidden" name="signature_type" value="typed">
 
                     <!-- Additional Notes -->
                     <div>
@@ -244,46 +240,57 @@
         (function() {
             const shiftStart = document.getElementById('shift_start');
             const shiftEnd = document.getElementById('shift_end');
+            const breakMinutes = document.getElementById('break_minutes');
             const hoursPerDayDisplay = document.getElementById('hours_per_day');
-            const dayCheckboxes = document.querySelectorAll('input[type="checkbox"][name^="work_schedule"]');
 
             function calculateHoursPerDay() {
                 // Get shift times
                 const start = shiftStart.value;
                 const end = shiftEnd.value;
+                const breakTime = parseInt(breakMinutes.value) || 0;
 
                 if (!start || !end) {
-                    hoursPerDayDisplay.textContent = '0 hours';
+                    hoursPerDayDisplay.textContent = '— hours';
                     return;
                 }
 
-                // Calculate hours per day
+                // Calculate total shift minutes
                 const [startHour, startMin] = start.split(':').map(Number);
                 const [endHour, endMin] = end.split(':').map(Number);
                 
                 const startMinutes = startHour * 60 + startMin;
                 const endMinutes = endHour * 60 + endMin;
-                const totalMinutes = endMinutes - startMinutes;
+                let totalMinutes = endMinutes - startMinutes;
                 
                 if (totalMinutes <= 0) {
                     hoursPerDayDisplay.textContent = '0 hours';
                     return;
                 }
                 
-                const hours = Math.floor(totalMinutes / 60);
-                const minutes = totalMinutes % 60;
+                // Subtract break time
+                totalMinutes = totalMinutes - breakTime;
                 
-                // Display hours and minutes
-                if (minutes > 0) {
-                    hoursPerDayDisplay.textContent = `${hours} hours ${minutes} mins`;
+                if (totalMinutes <= 0) {
+                    hoursPerDayDisplay.textContent = '0 hours';
+                    return;
+                }
+                
+                // Convert to hours with decimal
+                const totalHours = totalMinutes / 60;
+                
+                // Display with 1 decimal place if needed
+                if (totalHours % 1 === 0) {
+                    hoursPerDayDisplay.textContent = `${totalHours} hours`;
                 } else {
-                    hoursPerDayDisplay.textContent = `${hours} hours`;
+                    hoursPerDayDisplay.textContent = `${totalHours.toFixed(1)} hours`;
                 }
             }
 
             // Add event listeners
             shiftStart.addEventListener('change', calculateHoursPerDay);
             shiftEnd.addEventListener('change', calculateHoursPerDay);
+            breakMinutes.addEventListener('input', calculateHoursPerDay);
+            breakMinutes.addEventListener('change', calculateHoursPerDay);
             shiftStart.addEventListener('input', calculateHoursPerDay);
             shiftEnd.addEventListener('input', calculateHoursPerDay);
 

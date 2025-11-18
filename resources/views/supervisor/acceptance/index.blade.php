@@ -72,25 +72,40 @@
                         @foreach($generatedLetters as $letter)
                             <div class="border border-gray-200 rounded-lg p-4 hover:border-ojt-primary transition-colors">
                                 <div class="flex items-center justify-between">
-                                    <div class="flex-1">
-                                        <div class="flex items-center gap-3 mb-2">
-                                            <h4 class="font-medium text-gray-900">{{ $letter->student->name }}</h4>
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                Generated
-                                            </span>
+                                    <div class="flex items-start gap-4 flex-1">
+                                        <!-- Student Avatar -->
+                                        <div class="flex-shrink-0">
+                                            @if($letter->student->studentProfile && $letter->student->studentProfile->profile_image)
+                                                <img src="{{ Storage::url($letter->student->studentProfile->profile_image) }}" 
+                                                     alt="{{ $letter->student->name }}" 
+                                                     class="w-12 h-12 rounded-full object-cover border-2 border-ojt-primary">
+                                            @else
+                                                <div class="w-12 h-12 {{ $letter->student->getAvatarColor() }} rounded-full flex items-center justify-center text-white text-lg font-bold">
+                                                    {{ substr($letter->student->name, 0, 1) }}
+                                                </div>
+                                            @endif
                                         </div>
-                                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
-                                            <div>
-                                                <span class="font-medium">Position:</span> {{ $letter->job_title }}
+                                        
+                                        <div class="flex-1">
+                                            <div class="flex items-center gap-3 mb-2">
+                                                <h4 class="font-medium text-gray-900">{{ $letter->student->name }}</h4>
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                    Generated
+                                                </span>
                                             </div>
-                                            <div>
-                                                <span class="font-medium">Department:</span> {{ $letter->department }}
-                                            </div>
-                                            <div>
-                                                <span class="font-medium">Start Date:</span> {{ $letter->start_date->format('M d, Y') }}
-                                            </div>
-                                            <div>
-                                                <span class="font-medium">Generated:</span> {{ $letter->created_at->format('M d, Y') }}
+                                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
+                                                <div>
+                                                    <span class="font-medium">Position:</span> {{ $letter->job_title }}
+                                                </div>
+                                                <div>
+                                                    <span class="font-medium">Department:</span> {{ $letter->department }}
+                                                </div>
+                                                <div>
+                                                    <span class="font-medium">Start Date:</span> {{ $letter->start_date->format('M d, Y') }}
+                                                </div>
+                                                <div>
+                                                    <span class="font-medium">Generated:</span> {{ $letter->created_at->format('M d, Y') }}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

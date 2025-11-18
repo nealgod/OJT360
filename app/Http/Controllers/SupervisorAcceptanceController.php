@@ -135,8 +135,7 @@ class SupervisorAcceptanceController extends Controller
 
         // Check if student already has a supervisor
         if ($student->studentProfile && $student->studentProfile->supervisor_id) {
-            $existingSupervisor = User::find($student->studentProfile->supervisor_id);
-            return back()->with('error', 'This student already has a supervisor: ' . $existingSupervisor->name);
+            return back()->with('error', 'This student already has a supervisor.');
         }
 
         // Redirect to student view page
@@ -153,18 +152,21 @@ class SupervisorAcceptanceController extends Controller
             ->with(['studentProfile', 'documentSubmissions.requirement'])
             ->firstOrFail();
 
-        // Check if student already has a supervisor
+        // Check if student already has a different supervisor
         if ($student->studentProfile && $student->studentProfile->supervisor_id) {
-            $existingSupervisor = User::find($student->studentProfile->supervisor_id);
-            
-            // If current supervisor is viewing, allow it
+            // If it's a different supervisor trying to view, block them
             if (Auth::id() !== $student->studentProfile->supervisor_id) {
                 return redirect()->route('supervisor.students.search')
-                    ->with('error', 'This student already has a supervisor: ' . $existingSupervisor->name);
+                    ->with('error', 'This student already has a supervisor. You cannot accept this student.');
             }
         }
 
-        return view('supervisor.students.view', compact('student'));
+        // Check if this supervisor has already generated a letter for this student
+        $hasAcceptanceLetter = \App\Models\AcceptanceLetter::where('student_user_id', $student->id)
+            ->where('supervisor_user_id', Auth::id())
+            ->exists();
+
+        return view('supervisor.students.view', compact('student', 'hasAcceptanceLetter'));
     }
 
     /**

@@ -235,112 +235,131 @@
                 @endif
             </div>
 
-            <!-- Student Reports Section -->
-            <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold text-gray-900">Daily Reports</h3>
-                    <div class="flex gap-2">
-                        <button onclick="filterReports('all')" id="btn-all" class="px-3 py-1 text-sm font-medium rounded-lg bg-ojt-primary text-white">
-                            All
-                        </button>
-                        <button onclick="filterReports('week')" id="btn-week" class="px-3 py-1 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200">
-                            This Week
-                        </button>
-                        <button onclick="filterReports('month')" id="btn-month" class="px-3 py-1 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200">
-                            This Month
-                        </button>
+            @php
+                $isSupervised = $student->studentProfile && $student->studentProfile->supervisor_id === Auth::id();
+                // Use the variable passed from controller, or check if student has supervisor
+                $hasLetter = $hasAcceptanceLetter ?? false;
+            @endphp
+
+            @if($isSupervised && $hasLetter)
+                <!-- Student Reports Section (Only for supervised students) -->
+                <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">Daily Reports</h3>
+                        <div class="flex gap-2">
+                            <button onclick="filterReports('all')" id="btn-all" class="px-3 py-1 text-sm font-medium rounded-lg bg-ojt-primary text-white">
+                                All
+                            </button>
+                            <button onclick="filterReports('week')" id="btn-week" class="px-3 py-1 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200">
+                                This Week
+                            </button>
+                            <button onclick="filterReports('month')" id="btn-month" class="px-3 py-1 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200">
+                                This Month
+                            </button>
+                        </div>
                     </div>
-                </div>
 
-                @php
-                    $reports = $student->dailyReports()->latest('work_date')->get();
-                @endphp
+                    @php
+                        $reports = $student->dailyReports()->latest('work_date')->get();
+                    @endphp
 
-                @if($reports->count() > 0)
-                    <div id="reports-container" class="space-y-3">
-                        @foreach($reports as $report)
-                            <div class="report-item border border-gray-200 rounded-lg p-4 hover:border-ojt-primary transition-colors" 
-                                 data-date="{{ $report->work_date->format('Y-m-d') }}">
-                                <div class="flex items-start justify-between">
-                                    <div class="flex-1">
-                                        <div class="flex items-center gap-3 mb-2">
-                                            <h4 class="font-medium text-gray-900">{{ $report->work_date->format('l, F j, Y') }}</h4>
-                                            <span class="text-xs px-2 py-1 rounded-full {{ $report->status === 'submitted' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700' }}">
-                                                {{ ucfirst($report->status ?? 'submitted') }}
-                                            </span>
-                                            <span class="text-xs text-gray-500">{{ $report->work_date->diffForHumans() }}</span>
-                                        </div>
-                                        <p class="text-sm text-gray-700 whitespace-pre-line">{{ $report->summary }}</p>
-                                        @if($report->attachment_path)
-                                            <div class="mt-2">
-                                                <a href="{{ Storage::url($report->attachment_path) }}" target="_blank"
-                                                   class="inline-flex items-center text-sm text-ojt-primary hover:text-maroon-700">
-                                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                                                    </svg>
-                                                    View Attachment
-                                                </a>
+                    @if($reports->count() > 0)
+                        <div id="reports-container" class="space-y-3">
+                            @foreach($reports as $report)
+                                <div class="report-item border border-gray-200 rounded-lg p-4 hover:border-ojt-primary transition-colors" 
+                                     data-date="{{ $report->work_date->format('Y-m-d') }}">
+                                    <div class="flex items-start justify-between">
+                                        <div class="flex-1">
+                                            <div class="flex items-center gap-3 mb-2">
+                                                <h4 class="font-medium text-gray-900">{{ $report->work_date->format('l, F j, Y') }}</h4>
+                                                <span class="text-xs px-2 py-1 rounded-full {{ $report->status === 'submitted' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700' }}">
+                                                    {{ ucfirst($report->status ?? 'submitted') }}
+                                                </span>
+                                                <span class="text-xs text-gray-500">{{ $report->work_date->diffForHumans() }}</span>
                                             </div>
-                                        @endif
+                                            <p class="text-sm text-gray-700 whitespace-pre-line">{{ $report->summary }}</p>
+                                            @if($report->attachment_path)
+                                                <div class="mt-2">
+                                                    <a href="{{ Storage::url($report->attachment_path) }}" target="_blank"
+                                                       class="inline-flex items-center text-sm text-ojt-primary hover:text-maroon-700">
+                                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                                        </svg>
+                                                        View Attachment
+                                                    </a>
+                                                </div>
+                                            @endif
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        @endforeach
-                    </div>
-                @else
-                    <div class="text-center py-8">
-                        <svg class="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <p class="text-gray-500">No reports submitted yet</p>
-                    </div>
-                @endif
-            </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="text-center py-8">
+                            <svg class="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <p class="text-gray-500">No reports submitted yet</p>
+                        </div>
+                    @endif
+                </div>
+
+                <script>
+                    function filterReports(period) {
+                        const now = new Date();
+                        const reports = document.querySelectorAll('.report-item');
+                        
+                        // Update button styles
+                        document.querySelectorAll('[id^="btn-"]').forEach(btn => {
+                            btn.classList.remove('bg-ojt-primary', 'text-white');
+                            btn.classList.add('bg-gray-100', 'text-gray-700');
+                        });
+                        document.getElementById('btn-' + period).classList.remove('bg-gray-100', 'text-gray-700');
+                        document.getElementById('btn-' + period).classList.add('bg-ojt-primary', 'text-white');
+                        
+                        reports.forEach(report => {
+                            const reportDate = new Date(report.dataset.date);
+                            let show = false;
+                            
+                            if (period === 'all') {
+                                show = true;
+                            } else if (period === 'week') {
+                                const weekAgo = new Date(now);
+                                weekAgo.setDate(weekAgo.getDate() - 7);
+                                show = reportDate >= weekAgo;
+                            } else if (period === 'month') {
+                                const monthAgo = new Date(now);
+                                monthAgo.setMonth(monthAgo.getMonth() - 1);
+                                show = reportDate >= monthAgo;
+                            }
+                            
+                            report.style.display = show ? 'block' : 'none';
+                        });
+                    }
+                </script>
+            @endif
 
             <!-- Action Buttons -->
-            <div class="flex items-center justify-center">
-                <a href="{{ route('supervisor.students') }}" 
-                   class="inline-flex items-center px-6 py-3 bg-ojt-primary text-white rounded-lg hover:bg-maroon-700 transition-colors font-medium">
+            <div class="flex items-center justify-center gap-4">
+                @if(!$isSupervised)
+                    <!-- Show Accept button if not yet supervised -->
+                    <a href="{{ route('supervisor.students.accept', $student->id) }}" 
+                       class="inline-flex items-center px-6 py-3 bg-ojt-primary text-white rounded-lg hover:bg-maroon-700 transition-colors font-medium">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Accept & Generate Letter
+                    </a>
+                @endif
+                
+                <a href="{{ $isSupervised ? route('supervisor.students') : route('supervisor.students.search') }}" 
+                   class="inline-flex items-center px-6 py-3 {{ $isSupervised ? 'bg-ojt-primary text-white' : 'border border-gray-300 text-gray-700' }} rounded-lg hover:bg-{{ $isSupervised ? 'maroon-700' : 'gray-50' }} transition-colors font-medium">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                     </svg>
-                    Back to My Students
+                    {{ $isSupervised ? 'Back to My Students' : 'Back to Search' }}
                 </a>
             </div>
-
-            <script>
-                function filterReports(period) {
-                    const now = new Date();
-                    const reports = document.querySelectorAll('.report-item');
-                    
-                    // Update button styles
-                    document.querySelectorAll('[id^="btn-"]').forEach(btn => {
-                        btn.classList.remove('bg-ojt-primary', 'text-white');
-                        btn.classList.add('bg-gray-100', 'text-gray-700');
-                    });
-                    document.getElementById('btn-' + period).classList.remove('bg-gray-100', 'text-gray-700');
-                    document.getElementById('btn-' + period).classList.add('bg-ojt-primary', 'text-white');
-                    
-                    reports.forEach(report => {
-                        const reportDate = new Date(report.dataset.date);
-                        let show = false;
-                        
-                        if (period === 'all') {
-                            show = true;
-                        } else if (period === 'week') {
-                            const weekAgo = new Date(now);
-                            weekAgo.setDate(weekAgo.getDate() - 7);
-                            show = reportDate >= weekAgo;
-                        } else if (period === 'month') {
-                            const monthAgo = new Date(now);
-                            monthAgo.setMonth(monthAgo.getMonth() - 1);
-                            show = reportDate >= monthAgo;
-                        }
-                        
-                        report.style.display = show ? 'block' : 'none';
-                    });
-                }
-            </script>
         </div>
     </div>
 </x-app-layout>
