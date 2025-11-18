@@ -18,6 +18,8 @@ class StudentProfile extends Model
         'address',
         'profile_image',
         'ojt_status',
+        'preplacement_complete',
+        'preplacement_completed_at',
         'required_hours',
         'completed_hours',
         'assigned_company_id',
@@ -26,6 +28,8 @@ class StudentProfile extends Model
 
     protected $casts = [
         'ojt_status' => 'string',
+        'preplacement_complete' => 'boolean',
+        'preplacement_completed_at' => 'datetime',
     ];
 
     // Relationship with User

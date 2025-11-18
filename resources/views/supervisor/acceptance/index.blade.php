@@ -18,7 +18,7 @@
                 <div class="bg-white rounded-lg border border-gray-200 p-6">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-gray-600 text-sm font-medium">My Students</p>
+                            <p class="text-gray-600 text-sm font-medium">Supervised Students</p>
                             <p class="text-2xl font-bold text-ojt-dark">{{ $studentsCount }}</p>
                         </div>
                         <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">

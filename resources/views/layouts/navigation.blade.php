@@ -21,28 +21,14 @@
                     @if(Auth::user()->isStudent())
                         @php
                             $hasActiveOJT = Auth::user()->hasActiveOJT();
-                            // Pre-requirements considered complete if student has submitted all pre_placement docs approved
-                            $preReqComplete = \App\Models\DocumentRequirement::where('type', 'pre_placement')
-                                ->whereDoesntHave('submissions', function($q) {
-                                    $q->where('student_user_id', Auth::id())
-                                      ->where('status', 'approved');
-                                })->count() === 0;
                         @endphp
                         {{-- Documents (includes acceptance letter flow) --}}
                         <x-nav-link :href="route('documents.index')" :active="request()->routeIs('documents.*')">
                             {{ __('Documents') }}
                         </x-nav-link>
-                        {{-- Companies/Placements only after pre-reqs complete --}}
-                        @if($preReqComplete)
-                            <x-nav-link :href="route('companies.index')" :active="request()->routeIs('companies.*')">
-                                {{ __('Companies') }}
-                            </x-nav-link>
-                            @if(!Auth::user()->hasActiveOJT())
-                                <x-nav-link :href="route('placements.index')" :active="request()->routeIs('placements.*')">
-                                    {{ __('Placements') }}
-                                </x-nav-link>
-                            @endif
-                        @endif
+                        <x-nav-link :href="route('companies.index')" :active="request()->routeIs('companies.*')">
+                            {{ __('Companies') }}
+                        </x-nav-link>
                         {{-- Attendance/Reports only when OJT active --}}
                         @if($hasActiveOJT)
                             <x-nav-link :href="route('attendance.index')" :active="request()->routeIs('attendance.*')">
@@ -73,9 +59,6 @@
                         <x-nav-link :href="route('coord.students.index')" :active="request()->routeIs('coord.students.*')">
                             {{ __('Students') }}
                         </x-nav-link>
-                        <x-nav-link :href="route('coord.placements.inbox')" :active="request()->routeIs('coord.placements.*')">
-                            {{ __('Placement Inbox') }}
-                        </x-nav-link>
                         <x-nav-link :href="route('companies.index')" :active="request()->routeIs('companies.*')">
                             {{ __('Companies') }}
                         </x-nav-link>
@@ -102,11 +85,8 @@
                         <x-nav-link :href="route('supervisor.students.search')" :active="request()->routeIs('supervisor.students.search*')">
                             {{ __('Accept Student') }}
                         </x-nav-link>
-                        <x-nav-link :href="route('supervisor.acceptance.index')" :active="request()->routeIs('supervisor.acceptance.*')">
-                            {{ __('My Letters') }}
-                        </x-nav-link>
                         <x-nav-link :href="route('supervisor.students')" :active="request()->routeIs('supervisor.students')">
-                            {{ __('My Students') }}
+                            {{ __('Supervised Students') }}
                         </x-nav-link>
                         <x-nav-link :href="route('messages.index')" :active="request()->routeIs('messages.*')">
                             {{ __('Messages') }}
@@ -205,28 +185,13 @@
                 </x-responsive-nav-link>
                 @php
                     $hasActiveOJT = Auth::user()->hasActiveOJT();
-                    $preReqComplete = \App\Models\DocumentRequirement::where('type', 'pre_placement')
-                        ->whereDoesntHave('submissions', function($q) {
-                            $q->where('student_user_id', Auth::id())
-                              ->where('status', 'approved');
-                        })->count() === 0;
                 @endphp
-                @if($preReqComplete)
-                    <x-responsive-nav-link :href="route('companies.index')" :active="request()->routeIs('companies.*')">
-                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
-                        {{ __('Companies') }}
-                    </x-responsive-nav-link>
-                    @if(!Auth::user()->hasActiveOJT())
-                        <x-responsive-nav-link :href="route('placements.index')" :active="request()->routeIs('placements.*')">
-                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            {{ __('Placements') }}
-                        </x-responsive-nav-link>
-                    @endif
-                @endif
+                <x-responsive-nav-link :href="route('companies.index')" :active="request()->routeIs('companies.*')">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    {{ __('Companies') }}
+                </x-responsive-nav-link>
                 @if($hasActiveOJT)
                     <x-responsive-nav-link :href="route('attendance.index')" :active="request()->routeIs('attendance.*')">
                         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -270,12 +235,6 @@
                     </svg>
                     {{ __('Students') }}
                 </x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('coord.placements.inbox')" :active="request()->routeIs('coord.placements.*')">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    {{ __('Placement Inbox') }}
-                </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('companies.index')" :active="request()->routeIs('companies.*')">
                     <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -317,17 +276,11 @@
                     </svg>
                     {{ __('Accept Student') }}
                 </x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('supervisor.acceptance.index')" :active="request()->routeIs('supervisor.acceptance.*')">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    {{ __('My Letters') }}
-                </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('supervisor.students')" :active="request()->routeIs('supervisor.students')">
                     <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                     </svg>
-                    {{ __('My Students') }}
+                        {{ __('Supervised Students') }}
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('messages.index')" :active="request()->routeIs('messages.*')">
                     <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

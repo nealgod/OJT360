@@ -152,7 +152,7 @@
                                                              src="{{ Storage::url($student->getProfile()->profile_image) }}" 
                                                              alt="{{ $student->name }}">
                                                     @else
-                                                        <div class="h-10 w-10 rounded-full bg-ojt-primary flex items-center justify-center">
+                                                        <div class="h-10 w-10 rounded-full {{ $student->getAvatarColor() }} flex items-center justify-center">
                                                             <span class="text-white font-medium text-sm">{{ substr($student->name, 0, 1) }}</span>
                                                         </div>
                                                     @endif

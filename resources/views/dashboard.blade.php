@@ -8,7 +8,7 @@
                     @if(Auth::user()->getProfile() && Auth::user()->getProfile()->profile_image)
                         <img src="{{ Storage::url(Auth::user()->getProfile()->profile_image) }}" alt="Profile" class="w-16 h-16 rounded-full object-cover border-2 border-ojt-primary">
                     @else
-                        <div class="w-16 h-16 bg-ojt-primary rounded-full flex items-center justify-center text-white text-xl font-bold">
+                        <div class="w-16 h-16 {{ Auth::user()->getAvatarColor() }} rounded-full flex items-center justify-center text-white text-xl font-bold">
                             {{ substr(Auth::user()->name, 0, 1) }}
                         </div>
                     @endif
@@ -20,20 +20,10 @@
                     </div>
                 </div>
                 @if(Auth::user()->isStudent())
-                    @php
-                        $preReqCompleteTop = \App\Models\DocumentRequirement::where('type', 'pre_placement')
-                            ->whereDoesntHave('submissions', function($q) {
-                                $q->where('student_user_id', Auth::id())->where('status', 'approved');
-                            })->count() === 0;
-                    @endphp
-                    @if(Auth::user()->studentProfile && Auth::user()->studentProfile->ojt_status === 'active')
-                        <p class="text-gray-600">Here's what's happening with your OJT internship today.</p>
+                    @if(Auth::user()->studentProfile?->preplacement_complete)
+                        <p class="text-gray-600">All set—your checklist is complete. Keep logging your hours and submitting reports.</p>
                     @else
-                        @if(!$preReqCompleteTop)
-                            <p class="text-gray-600">Complete your pre-requirement documents first to proceed to placement.</p>
-                        @else
-                            <p class="text-gray-600">Pre-requirements approved. You can proceed with placement when ready.</p>
-                            @endif
+                        <p class="text-gray-600">Finish the required documents below to unlock attendance, reports, and other OJT tools.</p>
                     @endif
                 @else
                     <p class="text-gray-600">Here's what's happening in your OJT management system today.</p>
@@ -240,19 +230,15 @@
                     </div>
                 @endif
 
-                <!-- My Placement Button for Students with Approved Placement -->
-                @if(Auth::user()->isStudent() && Auth::user()->placementRequests()->where('status', 'approved')->exists())
-                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-8">
-                        <div class="flex items-center justify-between">
+                @if(Auth::user()->isStudent() && Auth::user()->studentProfile && !Auth::user()->studentProfile->preplacement_complete)
+                    <div class="bg-white rounded-xl border border-yellow-200 shadow-sm p-6 mb-8">
+                        <div class="flex items-center justify-between gap-4">
                             <div>
-                                <h3 class="text-lg font-semibold text-ojt-dark mb-2">My Placement</h3>
-                                <p class="text-gray-600 text-sm">View your approved placement details, supervisor information, and company details.</p>
+                                <h3 class="text-lg font-semibold text-ojt-dark mb-2">Pre-Placement Checklist</h3>
+                                <p class="text-gray-600 text-sm">Submit every required document to unlock attendance, reports, and the rest of your OJT tools.</p>
                             </div>
-                            <a href="{{ route('placements.my') }}" class="inline-flex items-center px-4 py-2 bg-ojt-primary text-white text-sm font-medium rounded-lg hover:bg-maroon-700 transition-colors">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                View Details
+                            <a href="{{ route('documents.index') }}" class="inline-flex items-center px-4 py-2 bg-ojt-primary text-white text-sm font-medium rounded-lg hover:bg-maroon-700 transition-colors">
+                                Review Checklist
                             </a>
                         </div>
                     </div>
@@ -284,25 +270,19 @@
                             }
                         })->count();
 
-                    // Pending placements scoped to coordinator's department and optional program
-                    $pendingPlacements = \App\Models\PlacementRequest::whereHas('student', function($query) use ($department, $programName) {
-                        $query->whereHas('studentProfile', function($q) use ($department, $programName) {
-                            $q->where('department', $department);
-                            if (!empty($programName)) {
-                                $q->where('course', $programName);
-                            }
-                        });
-                    })->where('status', 'pending')->count();
+                    $pendingChecklists = \App\Models\StudentProfile::where('department', $department)
+                        ->when(!empty($programName), function($q) use ($programName) {
+                            $q->where('course', $programName);
+                        })
+                        ->where('preplacement_complete', false)
+                        ->count();
 
-                    // Approved placements scoped similarly
-                    $approvedPlacements = \App\Models\PlacementRequest::whereHas('student', function($query) use ($department, $programName) {
-                        $query->whereHas('studentProfile', function($q) use ($department, $programName) {
-                            $q->where('department', $department);
-                            if (!empty($programName)) {
-                                $q->where('course', $programName);
-                            }
-                        });
-                    })->where('status', 'approved')->count();
+                    $readyChecklists = \App\Models\StudentProfile::where('department', $department)
+                        ->when(!empty($programName), function($q) use ($programName) {
+                            $q->where('course', $programName);
+                        })
+                        ->where('preplacement_complete', true)
+                        ->count();
 
                     // Active companies in department
                     $activeCompanies = \App\Models\Company::where('department', $department)
@@ -329,8 +309,8 @@
                     <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-gray-600 text-sm font-medium">Pending Reviews</p>
-                                <p class="text-2xl font-bold text-ojt-dark">{{ $pendingPlacements }}</p>
+                                <p class="text-gray-600 text-sm font-medium">Missing Checklist</p>
+                                <p class="text-2xl font-bold text-ojt-dark">{{ $pendingChecklists }}</p>
                             </div>
                             <div class="w-12 h-12 bg-ojt-warning/10 rounded-lg flex items-center justify-center">
                                 <svg class="w-6 h-6 text-ojt-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -340,12 +320,12 @@
                         </div>
                     </div>
 
-                    <!-- Approved Placements -->
+                    <!-- Ready Students -->
                     <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-gray-600 text-sm font-medium">Approved Placements</p>
-                                <p class="text-2xl font-bold text-ojt-dark">{{ $approvedPlacements }}</p>
+                                <p class="text-gray-600 text-sm font-medium">Ready for OJT</p>
+                                <p class="text-2xl font-bold text-ojt-dark">{{ $readyChecklists }}</p>
                             </div>
                             <div class="w-12 h-12 bg-ojt-success/10 rounded-lg flex items-center justify-center">
                                 <svg class="w-6 h-6 text-ojt-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -703,6 +683,12 @@
                                             </svg>
                                             View Reports
                                         </a>
+                                        <a href="{{ route('student.placement.show') }}" class="w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center">
+                                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6M12 6v12m9-6a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            My Placement
+                                        </a>
                                     @else
                                         <!-- Pre-OJT Actions -->
                                         <div class="text-center py-4">
@@ -731,11 +717,11 @@
                                         </svg>
                                         Class List
                                     </a>
-                                    <a href="{{ route('coord.placements.inbox') }}" class="w-full bg-ojt-primary text-white py-3 px-4 rounded-lg font-medium hover:bg-maroon-700 transition-colors duration-200 flex items-center justify-center">
+                                    <a href="{{ route('coord.documents.index') }}" class="w-full bg-ojt-primary text-white py-3 px-4 rounded-lg font-medium hover:bg-maroon-700 transition-colors duration-200 flex items-center justify-center">
                                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                         </svg>
-                                        Review Placements
+                                        Review Checklists
                                     </a>
                                     <a href="{{ route('companies.index') }}" class="w-full bg-white border border-ojt-primary text-ojt-primary py-3 px-4 rounded-lg font-medium hover:bg-ojt-primary hover:text-white transition-colors duration-200 flex items-center justify-center">
                                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -780,9 +766,9 @@
                                     </a>
                                     <a href="{{ route('supervisor.students') }}" class="w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center">
                                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                                         </svg>
-                                        My Students
+                                        Supervised Students
                                     </a>
                                 </div>
                             @elseif(Auth::user()->isAdmin())

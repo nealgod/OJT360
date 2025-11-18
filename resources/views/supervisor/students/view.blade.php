@@ -34,7 +34,7 @@
                                  alt="{{ $student->name }}" 
                                  class="w-24 h-24 rounded-full object-cover border-4 border-ojt-primary">
                         @else
-                            <div class="w-24 h-24 rounded-full bg-ojt-primary flex items-center justify-center text-white text-3xl font-bold border-4 border-ojt-primary">
+                            <div class="w-24 h-24 rounded-full {{ $student->getAvatarColor() }} flex items-center justify-center text-white text-3xl font-bold border-4 border-gray-200">
                                 {{ substr($student->name, 0, 1) }}
                             </div>
                         @endif

@@ -24,7 +24,7 @@
                                  src="{{ Storage::url($student->getProfile()->profile_image) }}" 
                                  alt="{{ $student->name }}">
                         @else
-                            <div class="h-20 w-20 rounded-full bg-ojt-primary flex items-center justify-center border-4 border-ojt-primary">
+                            <div class="h-20 w-20 rounded-full {{ $student->getAvatarColor() }} flex items-center justify-center border-4 border-gray-200">
                                 <span class="text-white font-bold text-2xl">{{ substr($student->name, 0, 1) }}</span>
                             </div>
                         @endif
@@ -106,12 +106,12 @@
                 <!-- Main Content -->
                 <div class="lg:col-span-2 space-y-8">
                     <!-- Attendance Overview -->
-                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
                         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
                             <div>
                                 <h3 class="text-lg font-semibold text-gray-900">Attendance Overview</h3>
                                 <p class="text-sm text-gray-500">Latest logs with photos and punctuality checks.</p>
-                            </div>
+                                </div>
                             <div class="flex items-center gap-4 text-xs text-gray-600">
                                 <div><span class="font-semibold text-ojt-dark">{{ $attendanceStats['total_days'] }}</span> days logged</div>
                                 <div><span class="font-semibold text-green-600">{{ $attendanceStats['completed_days'] }}</span> completed</div>
@@ -151,11 +151,11 @@
                                                 <div class="flex items-center gap-2">
                                                     @if($log->photo_in_path)
                                                         <a href="{{ Storage::url($log->photo_in_path) }}" target="_blank" class="inline-flex items-center px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200">Time In</a>
-                                                    @endif
+                    @endif
                                                     @if($log->photo_out_path)
                                                         <a href="{{ Storage::url($log->photo_out_path) }}" target="_blank" class="inline-flex items-center px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200">Time Out</a>
                                                     @endif
-                                                </div>
+                                            </div>
                                             </td>
                                             <td class="px-3 py-2">
                                                 @if(!$log->time_in)
@@ -176,21 +176,21 @@
                                     @endforelse
                                 </tbody>
                             </table>
-                        </div>
-                    </div>
+                                    </div>
+                                </div>
 
                     <!-- Reports Overview -->
                     <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
                         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-                            <div>
+                                <div>
                                 <h3 class="text-lg font-semibold text-gray-900">Reports Overview</h3>
                                 <p class="text-sm text-gray-500">Recent submissions with quick access.</p>
-                            </div>
+                                            </div>
                             <div class="flex items-center gap-4 text-xs text-gray-600">
                                 <div><span class="font-semibold text-ojt-dark">{{ $reportStats['total_reports'] }}</span> total</div>
                                 <div><span class="font-semibold text-ojt-dark">{{ $reportStats['this_week'] }}</span> this week</div>
-                            </div>
-                        </div>
+                                    </div>
+                                </div>
                         <div class="overflow-x-auto">
                             <table class="min-w-full divide-y divide-gray-200 text-sm">
                                 <thead class="bg-gray-50">
@@ -280,7 +280,7 @@
                                         <p class="text-xs uppercase tracking-wide text-gray-500">Supervisor</p>
                                         <p class="mt-1 text-gray-400">Not assigned</p>
                                     </div>
-                                @endif
+                            @endif
                             </div>
                         </div>
                     </div>
@@ -327,13 +327,13 @@
 
                         <!-- Current assignment -->
                         <div class="mb-4" x-show="open">
-                        @if($student->studentProfile?->supervisor)
-                            <div class="bg-ojt-accent/10 border border-ojt-accent/30 rounded-lg p-3">
+                            @if($student->studentProfile?->supervisor)
+                        <div class="bg-ojt-accent/10 border border-ojt-accent/30 rounded-lg p-3">
                                 <div class="flex items-center justify-between">
                                     <div>
                                         <p class="text-sm text-ojt-accent font-medium">Supervisor:</p>
-                                        <p class="text-sm text-ojt-dark">{{ $student->studentProfile->supervisor->name }}</p>
-                                        <p class="text-xs text-ojt-dark/70">{{ $student->studentProfile->supervisor->email }}</p>
+                            <p class="text-sm text-ojt-dark">{{ $student->studentProfile->supervisor->name }}</p>
+                            <p class="text-xs text-ojt-dark/70">{{ $student->studentProfile->supervisor->email }}</p>
                                     </div>
                                     @if($student->studentProfile->supervisor->supervisorProfile?->company)
                                         <div class="text-right text-xs text-ojt-dark/70">
@@ -342,7 +342,7 @@
                                         </div>
                                     @endif
                                 </div>
-                            </div>
+                                </div>
                             @else
                                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
                                     <p class="text-sm text-gray-600">No supervisor assigned yet</p>

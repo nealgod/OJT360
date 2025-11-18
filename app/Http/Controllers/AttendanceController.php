@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\AttendanceLog;
-use App\Models\PlacementRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -170,18 +169,7 @@ class AttendanceController extends Controller
                 return back()->with('error', 'Work duration seems excessive. Please contact your coordinator if this is correct.');
             }
 
-            // Load approved placement schedule with validation
-            $placement = PlacementRequest::where('student_user_id', $user->id)
-                ->where('status', 'approved')
-                ->orderByDesc('decided_at')
-                ->first();
-
-            if (!$placement) {
-                \Log::warning('No approved placement found', ['user_id' => $user->id]);
-                return back()->with('error', 'No approved placement found. Please contact your coordinator.');
-            }
-
-            $scheduledBreakMinutes = (int)($placement->break_minutes ?? 0);
+            $scheduledBreakMinutes = (int) config('timezone.default_break_duration', 60);
             
             // Validate break time is reasonable
             if ($scheduledBreakMinutes > config('timezone.max_break_duration', 240)) {

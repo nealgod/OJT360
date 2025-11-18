@@ -33,12 +33,15 @@
                     $progressPercentage = $totalRequired > 0 ? round(($submittedRequired / $totalRequired) * 100) : 0;
 
                     // Pre‑placement checklist counts (Approved gating)
-                    $preTotal = $prePlacement->count();
+                    $preTotal = $prePlacement->where('is_required', true)->count();
                     $preApproved = 0;
                     $prePendingList = [];
                     foreach($prePlacement as $req) {
+                        if(!$req->is_required) {
+                            continue;
+                        }
                         $first = ($submissions[$req->id] ?? collect())->first();
-                        if($first && $first->status === 'approved') {
+                        if($first && in_array($first->status, ['submitted', 'approved'])) {
                             $preApproved++;
                         } else {
                             $prePendingList[] = $req->name;
@@ -56,10 +59,10 @@
                 <div class="flex items-center justify-between">
                     <div class="text-sm text-gray-700">
                         <span class="font-medium">Pre‑requirements:</span>
-                        <span>{{ $preApproved }} of {{ $preTotal }} approved</span>
+                        <span>{{ $preApproved }} of {{ $preTotal }} submitted</span>
                     </div>
                     @if($preTotal > 0 && $preApproved === $preTotal)
-                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">You can proceed to Placement</span>
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Everything unlocked</span>
                     @else
                         @if(count($prePendingList))
                             <div class="text-xs text-gray-500">

@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\AttendanceLog;
-use App\Models\PlacementRequest;
 use App\Models\StudentProfile;
 use App\Models\User;
 use Carbon\Carbon;
@@ -31,14 +30,8 @@ class AttendanceFlowTest extends TestCase
             'course' => 'BSIT',
             'department' => 'Engineering',
             'ojt_status' => 'active',
-        ]);
-
-        $placement = PlacementRequest::create([
-            'student_user_id' => $student->id,
-            'status' => 'approved',
-            'start_date' => Carbon::parse('2025-10-20'),
-            'break_minutes' => 60,
-            'decided_at' => now(),
+            'preplacement_complete' => true,
+            'preplacement_completed_at' => now(),
         ]);
 
         // Time-in at 06:50 (early), time-out at 17:30 same day

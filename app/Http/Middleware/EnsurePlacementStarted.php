@@ -20,9 +20,11 @@ class EnsurePlacementStarted
             return $next($request);
         }
 
-        // Simplify guard: rely on active OJT status only
-        if (!$user->studentProfile || $user->studentProfile->ojt_status !== 'active') {
-            return redirect()->back()->with('error', 'Your OJT placement is not active yet. Please wait for coordinator approval.');
+        $profile = $user->studentProfile;
+
+        if (!$profile || !$profile->preplacement_complete) {
+            return redirect()->route('documents.index')
+                ->with('error', 'Please complete all required pre-placement documents to unlock this feature.');
         }
         return $next($request);
     }

@@ -3,9 +3,7 @@
 @php
     $profileImage = $user->profile_image;
     $initials = strtoupper(substr($user->name, 0, 1));
-    $colors = ['bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500'];
-    $colorIndex = ord($initials) % count($colors);
-    $avatarColor = $colors[$colorIndex];
+    $avatarColor = $user->getAvatarColor();
 @endphp
 
 @if($profileImage)

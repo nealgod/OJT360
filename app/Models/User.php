@@ -95,6 +95,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(StudentProfile::class, 'supervisor_id');
     }
 
+    public function acceptanceLetters()
+    {
+        return $this->hasMany(AcceptanceLetter::class, 'student_user_id');
+    }
+
     // Role checking methods
     public function isStudent()
     {
@@ -119,7 +124,11 @@ class User extends Authenticatable implements MustVerifyEmail
     // Check if user has active OJT (for students)
     public function hasActiveOJT()
     {
-        return $this->studentProfile && $this->studentProfile->ojt_status === 'active';
+        if (!$this->isStudent() || !$this->studentProfile) {
+            return false;
+        }
+
+        return $this->studentProfile->preplacement_complete || $this->studentProfile->ojt_status === 'active';
     }
 
     // Check if user completed their profile (aligned with CheckProfileCompletion)
@@ -218,15 +227,24 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Get the avatar color class based on user's initial
+     */
+    public function getAvatarColor()
+    {
+        $initials = strtoupper(substr($this->name, 0, 1));
+        $colors = ['bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500'];
+        $colorIndex = ord($initials) % count($colors);
+        return $colors[$colorIndex];
+    }
+
+    /**
      * Get user's avatar (profile image or initials)
      */
     public function getAvatarHtml($size = 'w-10 h-10')
     {
         $profileImage = $this->profile_image;
         $initials = strtoupper(substr($this->name, 0, 1));
-        $colors = ['bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500'];
-        $colorIndex = ord($initials) % count($colors);
-        $avatarColor = $colors[$colorIndex];
+        $avatarColor = $this->getAvatarColor();
         
         if ($profileImage) {
             return '<img src="' . $profileImage . '" alt="' . $this->name . '" class="' . $size . ' rounded-full object-cover">';

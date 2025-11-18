@@ -5,8 +5,8 @@ use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
-use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Notifications\VerifyWithTemporaryPassword;
+use Illuminate\Auth\Events\Verified;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -99,6 +99,11 @@ Route::get('/verify-email/{id}/{hash}', function (Request $request) {
         return redirect()->route('verification.expired');
     }
 
+    if (!$user->hasVerifiedEmail()) {
+        $user->markEmailAsVerified();
+        event(new Verified($user));
+    }
+
     // For coordinators/supervisors, redirect to login with message
     if (in_array($user->role, ['coordinator', 'supervisor'])) {
         // Log out any existing session to ensure clean login
@@ -106,11 +111,6 @@ Route::get('/verify-email/{id}/{hash}', function (Request $request) {
         \Illuminate\Support\Facades\Session::flush();
         
         return redirect()->route('login')->with('status', 'Verification link valid! Please login with your temporary password to verify your email and change it on first login.');
-    }
-
-    // For students/admins, mark email as verified and proceed to dashboard
-    if (!$user->hasVerifiedEmail()) {
-        $user->markEmailAsVerified();
     }
 
     // Students/Admins proceed to dashboard
