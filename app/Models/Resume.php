@@ -19,6 +19,8 @@ class Resume extends Model
         'certifications',
         'template_path',
         'profile_image',
+        'submitted_to_documents',
+        'submitted_at',
     ];
 
     protected $casts = [
@@ -28,6 +30,7 @@ class Resume extends Model
         'skills' => 'array',
         'certifications' => 'array',
         'references' => 'array',
+        'submitted_at' => 'datetime',
     ];
 
     // Relationship with User

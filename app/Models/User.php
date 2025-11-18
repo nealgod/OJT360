@@ -69,10 +69,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->receivedMessages()->unread();
     }
 
-    public function placementRequests()
-    {
-        return $this->hasMany(PlacementRequest::class, 'student_user_id');
-    }
+    // Removed placementRequests - using acceptance letters now
 
     public function attendanceLogs()
     {

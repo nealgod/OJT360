@@ -94,14 +94,32 @@ Route::middleware(['auth', 'force.password.change', 'profile.complete'])->group(
     // Acceptance Letter Download (auth required)
     Route::get('/acceptance-letters/{letter}/download', [App\Http\Controllers\AcceptanceLetterController::class, 'download'])->name('acceptance-letters.download');
     
-    // Resume Builder
-    Route::get('/resume', [App\Http\Controllers\ResumeController::class, 'index'])->name('resume.index');
-    Route::get('/resume/create', [App\Http\Controllers\ResumeController::class, 'create'])->name('resume.create');
-    Route::post('/resume', [App\Http\Controllers\ResumeController::class, 'store'])->name('resume.store');
-    Route::get('/resume/{resume}/edit', [App\Http\Controllers\ResumeController::class, 'edit'])->name('resume.edit');
-    Route::patch('/resume/{resume}', [App\Http\Controllers\ResumeController::class, 'update'])->name('resume.update');
-    Route::delete('/resume/{resume}', [App\Http\Controllers\ResumeController::class, 'destroy'])->name('resume.destroy');
-    Route::get('/resume/{resume}/download', [App\Http\Controllers\ResumeController::class, 'download'])->name('resume.download');
+    // Student Documents (Resume & Application Letter)
+    Route::get('/student-documents', [App\Http\Controllers\StudentDocumentController::class, 'index'])->name('student-documents.index');
+    
+    // Resume routes
+    Route::get('/student-documents/resume/create', [App\Http\Controllers\StudentDocumentController::class, 'createResume'])->name('student-documents.resume.create');
+    Route::post('/student-documents/resume', [App\Http\Controllers\StudentDocumentController::class, 'storeResume'])->name('student-documents.resume.store');
+    Route::get('/student-documents/resume/{resume}/edit', [App\Http\Controllers\StudentDocumentController::class, 'editResume'])->name('student-documents.resume.edit');
+    Route::patch('/student-documents/resume/{resume}', [App\Http\Controllers\StudentDocumentController::class, 'updateResume'])->name('student-documents.resume.update');
+    Route::delete('/student-documents/resume/{resume}', [App\Http\Controllers\StudentDocumentController::class, 'destroyResume'])->name('student-documents.resume.destroy');
+    Route::get('/student-documents/resume/{resume}/download', [App\Http\Controllers\StudentDocumentController::class, 'downloadResume'])->name('student-documents.resume.download');
+    
+    // Application Letter routes
+    Route::get('/student-documents/application-letter/create', [App\Http\Controllers\StudentDocumentController::class, 'createApplicationLetter'])->name('student-documents.application-letter.create');
+    Route::post('/student-documents/application-letter', [App\Http\Controllers\StudentDocumentController::class, 'storeApplicationLetter'])->name('student-documents.application-letter.store');
+    Route::get('/student-documents/application-letter/{letter}/edit', [App\Http\Controllers\StudentDocumentController::class, 'editApplicationLetter'])->name('student-documents.application-letter.edit');
+    Route::patch('/student-documents/application-letter/{letter}', [App\Http\Controllers\StudentDocumentController::class, 'updateApplicationLetter'])->name('student-documents.application-letter.update');
+    Route::delete('/student-documents/application-letter/{letter}', [App\Http\Controllers\StudentDocumentController::class, 'destroyApplicationLetter'])->name('student-documents.application-letter.destroy');
+    Route::get('/student-documents/application-letter/{letter}/download', [App\Http\Controllers\StudentDocumentController::class, 'downloadApplicationLetter'])->name('student-documents.application-letter.download');
+    
+    // Submit documents to coordinator
+    Route::post('/student-documents/resume/{resume}/submit', [App\Http\Controllers\StudentDocumentController::class, 'submitResume'])->name('student-documents.resume.submit');
+    Route::post('/student-documents/application-letter/{letter}/submit', [App\Http\Controllers\StudentDocumentController::class, 'submitApplicationLetter'])->name('student-documents.application-letter.submit');
+    
+    // Legacy resume routes (redirect to new routes for backward compatibility)
+    Route::get('/resume', function() { return redirect()->route('student-documents.index'); });
+    Route::get('/resume/create', function() { return redirect()->route('student-documents.resume.create'); });
 });
 
 // Admin routes
@@ -132,7 +150,7 @@ Route::get('/activate', [App\Http\Controllers\ActivationController::class, 'show
 Route::post('/activate', [App\Http\Controllers\ActivationController::class, 'activate'])->name('activate');
 
 Route::middleware(['auth', 'verified', 'force.password.change', 'profile.complete'])->group(function () {
-    Route::get('/my-placement', [App\Http\Controllers\PlacementRequestController::class, 'studentPlacement'])->name('student.placement.show');
+    Route::get('/my-placement', [App\Http\Controllers\StudentPlacementController::class, 'show'])->name('student.placement.show');
 });
 
 // Supervisor Routes (auth required)

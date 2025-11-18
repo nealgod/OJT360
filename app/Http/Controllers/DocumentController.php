@@ -224,6 +224,30 @@ class DocumentController extends Controller
             return back()->withErrors(['submission' => 'Cannot cancel submission that has already been reviewed.']);
         }
 
+        // Check if this was submitted from student-documents (Resume or Application Letter)
+        $requirement = $submission->requirement;
+        if ($requirement) {
+            // Reset submitted flags for Resume/PDS
+            if (stripos($requirement->name, 'Resume') !== false || stripos($requirement->name, 'PDS') !== false) {
+                \App\Models\Resume::where('user_id', $user->id)
+                    ->where('submitted_to_documents', true)
+                    ->update([
+                        'submitted_to_documents' => false,
+                        'submitted_at' => null,
+                    ]);
+            }
+            
+            // Reset submitted flags for Application Letter
+            if (stripos($requirement->name, 'Application Letter') !== false) {
+                \App\Models\ApplicationLetter::where('user_id', $user->id)
+                    ->where('submitted_to_documents', true)
+                    ->update([
+                        'submitted_to_documents' => false,
+                        'submitted_at' => null,
+                    ]);
+            }
+        }
+
         // Delete the file from storage
         if (Storage::disk('public')->exists($submission->file_path)) {
             Storage::disk('public')->delete($submission->file_path);
@@ -234,7 +258,7 @@ class DocumentController extends Controller
 
         PrePlacementService::recalculateForStudent($user->id);
 
-        return redirect()->route('documents.index')->with('success', 'Document submission cancelled successfully!');
+        return redirect()->route('documents.index')->with('success', 'Document submission cancelled successfully! You can now submit another document.');
     }
 
     public function download(StudentDocumentSubmission $submission)
@@ -317,6 +341,34 @@ class DocumentController extends Controller
             'reviewed_by' => $user->id,
             'reviewed_at' => now(),
         ]);
+
+        // If rejected, reset submitted flags so student can resubmit
+        if ($request->status === 'rejected') {
+            $requirement = $submission->requirement;
+            if ($requirement) {
+                $studentId = $submission->student_user_id;
+                
+                // Reset submitted flags for Resume/PDS
+                if (stripos($requirement->name, 'Resume') !== false || stripos($requirement->name, 'PDS') !== false) {
+                    \App\Models\Resume::where('user_id', $studentId)
+                        ->where('submitted_to_documents', true)
+                        ->update([
+                            'submitted_to_documents' => false,
+                            'submitted_at' => null,
+                        ]);
+                }
+                
+                // Reset submitted flags for Application Letter
+                if (stripos($requirement->name, 'Application Letter') !== false) {
+                    \App\Models\ApplicationLetter::where('user_id', $studentId)
+                        ->where('submitted_to_documents', true)
+                        ->update([
+                            'submitted_to_documents' => false,
+                            'submitted_at' => null,
+                        ]);
+                }
+            }
+        }
 
         // Notify student
         \App\Models\Notification::create([

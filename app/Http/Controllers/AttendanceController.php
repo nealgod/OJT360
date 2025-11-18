@@ -310,21 +310,20 @@ class AttendanceController extends Controller
                 ]);
             }
 
-            // Load approved placement schedule with validation
-            $placement = PlacementRequest::where('student_user_id', $user->id)
-                ->where('status', 'approved')
-                ->orderByDesc('decided_at')
+            // Load acceptance letter schedule with validation
+            $acceptance = \App\Models\AcceptanceLetter::where('student_user_id', $user->id)
+                ->latest()
                 ->first();
 
-            if (!$placement) {
-                \Log::warning('Recovery no approved placement found', ['user_id' => $user->id]);
+            if (!$acceptance) {
+                \Log::warning('Recovery no acceptance letter found', ['user_id' => $user->id]);
                 return response()->json([
                     'success' => false,
-                    'message' => 'No approved placement found. Please contact your coordinator.'
+                    'message' => 'No acceptance letter found. Please contact your coordinator.'
                 ]);
             }
 
-            $scheduledBreakMinutes = (int)($placement->break_minutes ?? 0);
+            $scheduledBreakMinutes = isset($acceptance->work_schedule['break_minutes']) ? (int)$acceptance->work_schedule['break_minutes'] : 0;
             
             // Validate break time is reasonable (0-4 hours)
             if ($scheduledBreakMinutes > 240) { // 4 hours

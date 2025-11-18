@@ -50,11 +50,10 @@ $log = App\Models\AttendanceLog::firstOrCreate(
 $log->time_in = $in;
 $log->time_out = $out;
 
-$placement = App\Models\PlacementRequest::where('student_user_id', $user->id)
-    ->where('status','approved')
-    ->orderByDesc('decided_at')
+$acceptance = App\Models\AcceptanceLetter::where('student_user_id', $user->id)
+    ->latest()
     ->first();
-$break = $placement ? (int)($placement->break_minutes ?? 0) : 0;
+$break = $acceptance && isset($acceptance->work_schedule['break_minutes']) ? (int)$acceptance->work_schedule['break_minutes'] : 0;
 
 $tz = 'Asia/Manila';
 $timeIn = \Carbon\Carbon::parse("{$date} {$in}", $tz);

@@ -41,8 +41,5 @@ class Company extends Model
         return $this->belongsTo(User::class, 'coordinator_id');
     }
 
-    public function placementRequests()
-    {
-        return $this->hasMany(PlacementRequest::class);
-    }
+    // Removed placementRequests - using acceptance letters now
 }

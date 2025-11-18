@@ -27,10 +27,7 @@ class CoordinatorStudentController extends Controller
             })
             ->with([
                 'studentProfile.company',
-                'studentProfile.supervisor',
-                'placementRequests' => function($q) {
-                    $q->where('status', 'approved')->latest('decided_at');
-                }
+                'studentProfile.supervisor'
             ]);
 
         // Apply filters (status, supervisor, search; program is fixed)
@@ -134,9 +131,6 @@ class CoordinatorStudentController extends Controller
             'studentProfile.company',
             'studentProfile.supervisor',
             'studentProfile.supervisor.supervisorProfile.company',
-            'placementRequests' => function($q) {
-                $q->orderBy('created_at', 'desc');
-            },
             'attendanceLogs' => function($q) {
                 $q->orderBy('work_date', 'desc')->limit(10);
             },
@@ -159,20 +153,18 @@ class CoordinatorStudentController extends Controller
         $acceptance = \App\Models\AcceptanceLetter::where('student_user_id', $student->id)->latest()->with('company')->first();
 
         $derivedCompanyName = $student->studentProfile?->company?->name
-            ?? $acceptance?->company?->name;
+            ?? $acceptance?->company?->name
+            ?? $student->studentProfile?->supervisor?->supervisorProfile?->company?->name;
         $derivedCompanyAddress = $student->studentProfile?->company?->address
-            ?? $acceptance?->company?->address;
+            ?? $acceptance?->company?->address
+            ?? $student->studentProfile?->supervisor?->supervisorProfile?->company?->address;
+        
         $companySource = null;
-
-        if ($derivedCompanyName) {
+        if ($student->studentProfile?->company) {
             $companySource = 'assigned';
-        } elseif (!empty($externalCompanyName)) {
-            $derivedCompanyName = $externalCompanyName;
-            $derivedCompanyAddress = $placementRequest?->external_company_address;
-            $companySource = 'external';
-        } elseif ($student->studentProfile?->supervisor?->supervisorProfile?->company?->name) {
-            $derivedCompanyName = $student->studentProfile->supervisor->supervisorProfile->company->name;
-            $derivedCompanyAddress = $student->studentProfile->supervisor->supervisorProfile->company->address;
+        } elseif ($acceptance?->company) {
+            $companySource = 'acceptance';
+        } elseif ($student->studentProfile?->supervisor?->supervisorProfile?->company) {
             $companySource = 'supervisor';
         }
 
@@ -185,10 +177,7 @@ class CoordinatorStudentController extends Controller
         // Eligible supervisors for assigned company
         $eligibleSupervisors = collect();
         $studentCompanyId = $student->studentProfile?->assigned_company_id;
-        
-        // Get company info from placement request if no assigned company
-        $placementRequest = $student->placementRequests()->where('status', 'approved')->latest('decided_at')->first();
-        $externalCompanyName = $placementRequest?->external_company_name;
+
         
         if ($studentCompanyId) {
             // For listed companies - show supervisors from that specific company
@@ -198,9 +187,6 @@ class CoordinatorStudentController extends Controller
                 })
                 ->orderBy('name')
                 ->get(['id','name']);
-        } elseif ($externalCompanyName) {
-            // For external companies - do not list existing supervisors to enforce company-specific assignment
-            $eligibleSupervisors = collect();
         }
 
         // Latest proposal, guarded if table not yet migrated
@@ -211,25 +197,14 @@ class CoordinatorStudentController extends Controller
                 ->first();
         }
         
-        // If no proposal exists, check the approved placement request for supervisor info
-        $placementSupervisorInfo = null;
-        if (!$latestProposal && $placementRequest && $placementRequest->supervisor_name && $placementRequest->supervisor_email) {
-            $placementSupervisorInfo = (object)[
-                'proposed_name' => $placementRequest->supervisor_name,
-                'proposed_email' => $placementRequest->supervisor_email,
-                'proposal_id' => null, // Not from SupervisorAssignmentRequest
-            ];
-        }
+        // Removed placement request supervisor info - using acceptance letters now
 
         return view('coord.students.show', compact(
             'student',
             'availableCompanies',
             'eligibleSupervisors',
             'latestProposal',
-            'placementSupervisorInfo',
             'studentCompanyId',
-            'externalCompanyName',
-            'placementRequest',
             'attendanceStats',
             'reportStats',
             'derivedCompanyName',
@@ -327,13 +302,6 @@ class CoordinatorStudentController extends Controller
             if ($latestProposal) {
                 $proposedName = $latestProposal->proposed_name;
                 $proposedEmail = $latestProposal->proposed_email;
-            } else {
-                // Check placement request for supervisor info
-                $placementRequest = $student->placementRequests()->where('status', 'approved')->latest('decided_at')->first();
-                if ($placementRequest && $placementRequest->supervisor_name && $placementRequest->supervisor_email) {
-                    $proposedName = $placementRequest->supervisor_name;
-                    $proposedEmail = $placementRequest->supervisor_email;
-                }
             }
                 
             if (!$proposedName || !$proposedEmail) {
@@ -385,17 +353,9 @@ class CoordinatorStudentController extends Controller
             $studentCompanyId = $student->studentProfile?->assigned_company_id;
             $supervisorCompanyId = $supervisor->supervisorProfile?->company_id ?? null;
             
-            // Get placement request info for external companies
-            $placementRequest = $student->placementRequests()->where('status', 'approved')->latest('decided_at')->first();
-            $externalCompanyName = $placementRequest?->external_company_name;
-            
             if ($studentCompanyId) {
                 // For listed companies - supervisor must be from same company
                 abort_unless($studentCompanyId && $supervisorCompanyId && $studentCompanyId === $supervisorCompanyId, 422);
-            } elseif ($externalCompanyName) {
-                // For external companies - supervisor must be from same department
-                $supervisorDepartment = $supervisor->supervisorProfile?->company?->department;
-                abort_unless($supervisorDepartment === $department, 422);
             } else {
                 abort(422, 'No company assigned to student');
             }
