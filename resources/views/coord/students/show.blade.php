@@ -423,51 +423,19 @@
                                 </div>
                             @endif
 
-                        <!-- Student-submitted details -->
-                        @if(isset($latestProposal) && $latestProposal)
-                                <div class="bg-ojt-accent/10 border border-ojt-accent/30 rounded-lg p-3 mb-4" x-show="open">
-                                <p class="text-sm text-ojt-accent font-medium mb-2">📝 Supervisor Details Submitted by Student:</p>
-                                <p class="text-sm text-ojt-dark"><strong>Name:</strong> {{ $latestProposal->proposed_name ?? 'Not provided' }}</p>
-                                <p class="text-sm text-ojt-dark"><strong>Email:</strong> {{ $latestProposal->proposed_email ?? 'Not provided' }}</p>
-                                @if($latestProposal->notes)
-                                    <button type="button" onclick="document.getElementById('proposalNotes').classList.toggle('hidden')" class="mt-2 text-xs text-ojt-accent underline">Show notes</button>
-                                    <div id="proposalNotes" class="hidden mt-2 text-xs text-ojt-dark bg-ojt-accent/10 p-2 rounded">{{ $latestProposal->notes }}</div>
-                                @endif
-                            </div>
-                        @endif
-
                         <!-- Assignment Options -->
                         <div class="space-y-3" x-show="open">
-                            <!-- Option 1: Create from student proposal or placement info -->
-                            @php
-                                $hasSupervisorInfo = false;
-                                $supervisorName = null;
-                                $supervisorEmail = null;
-                                
-                                if (isset($latestProposal) && $latestProposal && $latestProposal->proposed_name && $latestProposal->proposed_email) {
-                                    $hasSupervisorInfo = true;
-                                    $supervisorName = $latestProposal->proposed_name;
-                                    $supervisorEmail = $latestProposal->proposed_email;
-                                }
-                            @endphp
-                            
-                            @if($hasSupervisorInfo)
-                                <div class="border border-blue-200 rounded-lg p-3">
-                                    <h4 class="text-sm font-medium text-ojt-dark mb-2">Option 1: Create Supervisor Account</h4>
-                                    <p class="text-xs text-gray-600 mb-2">Create a new supervisor account using the details submitted by the student.</p>
-                                    <div class="text-xs text-gray-700 mb-3 space-y-1">
-                                        <p><strong>Name:</strong> {{ $supervisorName }}</p>
-                                        <p><strong>Email:</strong> {{ $supervisorEmail }}</p>
-                                    </div>
-                                    <form method="POST" action="{{ route('coord.students.assign-supervisor', $student) }}" class="inline">
-                                        @csrf
-                                        <input type="hidden" name="action" value="create_from_proposal">
-                                        <button type="submit" class="bg-ojt-primary text-white px-3 py-1 rounded text-sm hover:bg-maroon-700 transition-colors">
-                                            Create Account & Assign
-                                        </button>
-                                    </form>
+                            <!-- Option 1: Generate supervisor registration link (recommended) -->
+                            <div class="border border-blue-200 rounded-lg p-3">
+                                <h4 class="text-sm font-medium text-ojt-dark mb-2">Option 1: Generate Supervisor Registration Link (Recommended)</h4>
+                                <p class="text-xs text-gray-600 mb-2">Generate a secure registration link for the supervisor to complete their own registration.</p>
+                                <div class="text-xs text-gray-700 mb-3 space-y-1">
+                                    <p>The supervisor will receive an email with a link to complete their registration.</p>
                                 </div>
-                            @endif
+                                <a href="{{ route('supervisor.students.search', ['student_id' => $student->id]) }}" class="inline-block bg-ojt-primary text-white px-3 py-1 rounded text-sm hover:bg-maroon-700 transition-colors">
+                                    Generate Registration Link
+                                </a>
+                            </div>
 
 
 

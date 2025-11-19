@@ -4,11 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Company;
-use App\Models\SupervisorAssignmentRequest;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Schema;
 
 class CoordinatorStudentController extends Controller
 {
@@ -189,21 +187,10 @@ class CoordinatorStudentController extends Controller
                 ->get(['id','name']);
         }
 
-        // Latest proposal, guarded if table not yet migrated
-        $latestProposal = null;
-        if (Schema::hasTable('supervisor_assignment_requests')) {
-            $latestProposal = SupervisorAssignmentRequest::where('student_user_id', $student->id)
-                ->latest()
-                ->first();
-        }
-        
-        // Removed placement request supervisor info - using acceptance letters now
-
         return view('coord.students.show', compact(
             'student',
             'availableCompanies',
             'eligibleSupervisors',
-            'latestProposal',
             'studentCompanyId',
             'attendanceStats',
             'reportStats',
@@ -290,23 +277,8 @@ class CoordinatorStudentController extends Controller
         if ($action === 'create_from_proposal') {
             // Get the latest proposal from student OR from placement request
             $latestProposal = null;
-            $proposedName = null;
-            $proposedEmail = null;
-            
-            if (Schema::hasTable('supervisor_assignment_requests')) {
-                $latestProposal = SupervisorAssignmentRequest::where('student_user_id', $student->id)
-                    ->latest()
-                    ->first();
-            }
-            
-            if ($latestProposal) {
-                $proposedName = $latestProposal->proposed_name;
-                $proposedEmail = $latestProposal->proposed_email;
-            }
-                
-            if (!$proposedName || !$proposedEmail) {
-                return back()->withErrors(['error' => 'No supervisor information found from student.']);
-            }
+            // This action is no longer supported - supervisor assignment requests table was removed
+            return back()->withErrors(['error' => 'This action is no longer available. Please use the supervisor registration flow instead.']);
             
             // Create or get supervisor by email
             $email = strtolower($proposedEmail);
