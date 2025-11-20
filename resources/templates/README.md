@@ -1,10 +1,13 @@
-# Acceptance Letter Templates
+# PDF Templates
 
 ## 📁 Template Files
 
-This folder contains program-specific acceptance letter templates. The system automatically selects the appropriate template based on the student's course/program.
+This folder contains all PDF templates used in the OJT360 system:
+- **Acceptance Letter Templates** - Program-specific templates for student acceptance letters
+- **Weekly Report Template** - Template for weekly accomplishment reports
+- **Resume Template** - Template for student resume/CV generation
 
-### Required Templates (13 total):
+### Acceptance Letter Templates (13 programs):
 
 1. **BSIT-acceptance-letter.pdf** - Bachelor of Science in Information Technology
 2. **BEED-acceptance-letter.pdf** - Bachelor of Elementary Education
@@ -116,6 +119,45 @@ After adding templates, test by:
 1. Rename the PDF file
 2. Update `getProgramCode()` method in controller
 3. Test all affected programs
+
+---
+
+## 📄 Weekly Report Template
+
+**File:** `weekly-accomplishment.pdf`
+
+Used for generating weekly accomplishment reports with:
+- Student information
+- Daily activities (7 days)
+- Learnings and challenges
+- Supervisor and coordinator feedback
+
+**Controller:** `WeeklyReportPdfService.php`
+
+---
+
+## 📋 Resume Template
+
+**File:** `resume-template.pdf`
+
+Used for generating student resumes/CVs with:
+- Personal information and contact details
+- Profile photo (circular crop)
+- Career objective
+- Education history
+- Work experience
+- Skills
+- Certifications
+
+**Controller:** `ResumeController.php`
+
+**Features:**
+- Coordinate-based field positioning
+- Automatic text wrapping
+- Circular profile image cropping
+- Support for multiple education types (college, senior high, junior high, elementary)
+
+---
 
 ## 📞 Support
 

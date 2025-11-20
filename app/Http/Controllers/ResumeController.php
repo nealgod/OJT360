@@ -329,10 +329,10 @@ class ResumeController extends Controller
             abort(403);
         }
 
-        $templatePath = Storage::disk('local')->path('resume-templates/FINALTEMPLATENAJUD.pdf');
+        $templatePath = resource_path('templates/resume-template.pdf');
         
         if (!file_exists($templatePath)) {
-            abort(404, 'Template not found');
+            abort(404, 'Resume template not found');
         }
 
         try {
