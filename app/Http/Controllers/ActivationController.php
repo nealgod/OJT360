@@ -138,6 +138,7 @@ class ActivationController extends Controller
             'student_id' => $row->student_id,
             'course' => $row->program?->name,
             'department' => $row->program?->department?->name,
+            'program_id' => $row->program_id,
             'phone' => $validated['phone'] ?? $row->contact_number,
             'address' => $validated['address'],
         ]);
@@ -198,6 +199,7 @@ class ActivationController extends Controller
             'student_id' => $row->student_id,
             'course' => $row->program?->name,
             'department' => $row->program?->department?->name,
+            'program_id' => $row->program_id,
             'phone' => $row->contact_number,
             'address' => $row->address ?? null,
         ]);

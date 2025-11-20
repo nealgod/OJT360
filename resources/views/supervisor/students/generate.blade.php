@@ -130,18 +130,19 @@
                                 Total Required Hours (From Program) *
                             </label>
                             @php
-                                // Get required hours from student's program
-                                $requiredHours = 486; // Default
-                                if($student->studentProfile && $student->studentProfile->required_hours) {
-                                    $requiredHours = $student->studentProfile->required_hours;
-                                }
+                                $requiredHours = $student->studentProfile?->required_hours
+                                    ?? $student->getRequiredHours();
                             @endphp
-                            <input type="number" name="total_hours" id="total_hours" value="{{ old('total_hours', $requiredHours) }}" required min="1" readonly
+                            <input type="number" name="total_hours" id="total_hours" value="{{ old('total_hours', $requiredHours ?: null) }}" required min="1" readonly
                                    class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700 cursor-not-allowed">
                             @error('total_hours')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
-                            <p class="mt-1 text-xs text-gray-500">Set by coordinator for {{ $student->studentProfile->course ?? 'program' }}</p>
+                            @if($requiredHours)
+                                <p class="mt-1 text-xs text-gray-500">Set by coordinator for {{ $student->studentProfile->course ?? 'program' }}</p>
+                            @else
+                                <p class="mt-1 text-xs text-red-500">No required hours configured for this program yet.</p>
+                            @endif
                         </div>
                     </div>
 

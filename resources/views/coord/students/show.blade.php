@@ -282,13 +282,16 @@
                                         {{ number_format($student->studentProfile?->completed_hours ?? 0) }}
                                     </span>
                                 </div>
+                                @php
+                                    $requiredHours = $acceptance?->total_hours
+                                        ?? $student->studentProfile?->required_hours
+                                        ?? $student->getRequiredHours();
+                                @endphp
                                 <div class="flex items-center justify-between">
                                     <span class="uppercase tracking-wide">Required Hours</span>
                                     <span class="text-sm text-ojt-dark font-semibold">
-                                        @if($acceptance?->total_hours)
-                                            {{ number_format($acceptance->total_hours) }}
-                                        @elseif($student->studentProfile?->required_hours)
-                                            {{ number_format($student->studentProfile->required_hours) }}
+                                        @if($requiredHours)
+                                            {{ number_format($requiredHours) }}
                                         @else
                                             —
                                         @endif

@@ -25,7 +25,8 @@ class CoordinatorStudentController extends Controller
             })
             ->with([
                 'studentProfile.company',
-                'studentProfile.supervisor'
+                'studentProfile.supervisor',
+                'studentProfile.program',
             ]);
 
         // Apply filters (status, supervisor, search; program is fixed)
@@ -129,6 +130,7 @@ class CoordinatorStudentController extends Controller
             'studentProfile.company',
             'studentProfile.supervisor',
             'studentProfile.supervisor.supervisorProfile.company',
+            'studentProfile.program',
             'attendanceLogs' => function($q) {
                 $q->orderBy('work_date', 'desc')->limit(10);
             },

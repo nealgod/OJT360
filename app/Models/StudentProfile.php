@@ -14,6 +14,7 @@ class StudentProfile extends Model
         'student_id',
         'course',
         'department',
+        'program_id',
         'phone',
         'address',
         'profile_image',
@@ -42,6 +43,11 @@ class StudentProfile extends Model
     public function company()
     {
         return $this->belongsTo(Company::class, 'assigned_company_id');
+    }
+
+    public function program()
+    {
+        return $this->belongsTo(Program::class);
     }
 
     // Relationship with Supervisor

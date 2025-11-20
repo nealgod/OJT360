@@ -30,7 +30,9 @@
                     @php
                         $completedMinutes = Auth::user()->attendanceLogs()->sum('minutes_worked');
                         $completedHours = round(($completedMinutes ?? 0) / 60, 1);
-                        $requiredHours = $acceptance?->total_hours ?? $profile?->required_hours ?? 0;
+                        $requiredHours = $acceptance?->total_hours
+                            ?? $profile?->required_hours
+                            ?? Auth::user()->getRequiredHours();
                         $percentage = $requiredHours > 0 ? round(($completedHours / $requiredHours) * 100, 1) : 0;
                     @endphp
                     

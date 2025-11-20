@@ -78,7 +78,9 @@
                             @php
                                 $completedMinutes = $student->attendanceLogs()->sum('minutes_worked');
                                 $completedHours = round(($completedMinutes ?? 0) / 60, 1);
-                                $requiredHours = $latestLetter?->total_hours ?? $profile?->required_hours ?? 0;
+                                $requiredHours = $latestLetter?->total_hours
+                                    ?? $profile?->required_hours
+                                    ?? $student->getRequiredHours();
                                 $percentage = $requiredHours > 0 ? round(($completedHours / $requiredHours) * 100, 1) : 0;
                             @endphp
                             
