@@ -363,7 +363,8 @@ class SupervisorAcceptanceController extends Controller
         // Create PDF using FPDI
         $pdf = new \setasign\Fpdi\Fpdi();
         
-        $templatePath = resource_path('templates/BSITacceptancelettertemplate.pdf');
+        // Get appropriate template based on student's program
+        $templatePath = $this->getTemplatePath($studentProfile->course);
         
         if (file_exists($templatePath)) {
             $pdf->setSourceFile($templatePath);
@@ -560,4 +561,127 @@ class SupervisorAcceptanceController extends Controller
         
         return view('supervisor.students.success', compact('letter'));
     }
+
+    /**
+     * Get the appropriate template path based on student's course
+     */
+    private function getTemplatePath($course)
+    {
+        $programCode = $this->getProgramCode($course);
+        $templatePath = resource_path("templates/{$programCode}-acceptance-letter.pdf");
+        
+        if (file_exists($templatePath)) {
+            \Log::info("Using template for {$programCode}: {$templatePath}");
+            return $templatePath;
+        }
+        
+        // Fallback to BSIT template if program-specific not found
+        $fallbackPath = resource_path('templates/BSIT-acceptance-letter.pdf');
+        
+        if (file_exists($fallbackPath)) {
+            \Log::warning("Template not found for {$programCode}, using BSIT template");
+            return $fallbackPath;
+        }
+        
+        // Last resort: use old template name
+        $legacyPath = resource_path('templates/BSITacceptancelettertemplate.pdf');
+        \Log::warning("Using legacy BSIT template for {$programCode}");
+        return $legacyPath;
+    }
+
+    /**
+     * Extract program code from course name
+     */
+    private function getProgramCode($course)
+    {
+        if (empty($course)) {
+            return 'BSIT'; // Default fallback
+        }
+        
+        // EXACT MATCHING based on your database config/departments.php
+        // These are the EXACT program names from your system
+        
+        $exactMatches = [
+            // Department of Computer Studies
+            'Bachelor of Science in Information Technology (BSIT)' => 'BSIT',
+            
+            // Department of Teacher Education
+            'Bachelor of Elementary Education (BEED)' => 'BEED',
+            'Bachelor of Secondary Education (BSEd) major in Mathematics' => 'BSEd-Math',
+            'Bachelor of Secondary Education (BSEd) major in Science' => 'BSEd-Science',
+            'Bachelor of Physical Education (BPEd)' => 'BPEd',
+            'Bachelor of Technical-Vocational Teacher Education (BTVTEd)' => 'BTVTEd',
+            'Diploma in Teaching Secondary (DTS)' => 'DTS',
+            
+            // Department of Business Management
+            'Bachelor of Science in Hospitality Management (BSHM)' => 'BSHM',
+            
+            // Department of Engineering
+            'Bachelor of Science in Civil Engineering (BSCE)' => 'BSCE',
+            'Bachelor of Science in Electrical Engineering (BSEE)' => 'BSEE',
+            'Bachelor of Science in Mechanical Engineering (BSME)' => 'BSME',
+            
+            // Department of Industrial Technology
+            'Bachelor of Industrial Technology (BIT) major in Culinary Arts (CA)' => 'BIT-CA',
+            'Bachelor of Industrial Technology (BIT) major in Electronics (ET)' => 'BIT-ET',
+        ];
+        
+        // Try exact match first (case-insensitive)
+        foreach ($exactMatches as $programName => $code) {
+            if (strcasecmp(trim($course), $programName) === 0) {
+                \Log::info("Exact match: '{$course}' -> {$code}");
+                return $code;
+            }
+        }
+        
+        // Fallback: Try matching by code in parentheses (e.g., "(BSIT)")
+        $courseLower = strtolower(trim($course));
+        
+        $codeMatches = [
+            '(bsit)' => 'BSIT',
+            '(beed)' => 'BEED',
+            '(bsed) major in mathematics' => 'BSEd-Math',
+            '(bsed) major in science' => 'BSEd-Science',
+            '(bped)' => 'BPEd',
+            '(btvted)' => 'BTVTEd',
+            '(dts)' => 'DTS',
+            '(bshm)' => 'BSHM',
+            '(bsce)' => 'BSCE',
+            '(bsee)' => 'BSEE',
+            '(bsme)' => 'BSME',
+            '(bit) major in culinary arts (ca)' => 'BIT-CA',
+            '(bit) major in electronics (et)' => 'BIT-ET',
+        ];
+        
+        foreach ($codeMatches as $pattern => $code) {
+            if (str_contains($courseLower, $pattern)) {
+                \Log::info("Code match: '{$pattern}' in '{$course}' -> {$code}");
+                return $code;
+            }
+        }
+        
+        // Last resort: Try partial keyword matching
+        $keywordMatches = [
+            'information technology' => 'BSIT',
+            'elementary education' => 'BEED',
+            'physical education' => 'BPEd',
+            'civil engineering' => 'BSCE',
+            'electrical engineering' => 'BSEE',
+            'hospitality management' => 'BSHM',
+            'mechanical engineering' => 'BSME',
+            'technical-vocational teacher education' => 'BTVTEd',
+        ];
+        
+        foreach ($keywordMatches as $keyword => $code) {
+            if (str_contains($courseLower, $keyword)) {
+                \Log::info("Keyword match: '{$keyword}' in '{$course}' -> {$code}");
+                return $code;
+            }
+        }
+        
+        // Default fallback
+        \Log::warning("No matching program found for: '{$course}', using BSIT template as fallback");
+        return 'BSIT';
+    }
 }
+
