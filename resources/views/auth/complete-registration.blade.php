@@ -55,6 +55,34 @@
 			<input id="address" name="address" type="text" value="{{ old('address') }}" placeholder="Street, City, Postal Code, Country" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required />
 		</div>
 
+		<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+			<div>
+				<label for="year_level" class="block text-sm font-medium text-gray-700">Year Level</label>
+				<select id="year_level" name="year_level" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
+					<option value="">Select year level</option>
+					@foreach(($yearLevels ?? []) as $value => $label)
+						<option value="{{ $value }}" @selected(old('year_level') == $value)>{{ $label }}</option>
+					@endforeach
+				</select>
+				@error('year_level')
+					<p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+				@enderror
+			</div>
+
+			<div>
+				<label for="section" class="block text-sm font-medium text-gray-700">Section</label>
+				<select id="section" name="section" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
+					<option value="">Select section</option>
+					@foreach(($sectionOptions ?? []) as $sectionOption)
+						<option value="{{ $sectionOption }}" @selected(strtoupper(old('section')) === $sectionOption)>{{ $sectionOption }}</option>
+					@endforeach
+				</select>
+				@error('section')
+					<p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+				@enderror
+			</div>
+		</div>
+
 		<div>
 			<label for="password" class="block text-sm font-medium text-gray-700">Password</label>
 			<div class="mt-1 relative">

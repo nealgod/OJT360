@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Support\ProgramCodeResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,9 +22,16 @@ class ProfileController extends Controller
         // Load the appropriate profile based on user role
         $profile = $user->getProfile();
         
+        $yearLevels = ProgramCodeResolver::yearLevels();
+        $sectionOptions = $user->isStudent()
+            ? ProgramCodeResolver::sectionsForCourse($user->studentProfile?->course)
+            : [];
+
         return view('profile.edit', [
             'user' => $user,
             'profile' => $profile,
+            'yearLevels' => $yearLevels,
+            'sectionOptions' => $sectionOptions,
         ]);
     }
 
@@ -68,7 +76,25 @@ class ProfileController extends Controller
      */
     private function updateStudentProfile(ProfileUpdateRequest $request, $user)
     {
-        $profileData = $request->only(['student_id', 'course', 'department', 'phone', 'address']);
+        $profileData = $request->only([
+            'student_id',
+            'course',
+            'department',
+            'phone',
+            'address',
+            'year_level',
+            'section',
+        ]);
+
+        if (isset($profileData['section'])) {
+            $profileData['section'] = strtoupper($profileData['section']);
+        }
+
+        $profileData['course_section_code'] = ProgramCodeResolver::buildCourseSectionCode(
+            $profileData['course'] ?? $user->studentProfile?->course,
+            $profileData['year_level'] ?? $user->studentProfile?->year_level,
+            $profileData['section'] ?? $user->studentProfile?->section
+        );
         
         // Handle profile image upload
         if ($request->hasFile('profile_image')) {

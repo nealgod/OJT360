@@ -221,12 +221,12 @@
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-100">
-                                    @forelse($student->dailyReports as $report)
+                                    @forelse($student->weeklyReports as $report)
                                         <tr>
-                                            <td class="px-3 py-2 text-gray-900">{{ $report->work_date?->format('M d, Y') ?? '—' }}</td>
-                                            <td class="px-3 py-2 text-gray-700">{{ Str::limit($report->summary, 80) ?: 'No summary provided' }}</td>
+                                            <td class="px-3 py-2 text-gray-900">{{ $report->week_start_date?->format('M d, Y') ?? '—' }} - {{ $report->week_end_date?->format('M d, Y') ?? '—' }}</td>
+                                            <td class="px-3 py-2 text-gray-700">{{ Str::limit($report->problems_encountered, 80) ?: 'No problems reported' }}</td>
                                             <td class="px-3 py-2">
-                                                <a href="{{ route('reports.show', $report) }}" target="_blank" class="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-xs font-medium">
+                                                <a href="{{ route('reports.weekly.show', $report) }}" target="_blank" class="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-xs font-medium">
                                                     View Report
                                                 </a>
                                             </td>

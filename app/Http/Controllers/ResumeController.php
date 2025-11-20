@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Resume;
+use App\Support\ProgramCodeResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -38,6 +39,11 @@ class ResumeController extends Controller
 
         // Auto-fill from student profile
         $studentProfile = $user->studentProfile;
+        $yearLevels = ProgramCodeResolver::yearLevels();
+        $yearLabel = $studentProfile && $studentProfile->year_level
+            ? ($yearLevels[$studentProfile->year_level] ?? null)
+            : null;
+
         $defaultData = [
             'personal_info' => [
                 'name' => $user->name,
@@ -51,12 +57,15 @@ class ResumeController extends Controller
                     'institution' => 'Eastern Visayas State University',
                     'degree' => $studentProfile->course ?? '',
                     'department' => $studentProfile->department ?? '',
-                    'year' => '',
+                    'year_level' => $yearLabel,
                 ]
             ],
         ];
 
-        return view('resume.create', ['defaultData' => $defaultData]);
+        return view('resume.create', [
+            'defaultData' => $defaultData,
+            'yearLevels' => $yearLevels,
+        ]);
     }
 
     /**
@@ -168,7 +177,10 @@ class ResumeController extends Controller
             abort(403);
         }
 
-        return view('resume.edit', compact('resume'));
+        return view('resume.edit', [
+            'resume' => $resume,
+            'yearLevels' => ProgramCodeResolver::yearLevels(),
+        ]);
     }
 
     /**

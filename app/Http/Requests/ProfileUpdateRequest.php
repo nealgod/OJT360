@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\User;
+use App\Support\ProgramCodeResolver;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -22,11 +23,15 @@ class ProfileUpdateRequest extends FormRequest
 
         // Add student-specific validation rules
         if ($this->user()->isStudent()) {
+            $yearLevels = array_keys(ProgramCodeResolver::yearLevels());
             $rules = array_merge($rules, [
                 'student_id' => ['required', 'string', 'max:255', 'unique:student_profiles,student_id,' . ($this->user()->studentProfile->id ?? 'NULL')],
                 'course' => ['required', 'string', 'max:255'],
                 'department' => ['required', 'string', 'max:255'],
                 'phone' => ['nullable', 'string', 'max:20'],
+                'address' => ['nullable', 'string', 'max:255'],
+                'year_level' => ['required', Rule::in($yearLevels)],
+                'section' => ['required', 'string', 'max:10', 'regex:/^[A-Za-z0-9]+$/'],
                 'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
             ]);
         }

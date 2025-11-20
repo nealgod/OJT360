@@ -135,11 +135,11 @@
                                 <select name="education[0][year_level]" 
                                         class="w-full rounded-lg border-gray-300 focus:border-ojt-primary focus:ring-ojt-primary">
                                     <option value="">Select Year Level</option>
-                                    <option value="1st Year" {{ (old('education.0.year_level', $resume->education[0]['year_level'] ?? '') == '1st Year') ? 'selected' : '' }}>1st Year</option>
-                                    <option value="2nd Year" {{ (old('education.0.year_level', $resume->education[0]['year_level'] ?? '') == '2nd Year') ? 'selected' : '' }}>2nd Year</option>
-                                    <option value="3rd Year" {{ (old('education.0.year_level', $resume->education[0]['year_level'] ?? '') == '3rd Year') ? 'selected' : '' }}>3rd Year</option>
-                                    <option value="4th Year" {{ (old('education.0.year_level', $resume->education[0]['year_level'] ?? '') == '4th Year') ? 'selected' : '' }}>4th Year</option>
-                                    <option value="5th Year" {{ (old('education.0.year_level', $resume->education[0]['year_level'] ?? '') == '5th Year') ? 'selected' : '' }}>5th Year</option>
+                                    @foreach(($yearLevels ?? []) as $code => $label)
+                                        <option value="{{ $label }}" {{ (old('education.0.year_level', $resume->education[0]['year_level'] ?? '') == $label) ? 'selected' : '' }}>
+                                            {{ $label }}
+                                        </option>
+                                    @endforeach
                                 </select>
                             </div>
                         </div>

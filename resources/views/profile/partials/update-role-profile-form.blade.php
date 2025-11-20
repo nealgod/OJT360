@@ -55,6 +55,24 @@
                 </div>
 
                 <div>
+                    <x-input-label :value="__('Year Level')" />
+                    <div class="mt-1 block w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-700">
+                        {{ ($yearLevels[$profile->year_level ?? ''] ?? $profile->year_level) ?: '—' }}
+                    </div>
+                    <input type="hidden" name="year_level" value="{{ $profile->year_level ?? '' }}" />
+                    <x-input-error class="mt-2" :messages="$errors->get('year_level')" />
+                </div>
+
+                <div>
+                    <x-input-label :value="__('Section')" />
+                    <div class="mt-1 block w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-700">
+                        {{ strtoupper($profile->section ?? '—') }}
+                    </div>
+                    <input type="hidden" name="section" value="{{ $profile->section ?? '' }}" />
+                    <x-input-error class="mt-2" :messages="$errors->get('section')" />
+                </div>
+
+                <div>
                     <x-input-label for="phone" :value="__('Phone Number')" />
                     <x-text-input id="phone" name="phone" type="tel" class="mt-1 block w-full" 
                         :value="old('phone', $profile->phone ?? '')" 
@@ -68,7 +86,8 @@
                         :value="old('address', $profile->address ?? '')" 
                         placeholder="Street, City, Postal Code, Country" />
                     <x-input-error class="mt-2" :messages="$errors->get('address')" />
-           
+                </div>
+
             </div>
 
         @elseif($user->isCoordinator())

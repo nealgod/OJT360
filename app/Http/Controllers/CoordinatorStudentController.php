@@ -134,8 +134,8 @@ class CoordinatorStudentController extends Controller
             'attendanceLogs' => function($q) {
                 $q->orderBy('work_date', 'desc')->limit(10);
             },
-            'dailyReports' => function($q) {
-                $q->orderBy('work_date', 'desc')->limit(10);
+            'weeklyReports' => function($q) {
+                $q->orderBy('week_start_date', 'desc')->limit(10);
             }
         ]);
 
@@ -146,8 +146,8 @@ class CoordinatorStudentController extends Controller
         ];
 
         $reportStats = [
-            'total_reports' => $student->dailyReports()->count(),
-            'this_week' => $student->dailyReports()->whereBetween('work_date', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])->count(),
+            'total_reports' => $student->weeklyReports()->count(),
+            'this_week' => $student->weeklyReports()->whereBetween('week_start_date', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])->count(),
         ];
 
         $acceptance = \App\Models\AcceptanceLetter::where('student_user_id', $student->id)->latest()->with('company')->first();

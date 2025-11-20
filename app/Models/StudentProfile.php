@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\ProgramCodeResolver;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -14,6 +15,9 @@ class StudentProfile extends Model
         'student_id',
         'course',
         'department',
+        'year_level',
+        'section',
+        'course_section_code',
         'program_id',
         'phone',
         'address',
@@ -54,6 +58,23 @@ class StudentProfile extends Model
     public function supervisor()
     {
         return $this->belongsTo(User::class, 'supervisor_id');
+    }
+
+    public function getCourseSectionDisplayAttribute(): ?string
+    {
+        if ($this->course_section_code) {
+            return $this->course_section_code;
+        }
+
+        if ($this->course && $this->year_level) {
+            return ProgramCodeResolver::buildCourseSectionCode(
+                $this->course,
+                $this->year_level,
+                $this->section
+            );
+        }
+
+        return null;
     }
 
     // Relationship with Coordinator (through department)

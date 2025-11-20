@@ -62,6 +62,15 @@ Route::middleware(['auth', 'force.password.change', 'profile.complete'])->group(
     Route::patch('/messages/{message}/unread', [App\Http\Controllers\MessageController::class, 'markAsUnread'])->name('messages.unread');
     Route::delete('/messages/{message}', [App\Http\Controllers\MessageController::class, 'destroy'])->name('messages.destroy');
 
+    // Weekly Reports (always accessible for students)
+    Route::prefix('reports/weekly')->name('reports.weekly.')->group(function () {
+        Route::get('/', [App\Http\Controllers\WeeklyReportController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\WeeklyReportController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\WeeklyReportController::class, 'store'])->name('store');
+        Route::get('/{weekly}', [App\Http\Controllers\WeeklyReportController::class, 'show'])->name('show');
+        Route::get('/{weekly}/pdf', [App\Http\Controllers\WeeklyReportController::class, 'downloadPdf'])->name('pdf');
+    });
+    
     // Attendance & Reports (students)
     Route::middleware(['placement.started'])->group(function () {
         Route::get('/attendance', [App\Http\Controllers\AttendanceController::class, 'index'])->name('attendance.index');
@@ -70,18 +79,7 @@ Route::middleware(['auth', 'force.password.change', 'profile.complete'])->group(
         Route::post('/attendance/recovery', [App\Http\Controllers\AttendanceController::class, 'recovery'])->name('attendance.recovery');
     });
     
-    // (Removed enhanced/isolated attendance routes to keep original flow only)
-    Route::middleware(['placement.started'])->group(function () {
-        Route::get('/reports', [App\Http\Controllers\DailyReportController::class, 'index'])->name('reports.index');
-        Route::get('/reports/create', [App\Http\Controllers\DailyReportController::class, 'create'])->name('reports.create');
-        Route::post('/reports', [App\Http\Controllers\DailyReportController::class, 'store'])->name('reports.store');
-        Route::get('/reports/{report}', [App\Http\Controllers\DailyReportController::class, 'show'])->name('reports.show');
-        Route::delete('/reports/{report}', [App\Http\Controllers\DailyReportController::class, 'destroy'])->name('reports.destroy');
-        Route::get('/reports/weekly/generate', [App\Http\Controllers\DailyReportController::class, 'weekly'])->name('reports.weekly');
-        Route::post('/reports/weekly/generate', [App\Http\Controllers\DailyReportController::class, 'generateWeekly'])->name('reports.generate-weekly');
-        Route::post('/reports/weekly/download', [App\Http\Controllers\DailyReportController::class, 'downloadWeekly'])->name('reports.download-weekly');
-        Route::post('/reports/weekly/submit', [App\Http\Controllers\DailyReportController::class, 'submitWeeklyToDocuments'])->name('reports.submit-weekly');
-    });
+    // Daily reports removed - now using weekly reports only
     
     // Document Requirements
     Route::get('/documents', [App\Http\Controllers\DocumentController::class, 'index'])->name('documents.index');

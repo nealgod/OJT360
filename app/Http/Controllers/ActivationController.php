@@ -15,6 +15,8 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\StudentVerificationMail;
 use App\Mail\CoordinatorInvitationMail;
+use App\Support\ProgramCodeResolver;
+use Illuminate\Validation\Rule;
 
 class ActivationController extends Controller
 {
@@ -95,19 +97,16 @@ class ActivationController extends Controller
             'token' => $token,
             'department' => $row->program?->department?->name,
             'program' => $row->program?->name,
+            'yearLevels' => ProgramCodeResolver::yearLevels(),
+            'sectionOptions' => ProgramCodeResolver::sectionsForCourse($row->program?->name),
         ]);
     }
 
     public function completeRegistration(Request $request)
     {
-        $validated = $request->validate([
-            'token' => ['required', 'string'],
-            'password' => ['required', 'confirmed', 'min:8'],
-            'phone' => ['required', 'string', 'max:20'],
-            'address' => ['required', 'string', 'max:255'],
-        ]);
+        $token = $request->input('token');
 
-        $record = StudentVerification::where('token', $validated['token'])
+        $record = StudentVerification::where('token', $token)
             ->where('expires_at', '>', now())
             ->first();
 
@@ -127,6 +126,18 @@ class ActivationController extends Controller
             return back()->withErrors(['email' => 'Account already exists for this email. Try logging in.']);
         }
 
+        $yearLevelKeys = array_keys(ProgramCodeResolver::yearLevels());
+        $sectionOptions = ProgramCodeResolver::sectionsForCourse($row->program?->name);
+
+        $validated = $request->validate([
+            'token' => ['required', 'string'],
+            'password' => ['required', 'confirmed', 'min:8'],
+            'phone' => ['required', 'string', 'max:20'],
+            'address' => ['required', 'string', 'max:255'],
+            'year_level' => ['required', Rule::in($yearLevelKeys)],
+            'section' => ['required', Rule::in($sectionOptions)],
+        ]);
+
         $user = User::create([
             'name' => $row->name,
             'email' => $row->email,
@@ -134,9 +145,18 @@ class ActivationController extends Controller
             'role' => 'intern',
         ]);
 
+        $courseSectionCode = ProgramCodeResolver::buildCourseSectionCode(
+            $row->program?->name,
+            $validated['year_level'],
+            $validated['section']
+        );
+
         $user->studentProfile()->create([
             'student_id' => $row->student_id,
             'course' => $row->program?->name,
+            'year_level' => $validated['year_level'],
+            'section' => strtoupper($validated['section']),
+            'course_section_code' => $courseSectionCode,
             'department' => $row->program?->department?->name,
             'program_id' => $row->program_id,
             'phone' => $validated['phone'] ?? $row->contact_number,

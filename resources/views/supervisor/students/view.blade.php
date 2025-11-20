@@ -260,35 +260,28 @@
                     </div>
 
                     @php
-                        $reports = $student->dailyReports()->latest('work_date')->get();
+                        $reports = $student->weeklyReports()->latest('week_start_date')->get();
                     @endphp
 
                     @if($reports->count() > 0)
                         <div id="reports-container" class="space-y-3">
                             @foreach($reports as $report)
                                 <div class="report-item border border-gray-200 rounded-lg p-4 hover:border-ojt-primary transition-colors" 
-                                     data-date="{{ $report->work_date->format('Y-m-d') }}">
+                                     data-date="{{ $report->week_start_date->format('Y-m-d') }}">
                                     <div class="flex items-start justify-between">
                                         <div class="flex-1">
                                             <div class="flex items-center gap-3 mb-2">
-                                                <h4 class="font-medium text-gray-900">{{ $report->work_date->format('l, F j, Y') }}</h4>
+                                                <h4 class="font-medium text-gray-900">Week {{ $report->week_number }}: {{ $report->week_start_date->format('M d') }} - {{ $report->week_end_date->format('M d, Y') }}</h4>
                                                 <span class="text-xs px-2 py-1 rounded-full {{ $report->status === 'submitted' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700' }}">
                                                     {{ ucfirst($report->status ?? 'submitted') }}
                                                 </span>
-                                                <span class="text-xs text-gray-500">{{ $report->work_date->diffForHumans() }}</span>
+                                                <span class="text-xs text-gray-500">{{ $report->week_start_date->diffForHumans() }}</span>
                                             </div>
-                                            <p class="text-sm text-gray-700 whitespace-pre-line">{{ $report->summary }}</p>
-                                            @if($report->attachment_path)
-                                                <div class="mt-2">
-                                                    <a href="{{ Storage::url($report->attachment_path) }}" target="_blank"
-                                                       class="inline-flex items-center text-sm text-ojt-primary hover:text-maroon-700">
-                                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                                                        </svg>
-                                                        View Attachment
-                                                    </a>
-                                                </div>
-                                            @endif
+                                            <p class="text-sm text-gray-700 whitespace-pre-line">{{ $report->problems_encountered ?: 'No problems reported' }}</p>
+                                            <div class="mt-2 text-xs text-gray-600">
+                                                <span class="font-medium">Hours:</span> {{ number_format($report->total_hours, 2) }} | 
+                                                <span class="font-medium">Days Present:</span> {{ $report->days_present }}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

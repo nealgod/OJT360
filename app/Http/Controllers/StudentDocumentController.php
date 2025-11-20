@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Resume;
 use App\Models\ApplicationLetter;
 use App\Http\Controllers\ResumeController;
+use App\Support\ProgramCodeResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -72,6 +73,11 @@ class StudentDocumentController extends Controller
 
         // Auto-fill from student profile
         $studentProfile = $user->studentProfile;
+        $yearLevels = ProgramCodeResolver::yearLevels();
+        $yearLabel = $studentProfile && $studentProfile->year_level
+            ? ($yearLevels[$studentProfile->year_level] ?? null)
+            : null;
+
         $defaultData = [
             'personal_info' => [
                 'name' => $user->name,
@@ -85,12 +91,15 @@ class StudentDocumentController extends Controller
                     'institution' => 'Eastern Visayas State University',
                     'degree' => $studentProfile->course ?? '',
                     'department' => $studentProfile->department ?? '',
-                    'year' => '',
+                    'year_level' => $yearLabel,
                 ]
             ],
         ];
 
-        return view('student-documents.resume.create', ['defaultData' => $defaultData]);
+        return view('student-documents.resume.create', [
+            'defaultData' => $defaultData,
+            'yearLevels' => $yearLevels,
+        ]);
     }
 
     /**
@@ -199,7 +208,10 @@ class StudentDocumentController extends Controller
             abort(403);
         }
 
-        return view('student-documents.resume.edit', compact('resume'));
+        return view('student-documents.resume.edit', [
+            'resume' => $resume,
+            'yearLevels' => ProgramCodeResolver::yearLevels(),
+        ]);
     }
 
     /**
