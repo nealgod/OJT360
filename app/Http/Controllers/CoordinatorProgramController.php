@@ -20,23 +20,14 @@ class CoordinatorProgramController extends Controller
         // Get program with department
         $program = Program::with('department')->findOrFail($program->id);
         
-        // Count students
+        // Count students in this program
         $totalStudents = \App\Models\User::where('role', 'intern')
             ->whereHas('studentProfile', function($q) use ($program) {
                 $q->where('course', $program->name);
             })
             ->count();
-            
-        $studentsWithCustomHours = \App\Models\User::where('role', 'intern')
-            ->whereHas('studentProfile', function($q) use ($program) {
-                $q->where('course', $program->name)
-                  ->whereNotNull('required_hours');
-            })
-            ->count();
-        
-        $studentsUsingDefault = $totalStudents - $studentsWithCustomHours;
 
-        return view('coord.program.hours', compact('program', 'totalStudents', 'studentsWithCustomHours', 'studentsUsingDefault'));
+        return view('coord.program.hours', compact('program', 'totalStudents'));
     }
 
     public function updateHours(Request $request)
@@ -52,31 +43,68 @@ class CoordinatorProgramController extends Controller
             'required_hours' => ['required', 'integer', 'min:200', 'max:1000'],
         ]);
 
+        $oldHours = $program->required_hours;
+        $newHours = $request->required_hours;
+
+        // Check if hours actually changed
+        if ($oldHours == $newHours) {
+            return back()->with('info', 'No changes made. The required hours are already set to ' . $newHours . ' hours.');
+        }
+
+        // Update program hours
         $program->update([
-            'required_hours' => $request->required_hours,
+            'required_hours' => $newHours,
         ]);
 
-        // Notify all students in this program (who don't have custom hours)
-        $students = \App\Models\User::where('role', 'intern')
+        // Get students who will be affected (those without custom hours)
+        $affectedStudents = \App\Models\User::where('role', 'intern')
             ->whereHas('studentProfile', function($q) use ($program) {
                 $q->where('course', $program->name)
                   ->whereNull('required_hours');
             })
             ->get();
 
-        foreach ($students as $student) {
+        $affectedCount = $affectedStudents->count();
+
+        // Notify all affected students
+        foreach ($affectedStudents as $student) {
             \App\Models\Notification::create([
                 'user_id' => $student->id,
                 'type' => 'program_hours_updated',
                 'title' => 'OJT Required Hours Updated',
-                'message' => 'Your program\'s required OJT hours have been updated to ' . $request->required_hours . ' hours.',
+                'message' => sprintf(
+                    'Your program\'s required OJT hours have been updated from %s to %s hours by your coordinator.',
+                    $oldHours ?? 'unset',
+                    $newHours
+                ),
                 'data' => [
                     'program_id' => $program->id,
-                    'required_hours' => $request->required_hours,
+                    'old_hours' => $oldHours,
+                    'new_hours' => $newHours,
+                    'updated_by' => $coordinator->name,
+                    'updated_at' => now()->toDateTimeString(),
                 ],
             ]);
         }
 
-        return back()->with('success', 'Program required hours updated successfully.');
+        // Log the change
+        \Log::info('Program hours updated', [
+            'program_id' => $program->id,
+            'program_name' => $program->name,
+            'coordinator_id' => $coordinator->id,
+            'coordinator_name' => $coordinator->name,
+            'old_hours' => $oldHours,
+            'new_hours' => $newHours,
+            'affected_students' => $affectedCount,
+        ]);
+
+        $successMessage = sprintf(
+            'Program required hours updated successfully from %s to %s hours. %s student(s) have been notified.',
+            $oldHours ?? 'unset',
+            $newHours,
+            $affectedCount
+        );
+
+        return back()->with('success', $successMessage);
     }
 }

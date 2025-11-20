@@ -65,8 +65,8 @@ class WeeklyReportController extends Controller
                 ->with('error', 'Cannot create report for dates after your internship end date.');
         }
 
-        // Check for overlapping reports
-        $existing = WeeklyReport::forStudent(Auth::id())
+        // Check for overlapping reports with actual attendance
+        $existingReports = WeeklyReport::forStudent(Auth::id())
             ->where(function ($query) use ($weekStart, $weekEnd) {
                 $query->whereBetween('week_start_date', [$weekStart->toDateString(), $weekEnd->toDateString()])
                     ->orWhereBetween('week_end_date', [$weekStart->toDateString(), $weekEnd->toDateString()])
@@ -75,11 +75,43 @@ class WeeklyReportController extends Controller
                             ->where('week_end_date', '>=', $weekEnd->toDateString());
                     });
             })
-            ->first();
+            ->get();
 
-        if ($existing) {
-            return redirect()->route('reports.weekly.show', $existing)
-                ->with('info', 'You already have a report that overlaps with this date range.');
+        // Only block if there's an existing report with attendance on overlapping dates
+        foreach ($existingReports as $report) {
+            $reportStart = Carbon::parse($report->week_start_date);
+            $reportEnd = Carbon::parse($report->week_end_date);
+            
+            // Find overlapping date range
+            $overlapStart = $weekStart->greaterThan($reportStart) ? $weekStart : $reportStart;
+            $overlapEnd = $weekEnd->lessThan($reportEnd) ? $weekEnd : $reportEnd;
+            
+            // Check if student had attendance during overlap
+            $hasAttendance = AttendanceLog::where('student_user_id', Auth::id())
+                ->whereBetween('work_date', [$overlapStart->toDateString(), $overlapEnd->toDateString()])
+                ->whereNotNull('time_in')
+                ->exists();
+            
+            if ($hasAttendance) {
+                return redirect()->route('reports.weekly.show', $report)
+                    ->with('info', 'You already have a report covering dates with attendance. You can only create new reports for dates you were absent.');
+            }
+        }
+
+        // Check for incomplete attendance (time_in without time_out)
+        $incompleteAttendance = AttendanceLog::where('student_user_id', Auth::id())
+            ->whereBetween('work_date', [$weekStart->toDateString(), $weekEnd->toDateString()])
+            ->whereNotNull('time_in')
+            ->whereNull('time_out')
+            ->get();
+
+        if ($incompleteAttendance->isNotEmpty()) {
+            $incompleteDates = $incompleteAttendance->map(function ($log) {
+                return Carbon::parse($log->work_date)->format('M d, Y');
+            })->join(', ');
+
+            return redirect()->route('reports.weekly.index')
+                ->with('error', 'Cannot create report yet. You have incomplete attendance (no time out) on: ' . $incompleteDates . '. Please complete your time out first or wait until the day is complete.');
         }
 
         $attendanceSummary = $this->getAttendanceSummary($weekStart, $weekEnd);
@@ -134,8 +166,8 @@ class WeeklyReportController extends Controller
                 ->withInput();
         }
 
-        // Check for overlapping reports
-        $alreadyExists = WeeklyReport::forStudent(Auth::id())
+        // Check for overlapping reports with actual attendance
+        $existingReports = WeeklyReport::forStudent(Auth::id())
             ->where(function ($query) use ($weekStart, $weekEnd) {
                 $query->whereBetween('week_start_date', [$weekStart->toDateString(), $weekEnd->toDateString()])
                     ->orWhereBetween('week_end_date', [$weekStart->toDateString(), $weekEnd->toDateString()])
@@ -144,11 +176,44 @@ class WeeklyReportController extends Controller
                             ->where('week_end_date', '>=', $weekEnd->toDateString());
                     });
             })
-            ->exists();
+            ->get();
 
-        if ($alreadyExists) {
-            return redirect()->route('reports.weekly.index')
-                ->with('info', 'A report for this date range has already been submitted or overlaps with an existing report.');
+        // Only block if there's an existing report with attendance on overlapping dates
+        foreach ($existingReports as $report) {
+            $reportStart = Carbon::parse($report->week_start_date);
+            $reportEnd = Carbon::parse($report->week_end_date);
+            
+            // Find overlapping date range
+            $overlapStart = $weekStart->greaterThan($reportStart) ? $weekStart : $reportStart;
+            $overlapEnd = $weekEnd->lessThan($reportEnd) ? $weekEnd : $reportEnd;
+            
+            // Check if student had attendance during overlap
+            $hasAttendance = AttendanceLog::where('student_user_id', Auth::id())
+                ->whereBetween('work_date', [$overlapStart->toDateString(), $overlapEnd->toDateString()])
+                ->whereNotNull('time_in')
+                ->exists();
+            
+            if ($hasAttendance) {
+                return redirect()->route('reports.weekly.index')
+                    ->with('info', 'A report already exists covering dates with attendance. You can only create new reports for dates you were absent.');
+            }
+        }
+
+        // Check for incomplete attendance (time_in without time_out)
+        $incompleteAttendance = AttendanceLog::where('student_user_id', Auth::id())
+            ->whereBetween('work_date', [$weekStart->toDateString(), $weekEnd->toDateString()])
+            ->whereNotNull('time_in')
+            ->whereNull('time_out')
+            ->get();
+
+        if ($incompleteAttendance->isNotEmpty()) {
+            $incompleteDates = $incompleteAttendance->map(function ($log) {
+                return Carbon::parse($log->work_date)->format('M d, Y');
+            })->join(', ');
+
+            return back()
+                ->withErrors(['week_end_date' => 'Cannot submit report yet. You have incomplete attendance (no time out) on: ' . $incompleteDates . '. Please complete your time out first.'])
+                ->withInput();
         }
 
         $attendanceSummary = $this->getAttendanceSummary($weekStart, $weekEnd);
