@@ -13,6 +13,7 @@ class WeeklyReport extends Model
 
     protected $fillable = [
         'student_user_id',
+        'coordinator_user_id',
         'week_start_date',
         'week_end_date',
         'week_number',
@@ -25,6 +26,8 @@ class WeeklyReport extends Model
         'supervisor_feedback',
         'supervisor_rating',
         'supervisor_reviewed_at',
+        'coordinator_feedback',
+        'coordinator_reviewed_at',
         'status',
         'submitted_at',
     ];
@@ -34,12 +37,24 @@ class WeeklyReport extends Model
         'week_end_date' => 'date',
         'submitted_at' => 'datetime',
         'supervisor_reviewed_at' => 'datetime',
+        'coordinator_reviewed_at' => 'datetime',
         'entries' => 'array',
     ];
 
     public function student(): BelongsTo
     {
         return $this->belongsTo(User::class, 'student_user_id');
+    }
+
+    public function coordinator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'coordinator_user_id');
+    }
+
+    // Get supervisor through student's profile
+    public function getSupervisorAttribute()
+    {
+        return $this->student?->studentProfile?->supervisor;
     }
 
     public function isEditable(): bool

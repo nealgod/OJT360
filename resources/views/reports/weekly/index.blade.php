@@ -34,8 +34,21 @@
 
             <div class="bg-white shadow sm:rounded-lg p-6">
                 @if ($reports->isEmpty())
-                    <p class="text-gray-500">No weekly reports submitted yet.</p>
+                    <p class="text-gray-500">No weekly reports created yet.</p>
                 @else
+                    @php
+                        $draftCount = $reports->where('status', 'draft')->count();
+                    @endphp
+                    @if($draftCount > 0)
+                        <div class="mb-4 rounded-md bg-yellow-50 border border-yellow-100 px-4 py-3 text-yellow-800">
+                            <div class="flex items-start gap-2">
+                                <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                                <p class="text-sm">You have {{ $draftCount }} draft {{ $draftCount === 1 ? 'report' : 'reports' }}. Don't forget to submit them to your coordinator!</p>
+                            </div>
+                        </div>
+                    @endif
                     <div class="space-y-4">
                         @foreach ($reports as $report)
                             <div class="border rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4 hover:border-ojt-primary/50 transition">

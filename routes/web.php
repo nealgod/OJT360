@@ -68,6 +68,8 @@ Route::middleware(['auth', 'force.password.change', 'profile.complete'])->group(
         Route::get('/create', [App\Http\Controllers\WeeklyReportController::class, 'create'])->name('create');
         Route::post('/', [App\Http\Controllers\WeeklyReportController::class, 'store'])->name('store');
         Route::get('/{weekly}', [App\Http\Controllers\WeeklyReportController::class, 'show'])->name('show');
+        Route::patch('/{weekly}/submit', [App\Http\Controllers\WeeklyReportController::class, 'submit'])->name('submit');
+        Route::delete('/{weekly}', [App\Http\Controllers\WeeklyReportController::class, 'destroy'])->name('destroy');
         Route::get('/{weekly}/pdf', [App\Http\Controllers\WeeklyReportController::class, 'downloadPdf'])->name('pdf');
     });
     
@@ -77,6 +79,7 @@ Route::middleware(['auth', 'force.password.change', 'profile.complete'])->group(
         Route::post('/attendance/time-in', [App\Http\Controllers\AttendanceController::class, 'timeIn'])->name('attendance.timeIn');
         Route::post('/attendance/time-out', [App\Http\Controllers\AttendanceController::class, 'timeOut'])->name('attendance.timeOut');
         Route::post('/attendance/recovery', [App\Http\Controllers\AttendanceController::class, 'recovery'])->name('attendance.recovery');
+        Route::post('/attendance/report-absence', [App\Http\Controllers\AttendanceController::class, 'reportAbsence'])->name('attendance.reportAbsence');
     });
     
     // Daily reports removed - now using weekly reports only
@@ -185,6 +188,11 @@ Route::middleware(['auth', 'verified', 'force.password.change', 'profile.complet
     // Coordinator manage program hours
     Route::get('/coord/program/hours', [App\Http\Controllers\CoordinatorProgramController::class, 'showHours'])->name('coord.program.hours');
     Route::patch('/coord/program/hours', [App\Http\Controllers\CoordinatorProgramController::class, 'updateHours'])->name('coord.program.update-hours');
+
+    // Coordinator view weekly reports
+    Route::get('/coord/reports', [App\Http\Controllers\CoordinatorReportController::class, 'index'])->name('coord.reports.index');
+    Route::get('/coord/reports/{report}', [App\Http\Controllers\CoordinatorReportController::class, 'show'])->name('coord.reports.show');
+    Route::patch('/coord/reports/{report}/status', [App\Http\Controllers\CoordinatorReportController::class, 'updateStatus'])->name('coord.reports.update-status');
 
     // Coordinator manage students
     Route::get('/coord/students', [App\Http\Controllers\CoordinatorStudentController::class, 'index'])->name('coord.students.index');

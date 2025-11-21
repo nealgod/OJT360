@@ -218,8 +218,21 @@ class WeeklyReportController extends Controller
 
         $attendanceSummary = $this->getAttendanceSummary($weekStart, $weekEnd);
 
+        // Get coordinator for this student's program
+        $coordinatorId = null;
+        $studentProfile = Auth::user()->studentProfile;
+        if ($studentProfile && $studentProfile->program_id) {
+            $coordinator = \App\Models\User::where('role', 'coordinator')
+                ->whereHas('coordinatorProfile', function($q) use ($studentProfile) {
+                    $q->where('program_id', $studentProfile->program_id);
+                })
+                ->first();
+            $coordinatorId = $coordinator?->id;
+        }
+
         $report = WeeklyReport::create([
             'student_user_id' => Auth::id(),
+            'coordinator_user_id' => $coordinatorId,
             'week_start_date' => $weekStart,
             'week_end_date' => $weekEnd,
             'week_number' => $this->calculateWeekNumber($weekStart),
@@ -229,12 +242,11 @@ class WeeklyReportController extends Controller
             'total_hours' => $attendanceSummary['total_hours'],
             'entries' => $this->sanitizeEntries($validated['entries']),
             'problems_encountered' => $validated['problems_encountered'] ?? null,
-            'status' => 'submitted',
-            'submitted_at' => now(),
+            'status' => 'draft',
         ]);
 
         return redirect()->route('reports.weekly.show', $report)
-            ->with('success', 'Weekly report submitted successfully.');
+            ->with('success', 'Weekly report saved as draft. You can review and submit it when ready.');
     }
 
     public function show(WeeklyReport $weekly)
@@ -371,6 +383,65 @@ class WeeklyReportController extends Controller
                 return $entry;
             })
             ->all();
+    }
+
+    public function submit(WeeklyReport $weekly)
+    {
+        // Verify ownership
+        if ($weekly->student_user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        // Check if already submitted
+        if ($weekly->status !== 'draft') {
+            return redirect()->route('reports.weekly.show', $weekly)
+                ->with('error', 'This report has already been submitted.');
+        }
+
+        // Validate report has content
+        if (empty($weekly->entries) || count($weekly->entries) === 0) {
+            return redirect()->route('reports.weekly.show', $weekly)
+                ->with('error', 'Cannot submit an empty report. Please add activities first.');
+        }
+
+        // Check if at least one entry has activity
+        $hasActivity = collect($weekly->entries)->some(function ($entry) {
+            return !empty($entry['activity']);
+        });
+
+        if (!$hasActivity) {
+            return redirect()->route('reports.weekly.show', $weekly)
+                ->with('error', 'Please add at least one activity before submitting.');
+        }
+
+        // Update status to submitted
+        $weekly->update([
+            'status' => 'submitted',
+            'submitted_at' => now()
+        ]);
+
+        return redirect()->route('reports.weekly.show', $weekly)
+            ->with('success', 'Weekly report submitted successfully! Your coordinator will review it.');
+    }
+
+    public function destroy(WeeklyReport $weekly)
+    {
+        // Verify ownership
+        if ($weekly->student_user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        // Only allow deletion of draft reports
+        if ($weekly->status !== 'draft') {
+            return redirect()->route('reports.weekly.index')
+                ->with('error', 'Cannot delete a report that has already been submitted. Please contact your coordinator.');
+        }
+
+        $weekNumber = $weekly->week_number;
+        $weekly->delete();
+
+        return redirect()->route('reports.weekly.index')
+            ->with('success', "Weekly report (Week {$weekNumber}) has been deleted successfully.");
     }
 }
 
