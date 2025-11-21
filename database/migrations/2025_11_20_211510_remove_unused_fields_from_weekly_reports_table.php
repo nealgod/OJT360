@@ -13,9 +13,15 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('weekly_reports', function (Blueprint $table) {
-            $table->dropColumn(['activities_accomplished', 'skills_learned', 'challenges_faced']);
-        });
+        // Only run if table exists
+        if (Schema::hasTable('weekly_reports')) {
+            // Check if columns exist before dropping
+            if (Schema::hasColumn('weekly_reports', 'activities_accomplished')) {
+                Schema::table('weekly_reports', function (Blueprint $table) {
+                    $table->dropColumn(['activities_accomplished', 'skills_learned', 'challenges_faced']);
+                });
+            }
+        }
     }
 
     /**
@@ -25,10 +31,13 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::table('weekly_reports', function (Blueprint $table) {
-            $table->text('activities_accomplished')->nullable();
-            $table->text('skills_learned')->nullable();
-            $table->text('challenges_faced')->nullable();
-        });
+        // Only run if table exists
+        if (Schema::hasTable('weekly_reports')) {
+            Schema::table('weekly_reports', function (Blueprint $table) {
+                $table->text('activities_accomplished')->nullable();
+                $table->text('skills_learned')->nullable();
+                $table->text('challenges_faced')->nullable();
+            });
+        }
     }
 };
