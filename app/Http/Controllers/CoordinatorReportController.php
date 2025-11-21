@@ -75,4 +75,17 @@ class CoordinatorReportController extends Controller
         
         return redirect()->back()->with('success', 'Report status updated successfully.');
     }
+
+    public function downloadPdf(WeeklyReport $report, \App\Services\WeeklyReportPdfService $pdfService)
+    {
+        $this->authorize('viewAsCoordinator', $report);
+        
+        $pdf = $pdfService->generate($report);
+        $fileName = sprintf('weekly-report-week-%s-%s.pdf', $report->week_number, $report->student->studentProfile->student_id ?? 'student');
+
+        return response($pdf, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => "inline; filename=\"{$fileName}\"",
+        ]);
+    }
 }

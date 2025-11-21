@@ -192,6 +192,7 @@ Route::middleware(['auth', 'verified', 'force.password.change', 'profile.complet
     // Coordinator view weekly reports
     Route::get('/coord/reports', [App\Http\Controllers\CoordinatorReportController::class, 'index'])->name('coord.reports.index');
     Route::get('/coord/reports/{report}', [App\Http\Controllers\CoordinatorReportController::class, 'show'])->name('coord.reports.show');
+    Route::get('/coord/reports/{report}/pdf', [App\Http\Controllers\CoordinatorReportController::class, 'downloadPdf'])->name('coord.reports.pdf');
     Route::patch('/coord/reports/{report}/status', [App\Http\Controllers\CoordinatorReportController::class, 'updateStatus'])->name('coord.reports.update-status');
 
     // Coordinator manage students
