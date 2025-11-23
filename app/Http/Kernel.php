@@ -64,7 +64,6 @@ class Kernel extends HttpKernel
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'profile.complete' => \App\Http\Middleware\CheckProfileCompletion::class,
-        'force.password.change' => \App\Http\Middleware\ForcePasswordChange::class,
         'placement.started' => \App\Http\Middleware\EnsurePlacementStarted::class,
     ];
 }

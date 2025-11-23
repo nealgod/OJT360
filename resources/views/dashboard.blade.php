@@ -312,14 +312,14 @@
                                 </svg>
                             </div>
                         </div>
-                    // Get supervised student IDs
-                    $supervisedStudentIds = \App\Models\User::where('role', 'intern')
+                    </div>
+
                     <!-- Ready Students -->
                     <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-                        ->pluck('id');
-                    
-                    // Count supervised students
-                    $supervisedStudents = $supervisedStudentIds->count();
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-600 text-sm font-medium">Ready for OJT</p>
+                                <p class="text-2xl font-bold text-ojt-dark">{{ $readyChecklists }}</p>
                             </div>
                             <div class="w-12 h-12 bg-ojt-success/10 rounded-lg flex items-center justify-center">
                                 <svg class="w-6 h-6 text-ojt-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -330,7 +330,7 @@
                     </div>
 
                     <!-- Active Companies -->
-                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+                    <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-gray-600 text-sm font-medium">Active Companies</p>
@@ -367,7 +367,7 @@
                 @endphp
                 
                 <!-- Supervisor Dashboard Stats -->
-                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <!-- Supervised Students -->
                     <div class="bg-gradient-to-br from-ojt-primary to-maroon-700 rounded-xl p-6 text-white">
                         <div class="flex items-center justify-between">
@@ -979,6 +979,5 @@
         });
     </script>
 </x-app-layout>
-
 
 

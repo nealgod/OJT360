@@ -35,11 +35,6 @@ class AuthenticatedSessionController extends Controller
             $user->markEmailAsVerified();
         }
 
-        // Check if user must change password
-        if ($user->must_change_password) {
-            return redirect()->route('password.first-change');
-        }
-
         return redirect()->intended(RouteServiceProvider::HOME);
     }
 

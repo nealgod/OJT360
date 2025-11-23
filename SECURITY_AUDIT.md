@@ -29,11 +29,9 @@ All routes are protected with appropriate middleware layers:
 - ✅ Allows access to profile edit and logout routes
 - ✅ Redirects incomplete profiles with warning message
 
-#### 4. Force Password Change (`force.password.change`)
-- ✅ Custom middleware: `app/Http/Middleware/ForcePasswordChange.php`
-- ✅ Forces first-time password change
-- ✅ Allowlisted routes: password change, verification, logout
-- ✅ Prevents access until password is changed
+#### 4. ~~Force Password Change~~ (REMOVED - Not Needed)
+- ❌ Removed - users set their own passwords during registration
+- ✅ Simplified authentication flow
 
 #### 5. Placement Started (`placement.started`)
 - ✅ Custom middleware: `app/Http/Middleware/EnsurePlacementStarted.php`
@@ -80,9 +78,9 @@ All routes are protected with appropriate middleware layers:
 ### Dashboard Route
 ```php
 Route::get('/dashboard', ...)
-    ->middleware(['auth', 'verified', 'profile.complete', 'force.password.change'])
+    ->middleware(['auth', 'verified', 'profile.complete'])
 ```
-**Protection Level:** ✅ MAXIMUM (4 layers)
+**Protection Level:** ✅ STRONG (3 layers)
 
 ### Student Routes (Attendance & Reports)
 ```php
@@ -98,15 +96,15 @@ Route::middleware(['auth'])->group(...)
 
 ### Coordinator Routes
 ```php
-Route::middleware(['auth', 'verified', 'force.password.change', 'profile.complete'])->group(...)
+Route::middleware(['auth', 'verified', 'profile.complete'])->group(...)
 ```
-**Protection Level:** ✅ MAXIMUM (4 layers)
+**Protection Level:** ✅ STRONG (3 layers)
 
 ### Admin Routes
 ```php
-Route::middleware(['auth', 'verified', 'force.password.change', 'profile.complete'])->group(...)
+Route::middleware(['auth', 'verified', 'profile.complete'])->group(...)
 ```
-**Protection Level:** ✅ MAXIMUM (4 layers)
+**Protection Level:** ✅ STRONG (3 layers)
 
 ---
 
@@ -184,11 +182,9 @@ All middleware and authorization checks are properly configured and working.
 - ✅ Only applies to students
 - ✅ Proper error messages
 
-### ForcePasswordChange
-- ✅ Forces password change on first login
-- ✅ Allowlisted routes accessible
-- ✅ Redirects to password change page
-- ✅ Clears flag after successful change
+### ~~ForcePasswordChange~~ (REMOVED)
+- ❌ Not needed - users set passwords during registration
+- ✅ Simplified authentication flow
 
 ---
 

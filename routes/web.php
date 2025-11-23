@@ -31,17 +31,9 @@ Route::prefix('register/supervisor')->name('supervisor.register')->group(functio
 
 Route::get('/dashboard', function () {
     return view('dashboard');
-})->middleware(['auth', 'verified', 'profile.complete', 'force.password.change'])->name('dashboard');
+})->middleware(['auth', 'verified', 'profile.complete'])->name('dashboard');
 
-Route::middleware(['auth'])->group(function () {
-    // Force first password change routes (accessible even when forced)
-    Route::get('/password/first-change', [App\Http\Controllers\PasswordController::class, 'showFirstChange'])->name('password.first-change');
-    Route::post('/password/first-change', [App\Http\Controllers\PasswordController::class, 'updateFirstChange'])->name('password.first-change.update');
-
-    // Protected routes (subject to force password change)
-});
-
-Route::middleware(['auth', 'force.password.change', 'profile.complete'])->group(function () {
+Route::middleware(['auth', 'profile.complete'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -127,7 +119,7 @@ Route::middleware(['auth', 'force.password.change', 'profile.complete'])->group(
 });
 
 // Admin routes
-Route::middleware(['auth', 'verified', 'force.password.change', 'profile.complete'])->group(function () {
+Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', [App\Http\Controllers\AdminController::class, 'dashboard'])->name('dashboard');
         Route::get('/users', [App\Http\Controllers\AdminController::class, 'users'])->name('users');
@@ -153,7 +145,7 @@ Route::post('/register/coordinator/resend', [App\Http\Controllers\ActivationCont
 Route::get('/activate', [App\Http\Controllers\ActivationController::class, 'show'])->name('activate.show');
 Route::post('/activate', [App\Http\Controllers\ActivationController::class, 'activate'])->name('activate');
 
-Route::middleware(['auth', 'verified', 'force.password.change', 'profile.complete'])->group(function () {
+Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
     Route::get('/my-placement', [App\Http\Controllers\StudentPlacementController::class, 'show'])->name('student.placement.show');
 });
 
@@ -183,7 +175,7 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // Coordinator placement inbox
-Route::middleware(['auth', 'verified', 'force.password.change', 'profile.complete'])->group(function () {
+Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
     // Coordinator manage companies
     Route::get('/coord/companies/create', [App\Http\Controllers\CompanyController::class, 'create'])->name('coord.companies.create');
     Route::post('/coord/companies', [App\Http\Controllers\CompanyController::class, 'store'])->name('coord.companies.store');

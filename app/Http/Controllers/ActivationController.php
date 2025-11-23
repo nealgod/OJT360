@@ -298,7 +298,6 @@ class ActivationController extends Controller
             'email' => $invite->email,
             'password' => Hash::make($validated['password']),
             'role' => 'coordinator',
-            'must_change_password' => false,
         ]);
 
         // Mark email as verified explicitly (fillable doesn't include email_verified_at)
