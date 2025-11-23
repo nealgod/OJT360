@@ -1,9 +1,9 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-ojt-dark leading-tight">
-            Weekly Reports
+            Monthly Evaluations
         </h2>
-        <p class="text-sm text-gray-500">Review and manage student weekly reports</p>
+        <p class="text-sm text-gray-500">Review and manage student monthly progress evaluations</p>
     </x-slot>
 
     <div class="py-10">
@@ -21,12 +21,12 @@
             @endif
 
             <!-- Stats Overview -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <div class="bg-white rounded-lg border border-gray-200 p-4">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm text-gray-600">Total Reports</p>
-                            <p class="text-2xl font-bold text-ojt-dark">{{ $reports->total() }}</p>
+                            <p class="text-sm text-gray-600">Total</p>
+                            <p class="text-2xl font-bold text-ojt-dark">{{ $evaluations->total() }}</p>
                         </div>
                         <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                             <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -39,14 +39,14 @@
                 <div class="bg-white rounded-lg border border-gray-200 p-4">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm text-gray-600">Students Submitted</p>
-                            <p class="text-2xl font-bold text-purple-600">
-                                {{ $reports->pluck('student_user_id')->unique()->count() }}
+                            <p class="text-sm text-gray-600">Pending Review</p>
+                            <p class="text-2xl font-bold text-yellow-600">
+                                {{ $evaluations->where('reviewed_at', null)->count() }}
                             </p>
                         </div>
-                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                         </div>
                     </div>
@@ -55,14 +55,33 @@
                 <div class="bg-white rounded-lg border border-gray-200 p-4">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm text-gray-600">Submitted</p>
-                            <p class="text-2xl font-bold text-yellow-600">
-                                {{ $reports->where('status', 'submitted')->count() }}
+                            <p class="text-sm text-gray-600">Reviewed</p>
+                            <p class="text-2xl font-bold text-green-600">
+                                {{ $evaluations->whereNotNull('reviewed_at')->count() }}
                             </p>
                         </div>
-                        <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg border border-gray-200 p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">This Month</p>
+                            <p class="text-2xl font-bold text-purple-600">
+                                {{ $evaluations->filter(function($e) { 
+                                    return $e->evaluation_month === now()->month && 
+                                           $e->evaluation_year === now()->year; 
+                                })->count() }}
+                            </p>
+                        </div>
+                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
                         </div>
                     </div>
@@ -71,7 +90,7 @@
 
             <!-- Search and Filters -->
             <div class="bg-white rounded-lg border border-gray-200 p-4 mb-6">
-                <form method="GET" action="{{ route('coord.reports.index') }}" class="flex flex-col sm:flex-row gap-4">
+                <form method="GET" action="{{ route('coordinator.evaluations.index') }}" class="flex flex-col sm:flex-row gap-4">
                     <div class="flex-1">
                         <input type="text" 
                                name="search" 
@@ -87,7 +106,7 @@
                             Search
                         </button>
                         @if(request('search'))
-                            <a href="{{ route('coord.reports.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                            <a href="{{ route('coordinator.evaluations.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
                                 Clear
                             </a>
                         @endif
@@ -96,34 +115,28 @@
             </div>
 
             <div class="bg-white shadow sm:rounded-lg p-4 sm:p-6">
-                @if($reports->count() > 0)
+                @if($evaluations->count() > 0)
                     <!-- Mobile: Card View -->
                     <div class="block lg:hidden space-y-4">
-                        @foreach($reports as $report)
+                        @foreach($evaluations as $evaluation)
                             <div class="border rounded-lg p-4 hover:border-ojt-primary/50 transition-colors">
                                 <div class="flex items-start justify-between mb-3">
                                     <div class="flex items-center space-x-3">
-                                        @if($report->student->studentProfile && $report->student->studentProfile->profile_image)
-                                            <img src="{{ Storage::url($report->student->studentProfile->profile_image) }}" 
-                                                 alt="{{ $report->student->name }}" 
+                                        @if($evaluation->student->studentProfile && $evaluation->student->studentProfile->profile_image)
+                                            <img src="{{ Storage::url($evaluation->student->studentProfile->profile_image) }}" 
+                                                 alt="{{ $evaluation->student->name }}" 
                                                  class="w-10 h-10 rounded-full object-cover">
                                         @else
-                                            <div class="w-10 h-10 {{ $report->student->getAvatarColor() }} rounded-full flex items-center justify-center text-white text-sm font-bold">
-                                                {{ substr($report->student->name, 0, 1) }}
+                                            <div class="w-10 h-10 {{ $evaluation->student->getAvatarColor() }} rounded-full flex items-center justify-center text-white text-sm font-bold">
+                                                {{ substr($evaluation->student->name, 0, 1) }}
                                             </div>
                                         @endif
                                         <div>
-                                            <h3 class="font-semibold text-ojt-dark">{{ $report->student->name }}</h3>
-                                            <p class="text-xs text-gray-500">{{ $report->student->studentProfile->student_id ?? 'N/A' }}</p>
+                                            <h3 class="font-semibold text-ojt-dark">{{ $evaluation->student->name }}</h3>
+                                            <p class="text-xs text-gray-500">{{ $evaluation->student->studentProfile->student_id ?? 'N/A' }}</p>
                                         </div>
                                     </div>
-                                    <span class="inline-flex px-2 py-1 rounded-full text-xs font-medium
-                                        @if($report->status === 'reviewed') bg-green-100 text-green-800
-                                        @elseif($report->status === 'submitted') bg-blue-100 text-blue-800
-                                        @else bg-yellow-100 text-yellow-800
-                                        @endif">
-                                        {{ ucfirst($report->status) }}
-                                    </span>
+                                    <x-evaluation-status-badge :evaluation="$evaluation" />
                                 </div>
                                 
                                 <div class="space-y-2 text-sm mb-3">
@@ -131,22 +144,22 @@
                                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                         </svg>
-                                        Week {{ $report->week_number }}: {{ $report->week_start_date->format('M d') }} - {{ $report->week_end_date->format('M d, Y') }}
+                                        {{ $evaluation->getMonthYearLabel() }} (Month {{ $evaluation->month_number }})
                                     </div>
                                     <div class="flex items-center text-gray-600">
                                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                         </svg>
-                                        {{ $report->days_present }} days • {{ number_format($report->total_hours, 2) }} hours
+                                        Supervisor: {{ $evaluation->supervisor->name }}
                                     </div>
                                 </div>
                                 
                                 <div class="flex gap-2">
-                                    <a href="{{ route('coord.reports.show', $report) }}"
+                                    <a href="{{ route('coordinator.evaluations.show', $evaluation) }}"
                                        class="flex-1 text-center px-4 py-2 bg-ojt-primary text-white rounded-lg text-sm font-medium hover:bg-maroon-700 transition-colors">
-                                        View Details →
+                                        Review →
                                     </a>
-                                    <a href="{{ route('coord.reports.pdf', $report) }}"
+                                    <a href="{{ route('coordinator.evaluations.download-pdf', $evaluation) }}"
                                        class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -163,61 +176,54 @@
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Week Period</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Attendance</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Period</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Supervisor</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submitted</th>
                                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                @foreach($reports as $report)
+                                @foreach($evaluations as $evaluation)
                                     <tr class="hover:bg-gray-50 transition-colors">
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="flex items-center">
-                                                @if($report->student->studentProfile && $report->student->studentProfile->profile_image)
-                                                    <img src="{{ Storage::url($report->student->studentProfile->profile_image) }}" 
-                                                         alt="{{ $report->student->name }}" 
+                                                @if($evaluation->student->studentProfile && $evaluation->student->studentProfile->profile_image)
+                                                    <img src="{{ Storage::url($evaluation->student->studentProfile->profile_image) }}" 
+                                                         alt="{{ $evaluation->student->name }}" 
                                                          class="w-10 h-10 rounded-full object-cover">
                                                 @else
-                                                    <div class="w-10 h-10 {{ $report->student->getAvatarColor() }} rounded-full flex items-center justify-center text-white text-sm font-bold">
-                                                        {{ substr($report->student->name, 0, 1) }}
+                                                    <div class="w-10 h-10 {{ $evaluation->student->getAvatarColor() }} rounded-full flex items-center justify-center text-white text-sm font-bold">
+                                                        {{ substr($evaluation->student->name, 0, 1) }}
                                                     </div>
                                                 @endif
                                                 <div class="ml-3">
-                                                    <div class="text-sm font-medium text-gray-900">{{ $report->student->name }}</div>
-                                                    <div class="text-xs text-gray-500">{{ $report->student->studentProfile->student_id ?? 'N/A' }}</div>
+                                                    <div class="text-sm font-medium text-gray-900">{{ $evaluation->student->name }}</div>
+                                                    <div class="text-xs text-gray-500">{{ $evaluation->student->studentProfile->student_id ?? 'N/A' }}</div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm text-gray-900">Week {{ $report->week_number }}</div>
-                                            <div class="text-xs text-gray-500">{{ $report->week_start_date->format('M d') }} - {{ $report->week_end_date->format('M d, Y') }}</div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm text-gray-900">{{ $report->days_present }} days</div>
-                                            <div class="text-xs text-gray-500">{{ number_format($report->total_hours, 2) }} hours</div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="inline-flex px-2 py-1 rounded-full text-xs font-medium
-                                                @if($report->status === 'reviewed') bg-green-100 text-green-800
-                                                @elseif($report->status === 'submitted') bg-blue-100 text-blue-800
-                                                @else bg-yellow-100 text-yellow-800
-                                                @endif">
-                                                {{ ucfirst($report->status) }}
-                                            </span>
+                                            <div class="text-sm text-gray-900">{{ $evaluation->getMonthYearLabel() }}</div>
+                                            <div class="text-xs text-gray-500">Month {{ $evaluation->month_number }}</div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ $report->submitted_at ? $report->submitted_at->format('M d, Y') : 'N/A' }}
+                                            {{ $evaluation->supervisor->name }}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <x-evaluation-status-badge :evaluation="$evaluation" />
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {{ $evaluation->submitted_at ? $evaluation->submitted_at->format('M d, Y') : 'N/A' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <div class="flex items-center justify-end space-x-2">
-                                                <a href="{{ route('coord.reports.show', $report) }}"
+                                                <a href="{{ route('coordinator.evaluations.show', $evaluation) }}"
                                                    class="text-ojt-primary hover:text-maroon-700">
-                                                    View
+                                                    Review
                                                 </a>
                                                 <span class="text-gray-300">|</span>
-                                                <a href="{{ route('coord.reports.pdf', $report) }}"
+                                                <a href="{{ route('coordinator.evaluations.download-pdf', $evaluation) }}"
                                                    class="text-gray-600 hover:text-gray-900">
                                                     PDF
                                                 </a>
@@ -230,14 +236,14 @@
                     </div>
 
                     <div class="mt-6">
-                        {{ $reports->links() }}
+                        {{ $evaluations->links() }}
                     </div>
                 @else
                     <div class="text-center py-12">
                         <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                        <p class="text-gray-500 text-lg">No weekly reports found</p>
+                        <p class="text-gray-500 text-lg">No evaluations found</p>
                         @if(request('search'))
                             <p class="text-gray-400 text-sm mt-2">Try adjusting your search criteria</p>
                         @endif

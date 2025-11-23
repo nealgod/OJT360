@@ -75,6 +75,52 @@
                 ];
             @endphp
 
+            <!-- OJT Hours Progress Bar -->
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
+                @php
+                    // Calculate progress
+                    $totalMinutes = $student->attendanceLogs->sum('minutes_worked');
+                    $completedHours = $totalMinutes > 0 ? round($totalMinutes / 60, 1) : 0;
+                    $requiredHours = $acceptance?->total_hours
+                        ?? $student->studentProfile?->required_hours
+                        ?? $student->getRequiredHours()
+                        ?? 500; // Default fallback
+                    $progressPercentage = $requiredHours > 0 ? min(($completedHours / $requiredHours) * 100, 100) : 0;
+                @endphp
+                
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-sm font-semibold text-gray-700">OJT Hours Progress</h3>
+                    <span class="text-sm font-bold text-ojt-primary">{{ number_format($completedHours, 1) }} / {{ number_format($requiredHours) }} hours</span>
+                </div>
+                
+                <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                    <div class="h-full rounded-full transition-all duration-500 ease-out flex items-center justify-end pr-2
+                        @if($progressPercentage >= 100) bg-green-500
+                        @elseif($progressPercentage >= 75) bg-blue-500
+                        @elseif($progressPercentage >= 50) bg-yellow-500
+                        @else bg-orange-500
+                        @endif"
+                        style="width: {{ $progressPercentage }}%">
+                        @if($progressPercentage > 10)
+                            <span class="text-xs font-bold text-white">{{ number_format($progressPercentage, 1) }}%</span>
+                        @endif
+                    </div>
+                </div>
+                
+                <div class="flex items-center justify-between mt-2 text-xs text-gray-500">
+                    <span>{{ number_format($requiredHours - $completedHours, 1) }} hours remaining</span>
+                    @if($progressPercentage >= 100)
+                        <span class="text-green-600 font-semibold">✓ Completed!</span>
+                    @elseif($progressPercentage >= 75)
+                        <span class="text-blue-600 font-semibold">Almost there!</span>
+                    @elseif($progressPercentage >= 50)
+                        <span class="text-yellow-600 font-semibold">Halfway done</span>
+                    @else
+                        <span class="text-gray-600">Keep going!</span>
+                    @endif
+                </div>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                 @foreach($milestones as $milestone)
                     <div class="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between">
@@ -118,9 +164,9 @@
                                 <div><span class="font-semibold text-yellow-600">{{ $attendanceStats['missing_checkout'] }}</span> pending out</div>
                             </div>
                         </div>
-                        <div class="overflow-x-auto">
+                        <div class="overflow-x-auto max-h-96 overflow-y-scroll border border-gray-200 rounded-lg">
                             <table class="min-w-full divide-y divide-gray-200 text-sm">
-                                <thead class="bg-gray-50">
+                                <thead class="bg-gray-50 sticky top-0">
                                     <tr>
                                         <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Date</th>
                                         <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Time In</th>
@@ -131,7 +177,7 @@
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-100">
-                                    @forelse($student->attendanceLogs as $log)
+                                    @forelse($student->attendanceLogs->take(5) as $log)
                                         @php
                                             $late = false;
                                             // Late detection removed - can be added back using acceptance letter data if needed
@@ -202,42 +248,90 @@
                     <!-- Reports Overview -->
                     <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
                         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-                                <div>
+                            <div>
                                 <h3 class="text-lg font-semibold text-gray-900">Reports Overview</h3>
-                                <p class="text-sm text-gray-500">Recent submissions with quick access.</p>
-                                            </div>
+                                <p class="text-sm text-gray-500">Weekly and monthly submissions</p>
+                            </div>
                             <div class="flex items-center gap-4 text-xs text-gray-600">
-                                <div><span class="font-semibold text-ojt-dark">{{ $reportStats['total_reports'] }}</span> total</div>
-                                <div><span class="font-semibold text-ojt-dark">{{ $reportStats['this_week'] }}</span> this week</div>
-                                    </div>
-                                </div>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200 text-sm">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Date</th>
-                                        <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Summary</th>
-                                        <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-100">
-                                    @forelse($student->weeklyReports as $report)
+                                <div><span class="font-semibold text-blue-600">{{ $student->weeklyReports->count() }}</span> weekly</div>
+                                <div><span class="font-semibold text-purple-600">{{ $student->monthlyEvaluations->count() }}</span> monthly</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Weekly Reports -->
+                        <div class="mb-6">
+                            <h4 class="text-sm font-semibold text-gray-700 mb-2">Weekly Reports</h4>
+                            <div class="overflow-x-auto max-h-64 overflow-y-scroll border border-gray-200 rounded-lg">
+                                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                                    <thead class="bg-gray-50">
                                         <tr>
-                                            <td class="px-3 py-2 text-gray-900">{{ $report->week_start_date?->format('M d, Y') ?? '—' }} - {{ $report->week_end_date?->format('M d, Y') ?? '—' }}</td>
-                                            <td class="px-3 py-2 text-gray-700">{{ Str::limit($report->problems_encountered, 80) ?: 'No problems reported' }}</td>
-                                            <td class="px-3 py-2">
-                                                <a href="{{ route('reports.weekly.show', $report) }}" target="_blank" class="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-xs font-medium">
-                                                    View Report
-                                                </a>
-                                            </td>
+                                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Week</th>
+                                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Period</th>
+                                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Status</th>
+                                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Action</th>
                                         </tr>
-                                    @empty
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-100">
+                                        @forelse($student->weeklyReports->take(3) as $report)
+                                            <tr>
+                                                <td class="px-3 py-2 text-gray-900">Week {{ $report->week_number }}</td>
+                                                <td class="px-3 py-2 text-gray-700">{{ $report->week_start_date?->format('M d') ?? '—' }} - {{ $report->week_end_date?->format('M d, Y') ?? '—' }}</td>
+                                                <td class="px-3 py-2">
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                        {{ ucfirst($report->status) }}
+                                                    </span>
+                                                </td>
+                                                <td class="px-3 py-2">
+                                                    <a href="{{ route('coord.reports.show', $report) }}" target="_blank" class="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-xs font-medium">
+                                                        View
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="4" class="px-3 py-4 text-center text-sm text-gray-500">No weekly reports yet</td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Monthly Evaluations -->
+                        <div>
+                            <h4 class="text-sm font-semibold text-gray-700 mb-2">Monthly Evaluations</h4>
+                            <div class="overflow-x-auto max-h-64 overflow-y-scroll border border-gray-200 rounded-lg">
+                                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                                    <thead class="bg-gray-50">
                                         <tr>
-                                            <td colspan="3" class="px-3 py-4 text-center text-sm text-gray-500">No reports submitted yet.</td>
+                                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Month</th>
+                                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Supervisor</th>
+                                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Status</th>
+                                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Action</th>
                                         </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-100">
+                                        @forelse($student->monthlyEvaluations->take(3) as $evaluation)
+                                            <tr>
+                                                <td class="px-3 py-2 text-gray-900">{{ $evaluation->getMonthYearLabel() }}</td>
+                                                <td class="px-3 py-2 text-gray-700">{{ $evaluation->supervisor_name }}</td>
+                                                <td class="px-3 py-2">
+                                                    <x-evaluation-status-badge :evaluation="$evaluation" />
+                                                </td>
+                                                <td class="px-3 py-2">
+                                                    <a href="{{ route('coordinator.evaluations.show', $evaluation) }}" target="_blank" class="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-xs font-medium">
+                                                        View
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="4" class="px-3 py-4 text-center text-sm text-gray-500">No monthly evaluations yet</td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -279,7 +373,12 @@
                                 <div class="flex items-center justify-between">
                                     <span class="uppercase tracking-wide">Hours Completed</span>
                                     <span class="text-sm text-ojt-dark font-semibold">
-                                        {{ number_format($student->studentProfile?->completed_hours ?? 0) }}
+                                        @php
+                                            // Calculate total hours from attendance logs
+                                            $totalMinutes = $student->attendanceLogs->sum('minutes_worked');
+                                            $completedHours = $totalMinutes > 0 ? round($totalMinutes / 60, 1) : 0;
+                                        @endphp
+                                        {{ number_format($completedHours, 1) }}
                                     </span>
                                 </div>
                                 @php
@@ -321,24 +420,18 @@
 
 
                     <!-- Supervisor Assignment Section -->
-                    <div id="supervisor-assignment" class="bg-white rounded-xl border border-gray-200 shadow-sm p-6" x-data="{ open: {{ $student->studentProfile?->supervisor ? 'false' : 'true' }} }">
+                    <div id="supervisor-assignment" class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-lg font-semibold text-gray-900">Supervisor Assignment</h3>
-                            <div class="flex items-center gap-2">
-                                @if($student->studentProfile?->supervisor)
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">✓ Assigned</span>
-                                @else
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">⚠ Pending</span>
-                                @endif
-                                <button type="button" @click="open = !open" class="inline-flex items-center px-2.5 py-1 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50">
-                                    <span x-show="!open">Show</span>
-                                    <span x-show="open">Hide</span>
-                                </button>
-                            </div>
+                            @if($student->studentProfile?->supervisor)
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">✓ Assigned</span>
+                            @else
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">⚠ Pending</span>
+                            @endif
                         </div>
 
                         <!-- Current assignment -->
-                        <div class="mb-4" x-show="open">
+                        <div class="mb-4">
                             @if($student->studentProfile?->supervisor)
                                 <div class="bg-gradient-to-r from-ojt-accent/10 to-ojt-primary/5 border border-ojt-accent/30 rounded-lg p-4">
                                     <div class="flex items-start gap-4">
@@ -427,22 +520,7 @@
                             @endif
 
                         <!-- Assignment Options -->
-                        <div class="space-y-3" x-show="open">
-                            <!-- Option 1: Generate supervisor registration link (recommended) -->
-                            <div class="border border-blue-200 rounded-lg p-3">
-                                <h4 class="text-sm font-medium text-ojt-dark mb-2">Option 1: Generate Supervisor Registration Link (Recommended)</h4>
-                                <p class="text-xs text-gray-600 mb-2">Generate a secure registration link for the supervisor to complete their own registration.</p>
-                                <div class="text-xs text-gray-700 mb-3 space-y-1">
-                                    <p>The supervisor will receive an email with a link to complete their registration.</p>
-                                </div>
-                                <a href="{{ route('supervisor.students.search', ['student_id' => $student->id]) }}" class="inline-block bg-ojt-primary text-white px-3 py-1 rounded text-sm hover:bg-maroon-700 transition-colors">
-                                    Generate Registration Link
-                                </a>
-                            </div>
 
-
-
-                        </div>
                     </div>
                 </div>
             </div>

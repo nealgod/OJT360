@@ -68,6 +68,22 @@
                         <x-nav-link :href="route('coord.reports.index')" :active="request()->routeIs('coord.reports.*')">
                             {{ __('Weekly Reports') }}
                         </x-nav-link>
+                        <x-nav-link :href="route('coordinator.evaluations.index')" :active="request()->routeIs('coordinator.evaluations.*')">
+                            {{ __('Monthly Evaluations') }}
+                            @php
+                                $pendingEvals = \App\Models\MonthlyEvaluation::whereHas('student.studentProfile', function($q) {
+                                    $profile = Auth::user()->coordinatorProfile;
+                                    if ($profile && $profile->program_id) {
+                                        $q->where('program_id', $profile->program_id);
+                                    }
+                                })->whereNull('reviewed_at')->count();
+                            @endphp
+                            @if($pendingEvals > 0)
+                                <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                    {{ $pendingEvals }}
+                                </span>
+                            @endif
+                        </x-nav-link>
                         <x-nav-link :href="route('messages.index')" :active="request()->routeIs('messages.*')">
                             {{ __('Messages') }}
                             @if(auth()->user()->unreadMessages()->count() > 0)
@@ -207,6 +223,12 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                         {{ __('Reports') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('evaluations.index')" :active="request()->routeIs('evaluations.*')">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                        </svg>
+                        {{ __('Evaluations') }}
                     </x-responsive-nav-link>
                 @endif
                 <x-responsive-nav-link :href="route('messages.index')" :active="request()->routeIs('messages.*')">

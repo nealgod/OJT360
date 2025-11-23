@@ -82,6 +82,9 @@ Route::middleware(['auth', 'force.password.change', 'profile.complete'])->group(
         Route::post('/attendance/report-absence', [App\Http\Controllers\AttendanceController::class, 'reportAbsence'])->name('attendance.reportAbsence');
     });
     
+    // Monthly Evaluations (status only for students)
+    Route::get('/evaluations', [App\Http\Controllers\StudentEvaluationController::class, 'index'])->name('evaluations.index');
+    
     // Daily reports removed - now using weekly reports only
     
     // Document Requirements
@@ -168,6 +171,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/supervisor/students/{student}/accept', [App\Http\Controllers\SupervisorAcceptanceController::class, 'acceptStudent'])->name('supervisor.students.accept');
     Route::post('/supervisor/students/{student}/generate-letter', [App\Http\Controllers\SupervisorAcceptanceController::class, 'generateLetter'])->name('supervisor.students.generate');
     Route::get('/supervisor/students/success/{letter}', [App\Http\Controllers\SupervisorAcceptanceController::class, 'showSuccess'])->name('supervisor.students.success');
+    
+    // Supervisor Monthly Evaluations
+    Route::prefix('supervisor/evaluations')->name('supervisor.evaluations.')->group(function () {
+        Route::get('/', [App\Http\Controllers\SupervisorEvaluationController::class, 'index'])->name('index');
+        Route::get('/create/{student}', [App\Http\Controllers\SupervisorEvaluationController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\SupervisorEvaluationController::class, 'store'])->name('store');
+        Route::get('/{evaluation}', [App\Http\Controllers\SupervisorEvaluationController::class, 'show'])->name('show');
+        Route::get('/{evaluation}/pdf', [App\Http\Controllers\SupervisorEvaluationController::class, 'downloadPdf'])->name('pdf');
+    });
 });
 
 // Coordinator placement inbox
@@ -194,6 +206,14 @@ Route::middleware(['auth', 'verified', 'force.password.change', 'profile.complet
     Route::get('/coord/reports/{report}', [App\Http\Controllers\CoordinatorReportController::class, 'show'])->name('coord.reports.show');
     Route::get('/coord/reports/{report}/pdf', [App\Http\Controllers\CoordinatorReportController::class, 'downloadPdf'])->name('coord.reports.pdf');
     Route::patch('/coord/reports/{report}/status', [App\Http\Controllers\CoordinatorReportController::class, 'updateStatus'])->name('coord.reports.update-status');
+
+    // Coordinator view monthly evaluations
+    Route::prefix('coord/evaluations')->name('coordinator.evaluations.')->group(function () {
+        Route::get('/', [App\Http\Controllers\CoordinatorEvaluationController::class, 'index'])->name('index');
+        Route::get('/{evaluation}', [App\Http\Controllers\CoordinatorEvaluationController::class, 'show'])->name('show');
+        Route::get('/{evaluation}/pdf', [App\Http\Controllers\CoordinatorEvaluationController::class, 'downloadPdf'])->name('download-pdf');
+        Route::patch('/{evaluation}/review', [App\Http\Controllers\CoordinatorEvaluationController::class, 'markReviewed'])->name('mark-reviewed');
+    });
 
     // Coordinator manage students
     Route::get('/coord/students', [App\Http\Controllers\CoordinatorStudentController::class, 'index'])->name('coord.students.index');

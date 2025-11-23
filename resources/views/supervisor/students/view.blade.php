@@ -50,7 +50,7 @@
                             @if($student->studentProfile && $student->studentProfile->supervisor_id)
                                 @if($student->studentProfile->supervisor_id === Auth::id())
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                                        Your Student
+                                        Your Trainee
                                     </span>
                                 @else
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
@@ -242,46 +242,88 @@
             @endphp
 
             @if($isSupervised && $hasLetter)
-                <!-- Student Reports Section (Only for supervised students) -->
+                <!-- Monthly Progress Evaluations Section -->
                 <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-6">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-semibold text-gray-900">Daily Reports</h3>
-                        <div class="flex gap-2">
-                            <button onclick="filterReports('all')" id="btn-all" class="px-3 py-1 text-sm font-medium rounded-lg bg-ojt-primary text-white">
-                                All
-                            </button>
-                            <button onclick="filterReports('week')" id="btn-week" class="px-3 py-1 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200">
-                                This Week
-                            </button>
-                            <button onclick="filterReports('month')" id="btn-month" class="px-3 py-1 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200">
-                                This Month
-                            </button>
-                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900">Monthly Progress Evaluations</h3>
+                        <a href="{{ route('supervisor.evaluations.create', $student->id) }}" 
+                           class="inline-flex items-center px-4 py-2 bg-ojt-primary text-white text-sm font-medium rounded-lg hover:bg-maroon-700 transition-colors">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                            Create Evaluation
+                        </a>
                     </div>
 
                     @php
-                        $reports = $student->weeklyReports()->latest('week_start_date')->get();
+                        $evaluations = $student->monthlyEvaluations()
+                            ->where('supervisor_user_id', Auth::id())
+                            ->orderByDesc('evaluation_year')
+                            ->orderByDesc('evaluation_month')
+                            ->get();
+                        
+                        $totalEvals = $evaluations->count();
+                        $pendingReview = $evaluations->whereNull('reviewed_at')->count();
+                        $reviewed = $evaluations->whereNotNull('reviewed_at')->count();
                     @endphp
 
-                    @if($reports->count() > 0)
-                        <div id="reports-container" class="space-y-3">
-                            @foreach($reports as $report)
-                                <div class="report-item border border-gray-200 rounded-lg p-4 hover:border-ojt-primary transition-colors" 
-                                     data-date="{{ $report->week_start_date->format('Y-m-d') }}">
-                                    <div class="flex items-start justify-between">
+                    <!-- Statistics -->
+                    @if($totalEvals > 0)
+                        <div class="grid grid-cols-3 gap-3 mb-4">
+                            <div class="text-center p-3 rounded-lg bg-blue-50 border border-blue-200">
+                                <p class="text-xs font-medium text-blue-800 mb-1">Total</p>
+                                <p class="text-2xl font-bold text-blue-900">{{ $totalEvals }}</p>
+                            </div>
+                            <div class="text-center p-3 rounded-lg bg-yellow-50 border border-yellow-200">
+                                <p class="text-xs font-medium text-yellow-800 mb-1">Pending</p>
+                                <p class="text-2xl font-bold text-yellow-900">{{ $pendingReview }}</p>
+                            </div>
+                            <div class="text-center p-3 rounded-lg bg-green-50 border border-green-200">
+                                <p class="text-xs font-medium text-green-800 mb-1">Reviewed</p>
+                                <p class="text-2xl font-bold text-green-900">{{ $reviewed }}</p>
+                            </div>
+                        </div>
+                    @endif
+
+                    @if($evaluations->count() > 0)
+                        <div class="max-h-96 overflow-y-auto space-y-3 pr-2">
+                            @foreach($evaluations as $evaluation)
+                                <div class="border border-gray-200 rounded-lg p-4 hover:border-ojt-primary transition-colors">
+                                    <div class="flex items-center justify-between">
                                         <div class="flex-1">
                                             <div class="flex items-center gap-3 mb-2">
-                                                <h4 class="font-medium text-gray-900">Week {{ $report->week_number }}: {{ $report->week_start_date->format('M d') }} - {{ $report->week_end_date->format('M d, Y') }}</h4>
-                                                <span class="text-xs px-2 py-1 rounded-full {{ $report->status === 'submitted' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700' }}">
-                                                    {{ ucfirst($report->status ?? 'submitted') }}
+                                                <h4 class="font-medium text-gray-900">{{ $evaluation->getMonthYearLabel() }}</h4>
+                                                <span class="text-xs px-2 py-1 rounded-full font-medium {{ $evaluation->reviewed_at ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">
+                                                    {{ $evaluation->reviewed_at ? 'Reviewed' : 'Pending Review' }}
                                                 </span>
-                                                <span class="text-xs text-gray-500">{{ $report->week_start_date->diffForHumans() }}</span>
+                                                <span class="text-xs text-gray-500">Month {{ $evaluation->month_number }}</span>
                                             </div>
-                                            <p class="text-sm text-gray-700 whitespace-pre-line">{{ $report->problems_encountered ?: 'No problems reported' }}</p>
-                                            <div class="mt-2 text-xs text-gray-600">
-                                                <span class="font-medium">Hours:</span> {{ number_format($report->total_hours, 2) }} | 
-                                                <span class="font-medium">Days Present:</span> {{ $report->days_present }}
-                                            </div>
+                                            @if($evaluation->submitted_at)
+                                                <p class="text-xs text-gray-600">
+                                                    Submitted {{ $evaluation->submitted_at->diffForHumans() }} 
+                                                    ({{ $evaluation->submitted_at->format('M d, Y g:i A') }})
+                                                </p>
+                                            @else
+                                                <p class="text-xs text-gray-600">Draft - Not yet submitted</p>
+                                            @endif
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <a href="{{ route('supervisor.evaluations.show', $evaluation) }}" 
+                                               class="inline-flex items-center px-3 py-2 text-sm font-medium text-ojt-primary border border-ojt-primary rounded-lg hover:bg-ojt-primary hover:text-white transition-colors">
+                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                </svg>
+                                                View
+                                            </a>
+                                            <a href="{{ route('supervisor.evaluations.pdf', $evaluation) }}" 
+                                               class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                                               download="{{ $student->studentProfile->student_id ?? 'student' }}-{{ $evaluation->getMonthYearLabel() }}.pdf">
+                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                </svg>
+                                                PDF
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
@@ -292,44 +334,17 @@
                             <svg class="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
-                            <p class="text-gray-500">No reports submitted yet</p>
+                            <p class="text-gray-500 mb-3">No monthly evaluations yet</p>
+                            <a href="{{ route('supervisor.evaluations.create', $student->id) }}" 
+                               class="inline-flex items-center px-4 py-2 bg-ojt-primary text-white text-sm font-medium rounded-lg hover:bg-maroon-700 transition-colors">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                </svg>
+                                Create First Evaluation
+                            </a>
                         </div>
                     @endif
                 </div>
-
-                <script>
-                    function filterReports(period) {
-                        const now = new Date();
-                        const reports = document.querySelectorAll('.report-item');
-                        
-                        // Update button styles
-                        document.querySelectorAll('[id^="btn-"]').forEach(btn => {
-                            btn.classList.remove('bg-ojt-primary', 'text-white');
-                            btn.classList.add('bg-gray-100', 'text-gray-700');
-                        });
-                        document.getElementById('btn-' + period).classList.remove('bg-gray-100', 'text-gray-700');
-                        document.getElementById('btn-' + period).classList.add('bg-ojt-primary', 'text-white');
-                        
-                        reports.forEach(report => {
-                            const reportDate = new Date(report.dataset.date);
-                            let show = false;
-                            
-                            if (period === 'all') {
-                                show = true;
-                            } else if (period === 'week') {
-                                const weekAgo = new Date(now);
-                                weekAgo.setDate(weekAgo.getDate() - 7);
-                                show = reportDate >= weekAgo;
-                            } else if (period === 'month') {
-                                const monthAgo = new Date(now);
-                                monthAgo.setMonth(monthAgo.getMonth() - 1);
-                                show = reportDate >= monthAgo;
-                            }
-                            
-                            report.style.display = show ? 'block' : 'none';
-                        });
-                    }
-                </script>
             @endif
 
             <!-- Action Buttons -->
@@ -346,7 +361,7 @@
                 @endif
                 
                 <a href="{{ $isSupervised ? route('supervisor.students') : route('supervisor.students.search') }}" 
-                   class="inline-flex items-center px-6 py-3 {{ $isSupervised ? 'bg-ojt-primary text-white' : 'border border-gray-300 text-gray-700' }} rounded-lg hover:bg-{{ $isSupervised ? 'maroon-700' : 'gray-50' }} transition-colors font-medium">
+                   class="inline-flex items-center px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                     </svg>
@@ -356,3 +371,4 @@
         </div>
     </div>
 </x-app-layout>
+

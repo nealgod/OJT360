@@ -73,7 +73,7 @@
             <!-- Filters and Search -->
             <div class="mb-6 bg-white rounded-xl border border-gray-200 shadow-sm p-4">
                 <form method="GET" action="{{ route('coord.students.index') }}" class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <!-- Search -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
@@ -92,16 +92,6 @@
                                 <option value="pending" {{ $status == 'pending' ? 'selected' : '' }}>Pending</option>
                                 <option value="active" {{ $status == 'active' ? 'selected' : '' }}>Active</option>
                                 <option value="completed" {{ $status == 'completed' ? 'selected' : '' }}>Completed</option>
-                            </select>
-                        </div>
-
-                        <!-- Supervisor Filter (visible, non-draggable) -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Supervisor</label>
-                            <select name="supervisor" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-ojt-primary focus:border-ojt-primary">
-                                <option value="all" {{ ($supervisorFilter ?? 'all') == 'all' ? 'selected' : '' }}>All</option>
-                                <option value="assigned" {{ ($supervisorFilter ?? 'all') == 'assigned' ? 'selected' : '' }}>Assigned</option>
-                                <option value="pending" {{ ($supervisorFilter ?? 'all') == 'pending' ? 'selected' : '' }}>Pending</option>
                             </select>
                         </div>
 
