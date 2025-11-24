@@ -25,6 +25,12 @@ class AttendanceLog extends Model
         'regular_minutes',
         'status',
         'company_schedule',
+        'is_recovered',
+        'recovery_reason',
+        'lat_in',
+        'lng_in',
+        'lat_out',
+        'lng_out',
     ];
 
     protected $casts = [
@@ -34,6 +40,7 @@ class AttendanceLog extends Model
         'break_start' => 'string',
         'break_end' => 'string',
         'company_schedule' => 'array',
+        'is_recovered' => 'boolean',
     ];
 
     public function student()

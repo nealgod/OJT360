@@ -179,10 +179,6 @@
                                     </thead>
                                     <tbody class="divide-y divide-gray-100">
                                         @forelse($student->attendanceLogs as $log)
-                                        @php
-                                            $late = false;
-                                            // Late detection removed - can be added back using acceptance letter data if needed
-                                        @endphp
                                         <tr>
                                             <td class="px-3 py-2 text-gray-900">{{ $log->work_date?->format('M d, Y') ?? '—' }}</td>
                                             <td class="px-3 py-2 text-gray-700">{{ $log->time_in_formatted ?? '—' }}</td>
@@ -229,10 +225,16 @@
                                                     <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">Missing Time-In</span>
                                                 @elseif(!$log->time_out)
                                                     <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">Needs Time-Out</span>
-                                                @elseif($late)
-                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700">Late</span>
+                                                @elseif($log->is_recovered)
+                                                    <button onclick="showRecoveryReason({{ json_encode($log->recovery_reason) }}, {{ json_encode($log->work_date?->format('M d, Y')) }})" 
+                                                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 hover:bg-orange-200 cursor-pointer transition-colors">
+                                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                        </svg>
+                                                        Recovered
+                                                    </button>
                                                 @else
-                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">On Time</span>
+                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Complete</span>
                                                 @endif
                                             </td>
                                         </tr>
@@ -593,4 +595,51 @@
             </div>
         </div>
     </div>
+
+    <!-- Recovery Reason Modal -->
+    <div id="recoveryReasonModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Recovery Details</h3>
+                    <button onclick="closeRecoveryModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="mb-4">
+                    <p class="text-sm text-gray-500 mb-2">Date: <span id="recoveryDate" class="font-medium text-gray-900"></span></p>
+                    <div class="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                        <p class="text-xs uppercase tracking-wide text-orange-600 font-semibold mb-1">Reason for Recovery:</p>
+                        <p id="recoveryReasonText" class="text-sm text-gray-700"></p>
+                    </div>
+                </div>
+                <div class="flex justify-end">
+                    <button onclick="closeRecoveryModal()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm font-medium">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showRecoveryReason(reason, date) {
+            document.getElementById('recoveryReasonText').textContent = reason || 'No reason provided';
+            document.getElementById('recoveryDate').textContent = date;
+            document.getElementById('recoveryReasonModal').classList.remove('hidden');
+        }
+
+        function closeRecoveryModal() {
+            document.getElementById('recoveryReasonModal').classList.add('hidden');
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('recoveryReasonModal')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeRecoveryModal();
+            }
+        });
+    </script>
 </x-app-layout>

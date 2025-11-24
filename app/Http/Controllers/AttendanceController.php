@@ -197,6 +197,9 @@ class AttendanceController extends Controller
                 'timezone' => 'Asia/Manila'
             ]);
 
+            // Check if student has completed required hours and auto-update status
+            $this->checkAndUpdateCompletionStatus($user);
+
             // Check if this is an AJAX request
             if (request()->ajax()) {
                 return response()->json([
@@ -326,7 +329,9 @@ class AttendanceController extends Controller
                 'time_out' => $request->time_out,
                 'photo_out_path' => $photoPath,
                 'minutes_worked' => $minutes,
-                'status' => 'approved' // Keep as approved since it's manual recovery
+                'status' => 'approved',
+                'is_recovered' => true,
+                'recovery_reason' => $request->reason
             ]);
 
             // Log the recovery action for audit purposes
@@ -343,6 +348,9 @@ class AttendanceController extends Controller
                 'timezone' => 'Asia/Manila'
             ]);
 
+            // Check if student has completed required hours and auto-update status
+            $this->checkAndUpdateCompletionStatus($user);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Attendance completed successfully! Your hours have been recorded.',
@@ -356,6 +364,51 @@ class AttendanceController extends Controller
                 'success' => false,
                 'message' => 'Failed to complete attendance: ' . $e->getMessage()
             ]);
+        }
+    }
+
+    /**
+     * Check if student has completed required hours and auto-update status to 'completed'
+     */
+    protected function checkAndUpdateCompletionStatus($user)
+    {
+        try {
+            $studentProfile = $user->studentProfile;
+            
+            if (!$studentProfile || $studentProfile->ojt_status !== 'active') {
+                return; // Only check for active students
+            }
+
+            // Calculate total hours completed
+            $totalMinutes = AttendanceLog::where('student_user_id', $user->id)
+                ->sum('minutes_worked');
+            $completedHours = $totalMinutes / 60;
+
+            // Get required hours from acceptance letter or student profile
+            $acceptance = \App\Models\AcceptanceLetter::where('student_user_id', $user->id)
+                ->latest()
+                ->first();
+            
+            $requiredHours = $acceptance?->total_hours 
+                ?? $studentProfile->required_hours 
+                ?? $user->getRequiredHours() 
+                ?? 500;
+
+            // If completed hours >= required hours, mark as completed
+            if ($completedHours >= $requiredHours) {
+                $studentProfile->update([
+                    'ojt_status' => 'completed',
+                    'completed_hours' => $completedHours
+                ]);
+
+                \Log::info('Student OJT status auto-updated to completed', [
+                    'user_id' => $user->id,
+                    'completed_hours' => $completedHours,
+                    'required_hours' => $requiredHours
+                ]);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error checking completion status: ' . $e->getMessage());
         }
     }
 
