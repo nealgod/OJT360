@@ -564,31 +564,136 @@
                 })();
             </script>
 
-            <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                <div class="divide-y">
-                    @forelse($logs as $log)
-                        <div class="p-4 sm:p-6 flex items-center justify-between">
-                            <div>
-                                <p class="text-ojt-dark font-medium">{{ $log->work_date->format('M d, Y') }}</p>
-                                <p class="text-sm text-gray-500">
-                                    In: {{ $log->time_in_formatted }} • Out: {{ $log->time_out_formatted }} • 
-                                    <span class="font-medium">{{ $log->hours_worked_formatted }} hrs</span>
-                                </p>
-                            </div>
-                            <div class="text-xs">
-                                <span class="px-2 py-1 rounded-full 
-                                    {{ $log->status === 'approved' ? 'bg-green-100 text-green-800' : ($log->status === 'flagged' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800') }}
-                                ">{{ ucfirst($log->status) }}</span>
-                            </div>
-                        </div>
-                    @empty
-                        <div class="p-8 text-center text-gray-500">No attendance logs yet.</div>
-                    @endforelse
+            <!-- Attendance Logs Table -->
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="font-semibold text-ojt-dark">Attendance History</h3>
+                </div>
+                <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                    <div class="max-h-96 overflow-y-auto">
+                        <table class="min-w-full divide-y divide-gray-200 text-sm">
+                            <thead class="bg-gray-50 sticky top-0">
+                                <tr>
+                                    <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wide">Date</th>
+                                    <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wide">Time In</th>
+                                    <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wide">Time Out</th>
+                                    <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wide">Hours</th>
+                                    <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wide">Photos</th>
+                                    <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wide">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                @forelse($logs as $log)
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-4 py-3 text-gray-900">{{ $log->work_date?->format('M d, Y') ?? '—' }}</td>
+                                    <td class="px-4 py-3 text-gray-700">{{ $log->time_in_formatted ?? '—' }}</td>
+                                    <td class="px-4 py-3 text-gray-700">{{ $log->time_out_formatted ?? '—' }}</td>
+                                    <td class="px-4 py-3">
+                                        @if($log->minutes_worked)
+                                            <span class="font-semibold text-ojt-primary">{{ round($log->minutes_worked / 60, 1) }}h</span>
+                                        @else
+                                            <span class="text-gray-400">—</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center gap-2">
+                                            @if($log->photo_in_path)
+                                                <button onclick="showPhoto('{{ Storage::url($log->photo_in_path) }}', 'Time In - {{ $log->work_date?->format('M d, Y') }}')" class="inline-flex items-center px-2.5 py-1.5 text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors">
+                                                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                    </svg>
+                                                    In
+                                                </button>
+                                            @endif
+                                            @if($log->photo_out_path)
+                                                <button onclick="showPhoto('{{ Storage::url($log->photo_out_path) }}', 'Time Out - {{ $log->work_date?->format('M d, Y') }}')" class="inline-flex items-center px-2.5 py-1.5 text-xs font-medium bg-green-50 text-green-700 border border-green-200 rounded-md hover:bg-green-100 transition-colors">
+                                                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                    </svg>
+                                                    Out
+                                                </button>
+                                            @endif
+                                            @if(!$log->photo_in_path && !$log->photo_out_path)
+                                                <span class="text-xs text-gray-400">No photos</span>
+                                            @endif
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        @if($log->is_recovered && $log->recovery_approved === null)
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">Pending</span>
+                                        @elseif($log->is_recovered && $log->recovery_approved === true)
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Approved</span>
+                                        @elseif($log->is_recovered && $log->recovery_approved === false)
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">Rejected</span>
+                                        @elseif($log->status === 'approved')
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Complete</span>
+                                        @else
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">{{ ucfirst($log->status) }}</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="px-4 py-12 text-center text-gray-500">
+                                        <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        <p class="font-medium">No attendance logs yet</p>
+                                        <p class="text-sm text-gray-400 mt-1">Start by timing in above</p>
+                                    </td>
+                                </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-            <div class="mt-6">{{ $logs->links() }}</div>
+            
+            @if($logs->hasPages())
+                <div class="mt-6">{{ $logs->links() }}</div>
+            @endif
         </div>
     </div>
+
+    <!-- Photo Modal -->
+    <div id="photoModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4" onclick="closePhotoModal()">
+        <div class="relative max-w-4xl w-full" onclick="event.stopPropagation()">
+            <button onclick="closePhotoModal()" class="absolute -top-10 right-0 text-white hover:text-gray-300">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+            <div class="bg-white rounded-lg overflow-hidden">
+                <div class="p-4 border-b border-gray-200">
+                    <h3 id="photoTitle" class="font-semibold text-gray-900"></h3>
+                </div>
+                <div class="p-4 bg-gray-50">
+                    <img id="photoImage" src="" alt="Attendance Photo" class="w-full h-auto rounded">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showPhoto(url, title) {
+            document.getElementById('photoImage').src = url;
+            document.getElementById('photoTitle').textContent = title;
+            document.getElementById('photoModal').classList.remove('hidden');
+        }
+
+        function closePhotoModal() {
+            document.getElementById('photoModal').classList.add('hidden');
+        }
+
+        // Close on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closePhotoModal();
+            }
+        });
+    </script>
 </x-app-layout>
 
 

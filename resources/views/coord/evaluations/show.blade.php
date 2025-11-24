@@ -64,7 +64,7 @@
                             </div>
                             <div>
                                 <dt class="font-medium text-gray-500">Work Schedule</dt>
-                                <dd class="text-ojt-dark">{{ $evaluation->work_schedule }}</dd>
+                                <dd class="text-ojt-dark">{{ $evaluation->formatted_work_schedule }}</dd>
                             </div>
                             <div>
                                 <dt class="font-medium text-gray-500">Supervisor Name</dt>
