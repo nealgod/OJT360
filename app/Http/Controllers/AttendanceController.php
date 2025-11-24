@@ -158,20 +158,15 @@ class AttendanceController extends Controller
             }
             
             $totalMinutes = $timeIn->diffInMinutes($timeOut);
-            
-            // Validate reasonable work duration
-            if ($totalMinutes > config('timezone.max_work_duration', 960)) {
-                \Log::warning('Excessive work duration', [
-                    'user_id' => $user->id,
-                    'total_minutes' => $totalMinutes,
-                    'hours' => round($totalMinutes / 60, 1)
-                ]);
-                return back()->with('error', 'Work duration seems excessive. Please contact your coordinator if this is correct.');
-            }
 
-            $scheduledBreakMinutes = (int) config('timezone.default_break_duration', 60);
-            
-            // Validate break time is reasonable
+            $acceptance = \App\Models\AcceptanceLetter::where('student_user_id', $user->id)
+                ->latest()
+                ->first();
+            $scheduledBreakMinutes = $acceptance?->work_schedule['break_minutes'] ?? config('timezone.default_break_duration', 60);
+            if (!is_numeric($scheduledBreakMinutes)) {
+                $scheduledBreakMinutes = config('timezone.default_break_duration', 60);
+            }
+            $scheduledBreakMinutes = (int) $scheduledBreakMinutes;
             if ($scheduledBreakMinutes > config('timezone.max_break_duration', 240)) {
                 \Log::warning('Excessive break time', [
                     'user_id' => $user->id,
@@ -298,17 +293,7 @@ class AttendanceController extends Controller
             $totalMinutes = $timeIn->diffInMinutes($timeOut);
             
             // Validate reasonable work duration (not more than 16 hours)
-            if ($totalMinutes > 960) { // 16 hours
-                \Log::warning('Recovery excessive work duration', [
-                    'user_id' => $user->id,
-                    'total_minutes' => $totalMinutes,
-                    'hours' => round($totalMinutes / 60, 1)
-                ]);
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Work duration seems excessive. Please contact your coordinator if this is correct.'
-                ]);
-            }
+            // Removed hard cap on recovery duration per updated requirements
 
             // Load acceptance letter schedule with validation
             $acceptance = \App\Models\AcceptanceLetter::where('student_user_id', $user->id)

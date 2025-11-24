@@ -164,20 +164,21 @@
                                 <div><span class="font-semibold text-yellow-600">{{ $attendanceStats['missing_checkout'] }}</span> pending out</div>
                             </div>
                         </div>
-                        <div class="overflow-x-auto max-h-96 overflow-y-scroll border border-gray-200 rounded-lg">
-                            <table class="min-w-full divide-y divide-gray-200 text-sm">
-                                <thead class="bg-gray-50 sticky top-0">
-                                    <tr>
-                                        <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Date</th>
-                                        <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Time In</th>
-                                        <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Time Out</th>
-                                        <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Hours</th>
-                                        <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Photos</th>
-                                        <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-100">
-                                    @forelse($student->attendanceLogs->take(5) as $log)
+                        <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                            <div class="h-48 overflow-y-auto">
+                                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                                    <thead class="bg-gray-50 sticky top-0">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Date</th>
+                                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Time In</th>
+                                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Time Out</th>
+                                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Hours</th>
+                                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Photos</th>
+                                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-100">
+                                        @forelse($student->attendanceLogs as $log)
                                         @php
                                             $late = false;
                                             // Late detection removed - can be added back using acceptance letter data if needed
@@ -239,9 +240,10 @@
                                         <tr>
                                             <td colspan="6" class="px-3 py-4 text-center text-sm text-gray-500">No attendance logs yet.</td>
                                         </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
                                     </div>
                                 </div>
 
@@ -261,18 +263,19 @@
                         <!-- Weekly Reports -->
                         <div class="mb-6">
                             <h4 class="text-sm font-semibold text-gray-700 mb-2">Weekly Reports</h4>
-                            <div class="overflow-x-auto max-h-64 overflow-y-scroll border border-gray-200 rounded-lg">
-                                <table class="min-w-full divide-y divide-gray-200 text-sm">
-                                    <thead class="bg-gray-50">
-                                        <tr>
-                                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Week</th>
-                                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Period</th>
-                                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Status</th>
-                                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-gray-100">
-                                        @forelse($student->weeklyReports->take(3) as $report)
+                            <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                                <div class="h-40 overflow-y-auto">
+                                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                                        <thead class="bg-gray-50 sticky top-0">
+                                            <tr>
+                                                <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Week</th>
+                                                <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Period</th>
+                                                <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Status</th>
+                                                <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-gray-100">
+                                            @forelse($student->weeklyReports as $report)
                                             <tr>
                                                 <td class="px-3 py-2 text-gray-900">Week {{ $report->week_number }}</td>
                                                 <td class="px-3 py-2 text-gray-700">{{ $report->week_start_date?->format('M d') ?? '—' }} - {{ $report->week_end_date?->format('M d, Y') ?? '—' }}</td>
@@ -291,27 +294,29 @@
                                             <tr>
                                                 <td colspan="4" class="px-3 py-4 text-center text-sm text-gray-500">No weekly reports yet</td>
                                             </tr>
-                                        @endforelse
-                                    </tbody>
-                                </table>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
 
                         <!-- Monthly Evaluations -->
                         <div>
                             <h4 class="text-sm font-semibold text-gray-700 mb-2">Monthly Evaluations</h4>
-                            <div class="overflow-x-auto max-h-64 overflow-y-scroll border border-gray-200 rounded-lg">
-                                <table class="min-w-full divide-y divide-gray-200 text-sm">
-                                    <thead class="bg-gray-50">
-                                        <tr>
-                                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Month</th>
-                                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Supervisor</th>
-                                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Status</th>
-                                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-gray-100">
-                                        @forelse($student->monthlyEvaluations->take(3) as $evaluation)
+                            <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                                <div class="h-40 overflow-y-auto">
+                                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                                        <thead class="bg-gray-50 sticky top-0">
+                                            <tr>
+                                                <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Month</th>
+                                                <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Supervisor</th>
+                                                <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Status</th>
+                                                <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-gray-100">
+                                            @forelse($student->monthlyEvaluations as $evaluation)
                                             <tr>
                                                 <td class="px-3 py-2 text-gray-900">{{ $evaluation->getMonthYearLabel() }}</td>
                                                 <td class="px-3 py-2 text-gray-700">{{ $evaluation->supervisor_name }}</td>
@@ -328,9 +333,10 @@
                                             <tr>
                                                 <td colspan="4" class="px-3 py-4 text-center text-sm text-gray-500">No monthly evaluations yet</td>
                                             </tr>
-                                        @endforelse
-                                    </tbody>
-                                </table>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
