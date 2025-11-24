@@ -77,6 +77,9 @@ Route::middleware(['auth', 'profile.complete'])->group(function () {
     // Monthly Evaluations (status only for students)
     Route::get('/evaluations', [App\Http\Controllers\StudentEvaluationController::class, 'index'])->name('evaluations.index');
     
+    // Final Evaluation Status (status only for students)
+    Route::get('/evaluations/final/status', [App\Http\Controllers\StudentFinalEvaluationController::class, 'status'])->name('evaluations.final.status');
+    
     // Daily reports removed - now using weekly reports only
     
     // Document Requirements
@@ -172,6 +175,15 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{evaluation}', [App\Http\Controllers\SupervisorEvaluationController::class, 'show'])->name('show');
         Route::get('/{evaluation}/pdf', [App\Http\Controllers\SupervisorEvaluationController::class, 'downloadPdf'])->name('pdf');
     });
+    
+    // Supervisor Final Evaluations
+    Route::prefix('supervisor/final-evaluations')->name('supervisor.final-evaluations.')->group(function () {
+        Route::get('/', [App\Http\Controllers\SupervisorFinalEvaluationController::class, 'index'])->name('index');
+        Route::get('/create/{student}', [App\Http\Controllers\SupervisorFinalEvaluationController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\SupervisorFinalEvaluationController::class, 'store'])->name('store');
+        Route::get('/{evaluation}', [App\Http\Controllers\SupervisorFinalEvaluationController::class, 'show'])->name('show');
+        Route::get('/{evaluation}/pdf', [App\Http\Controllers\SupervisorFinalEvaluationController::class, 'downloadPdf'])->name('pdf');
+    });
 });
 
 // Coordinator placement inbox
@@ -205,6 +217,14 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
         Route::get('/{evaluation}', [App\Http\Controllers\CoordinatorEvaluationController::class, 'show'])->name('show');
         Route::get('/{evaluation}/pdf', [App\Http\Controllers\CoordinatorEvaluationController::class, 'downloadPdf'])->name('download-pdf');
         Route::patch('/{evaluation}/review', [App\Http\Controllers\CoordinatorEvaluationController::class, 'markReviewed'])->name('mark-reviewed');
+    });
+    
+    // Coordinator view final evaluations
+    Route::prefix('coord/final-evaluations')->name('coordinator.final-evaluations.')->group(function () {
+        Route::get('/', [App\Http\Controllers\CoordinatorFinalEvaluationController::class, 'index'])->name('index');
+        Route::get('/{evaluation}', [App\Http\Controllers\CoordinatorFinalEvaluationController::class, 'show'])->name('show');
+        Route::get('/{evaluation}/pdf', [App\Http\Controllers\CoordinatorFinalEvaluationController::class, 'downloadPdf'])->name('download-pdf');
+        Route::patch('/{evaluation}/review', [App\Http\Controllers\CoordinatorFinalEvaluationController::class, 'markReviewed'])->name('mark-reviewed');
     });
 
     // Coordinator manage students

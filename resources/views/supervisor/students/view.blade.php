@@ -242,6 +242,65 @@
             @endphp
 
             @if($isSupervised && $hasLetter)
+                <!-- Final Evaluation Section -->
+                @php
+                    $finalEvaluation = \App\Models\FinalEvaluation::where('student_user_id', $student->id)->first();
+                    $acceptance = \App\Models\AcceptanceLetter::where('student_user_id', $student->id)->first();
+                    $canCreateFinal = !$finalEvaluation && $acceptance;
+                @endphp
+                
+                @if($canCreateFinal || $finalEvaluation)
+                    <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900">Final Evaluation</h3>
+                                <p class="text-sm text-gray-500">One-time final OJT performance evaluation</p>
+                            </div>
+                            @if($canCreateFinal)
+                                <a href="{{ route('supervisor.final-evaluations.create', $student->id) }}" 
+                                   class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    Create Final Evaluation
+                                </a>
+                            @endif
+                        </div>
+                        
+                        @if($finalEvaluation)
+                            <div class="border rounded-lg p-4 bg-gray-50">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="flex items-center gap-2 mb-2">
+                                            <span class="font-medium text-gray-900">Control No: {{ $finalEvaluation->control_number }}</span>
+                                            <x-final-evaluation-status-badge :evaluation="$finalEvaluation" />
+                                        </div>
+                                        <div class="text-sm text-gray-600">
+                                            <span>Total Rating: <strong>{{ number_format($finalEvaluation->total_rating, 2) }}%</strong></span>
+                                            <span class="mx-2">•</span>
+                                            <span>Submitted: {{ $finalEvaluation->submitted_at->format('M d, Y') }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <a href="{{ route('supervisor.final-evaluations.show', $finalEvaluation) }}"
+                                           class="inline-flex items-center px-3 py-2 bg-ojt-primary text-white text-sm rounded-lg hover:bg-maroon-700 transition-colors">
+                                            View
+                                        </a>
+                                        <a href="{{ route('supervisor.final-evaluations.pdf', $finalEvaluation) }}"
+                                           class="inline-flex items-center px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50 transition-colors">
+                                            PDF
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        @else
+                            <div class="text-center py-6 text-gray-500 text-sm">
+                                <p>Final evaluation can be created when the student completes their OJT period.</p>
+                            </div>
+                        @endif
+                    </div>
+                @endif
+
                 <!-- Monthly Progress Evaluations Section -->
                 <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-6">
                     <div class="flex items-center justify-between mb-4">

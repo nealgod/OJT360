@@ -1,14 +1,44 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-ojt-dark leading-tight">
-            My Monthly Evaluations
+            My Evaluations
         </h2>
-        <p class="text-sm text-gray-500">View your monthly evaluation status</p>
+        <p class="text-sm text-gray-500">View your evaluation status</p>
     </x-slot>
 
     <div class="py-10">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+            <!-- Final Evaluation Section -->
+            @php
+                $finalEvaluation = \App\Models\FinalEvaluation::where('student_user_id', Auth::id())->first();
+            @endphp
+            
+            @if($finalEvaluation)
+                <div class="bg-white shadow sm:rounded-lg p-6 mb-6">
+                    <h3 class="text-lg font-semibold text-ojt-dark mb-4">Final Evaluation</h3>
+                    <div class="border rounded-lg p-4 bg-green-50 border-green-200">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-3 mb-2">
+                                    <h4 class="font-semibold text-gray-900">Final OJT Performance Evaluation</h4>
+                                    <x-final-evaluation-status-badge :evaluation="$finalEvaluation" />
+                                </div>
+                                <p class="text-sm text-gray-600">
+                                    Submitted by {{ $finalEvaluation->supervisor_name }} on {{ $finalEvaluation->submitted_at->format('M d, Y') }}
+                                </p>
+                            </div>
+                            <a href="{{ route('evaluations.final.status') }}"
+                               class="inline-flex items-center px-4 py-2 bg-ojt-primary text-white rounded-lg text-sm font-medium hover:bg-maroon-700 transition-colors">
+                                View Status →
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            <!-- Monthly Evaluations Section -->
             <div class="bg-white shadow sm:rounded-lg p-6">
+                <h3 class="text-lg font-semibold text-ojt-dark mb-4">Monthly Progress Evaluations</h3>
                 @if($evaluations->count() > 0)
                     <div class="space-y-4">
                         @foreach($evaluations as $evaluation)
