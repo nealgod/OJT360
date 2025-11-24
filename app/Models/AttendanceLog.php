@@ -27,6 +27,9 @@ class AttendanceLog extends Model
         'company_schedule',
         'is_recovered',
         'recovery_reason',
+        'recovery_approved',
+        'recovery_approved_at',
+        'recovery_approved_by',
         'lat_in',
         'lng_in',
         'lat_out',
@@ -41,6 +44,8 @@ class AttendanceLog extends Model
         'break_end' => 'string',
         'company_schedule' => 'array',
         'is_recovered' => 'boolean',
+        'recovery_approved' => 'boolean',
+        'recovery_approved_at' => 'datetime',
     ];
 
     public function student()

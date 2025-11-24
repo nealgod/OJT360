@@ -324,14 +324,15 @@ class AttendanceController extends Controller
             
             $minutes = max(0, $totalMinutes - $scheduledBreakMinutes);
 
-            // Update the attendance log
+            // Update the attendance log - set as pending until coordinator approves
             $log->update([
                 'time_out' => $request->time_out,
                 'photo_out_path' => $photoPath,
                 'minutes_worked' => $minutes,
-                'status' => 'approved',
+                'status' => 'pending', // Pending coordinator approval
                 'is_recovered' => true,
-                'recovery_reason' => $request->reason
+                'recovery_reason' => $request->reason,
+                'recovery_approved' => null // Waiting for approval
             ]);
 
             // Log the recovery action for audit purposes
@@ -379,8 +380,15 @@ class AttendanceController extends Controller
                 return; // Only check for active students
             }
 
-            // Calculate total hours completed
+            // Calculate total hours completed (exclude pending recovered logs)
             $totalMinutes = AttendanceLog::where('student_user_id', $user->id)
+                ->where(function($query) {
+                    $query->where('is_recovered', false)
+                          ->orWhere(function($q) {
+                              $q->where('is_recovered', true)
+                                ->where('recovery_approved', true);
+                          });
+                })
                 ->sum('minutes_worked');
             $completedHours = $totalMinutes / 60;
 

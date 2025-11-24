@@ -78,8 +78,10 @@
             <!-- OJT Hours Progress Bar -->
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
                 @php
-                    // Calculate progress
-                    $totalMinutes = $student->attendanceLogs->sum('minutes_worked');
+                    // Calculate progress (exclude pending recovered logs)
+                    $totalMinutes = $student->attendanceLogs->filter(function($log) {
+                        return !$log->is_recovered || $log->recovery_approved === true;
+                    })->sum('minutes_worked');
                     $completedHours = $totalMinutes > 0 ? round($totalMinutes / 60, 1) : 0;
                     $requiredHours = $acceptance?->total_hours
                         ?? $student->studentProfile?->required_hours
@@ -225,13 +227,29 @@
                                                     <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">Missing Time-In</span>
                                                 @elseif(!$log->time_out)
                                                     <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">Needs Time-Out</span>
-                                                @elseif($log->is_recovered)
-                                                    <button onclick="showRecoveryReason({{ json_encode($log->recovery_reason) }}, {{ json_encode($log->work_date?->format('M d, Y')) }})" 
-                                                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 hover:bg-orange-200 cursor-pointer transition-colors">
+                                                @elseif($log->is_recovered && $log->recovery_approved === null)
+                                                    <button onclick="showRecoveryModal({{ $log->id }}, {{ json_encode($log->recovery_reason) }}, {{ json_encode($log->work_date?->format('M d, Y')) }}, {{ json_encode(round($log->minutes_worked / 60, 1)) }})" 
+                                                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 hover:bg-yellow-200 cursor-pointer transition-colors">
                                                         <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                                         </svg>
-                                                        Recovered
+                                                        Pending Approval
+                                                    </button>
+                                                @elseif($log->is_recovered && $log->recovery_approved === true)
+                                                    <button onclick="showRecoveryModal({{ $log->id }}, {{ json_encode($log->recovery_reason) }}, {{ json_encode($log->work_date?->format('M d, Y')) }}, {{ json_encode(round($log->minutes_worked / 60, 1)) }})" 
+                                                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 hover:bg-green-200 cursor-pointer transition-colors">
+                                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                                        </svg>
+                                                        Approved
+                                                    </button>
+                                                @elseif($log->is_recovered && $log->recovery_approved === false)
+                                                    <button onclick="showRecoveryModal({{ $log->id }}, {{ json_encode($log->recovery_reason) }}, {{ json_encode($log->work_date?->format('M d, Y')) }}, {{ json_encode(round($log->minutes_worked / 60, 1)) }})" 
+                                                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 hover:bg-red-200 cursor-pointer transition-colors">
+                                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                                                        </svg>
+                                                        Rejected
                                                     </button>
                                                 @else
                                                     <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Complete</span>
@@ -443,8 +461,10 @@
                                     <span class="uppercase tracking-wide">Hours Completed</span>
                                     <span class="text-sm text-ojt-dark font-semibold">
                                         @php
-                                            // Calculate total hours from attendance logs
-                                            $totalMinutes = $student->attendanceLogs->sum('minutes_worked');
+                                            // Calculate total hours from attendance logs (exclude pending recovered logs)
+                                            $totalMinutes = $student->attendanceLogs->filter(function($log) {
+                                                return !$log->is_recovered || $log->recovery_approved === true;
+                                            })->sum('minutes_worked');
                                             $completedHours = $totalMinutes > 0 ? round($totalMinutes / 60, 1) : 0;
                                         @endphp
                                         {{ number_format($completedHours, 1) }}
@@ -610,12 +630,22 @@
                 </div>
                 <div class="mb-4">
                     <p class="text-sm text-gray-500 mb-2">Date: <span id="recoveryDate" class="font-medium text-gray-900"></span></p>
-                    <div class="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                    <p class="text-sm text-gray-500 mb-3">Hours: <span id="recoveryHours" class="font-medium text-ojt-primary"></span></p>
+                    <div class="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4">
                         <p class="text-xs uppercase tracking-wide text-orange-600 font-semibold mb-1">Reason for Recovery:</p>
                         <p id="recoveryReasonText" class="text-sm text-gray-700"></p>
                     </div>
+                    <div id="recoveryStatus" class="hidden mb-4"></div>
                 </div>
-                <div class="flex justify-end">
+                <div id="recoveryActions" class="flex gap-2">
+                    <button onclick="approveRecovery()" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm font-medium">
+                        ✓ Approve
+                    </button>
+                    <button onclick="rejectRecovery()" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm font-medium">
+                        ✗ Reject
+                    </button>
+                </div>
+                <div id="recoveryClose" class="hidden flex justify-end">
                     <button onclick="closeRecoveryModal()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm font-medium">
                         Close
                     </button>
@@ -625,14 +655,97 @@
     </div>
 
     <script>
-        function showRecoveryReason(reason, date) {
+        let currentLogId = null;
+
+        function showRecoveryModal(logId, reason, date, hours) {
+            currentLogId = logId;
             document.getElementById('recoveryReasonText').textContent = reason || 'No reason provided';
             document.getElementById('recoveryDate').textContent = date;
+            document.getElementById('recoveryHours').textContent = hours + ' hours';
+            
+            // Check if already approved/rejected
+            const logRow = event.target.closest('tr');
+            const statusBadge = logRow.querySelector('button');
+            const statusText = statusBadge.textContent.trim();
+            
+            if (statusText === 'Pending Approval') {
+                document.getElementById('recoveryActions').classList.remove('hidden');
+                document.getElementById('recoveryClose').classList.add('hidden');
+                document.getElementById('recoveryStatus').classList.add('hidden');
+            } else {
+                document.getElementById('recoveryActions').classList.add('hidden');
+                document.getElementById('recoveryClose').classList.remove('hidden');
+                const statusDiv = document.getElementById('recoveryStatus');
+                statusDiv.classList.remove('hidden');
+                if (statusText === 'Approved') {
+                    statusDiv.innerHTML = '<div class="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-700"><strong>Status:</strong> Approved - Hours counted in total</div>';
+                } else if (statusText === 'Rejected') {
+                    statusDiv.innerHTML = '<div class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700"><strong>Status:</strong> Rejected - Hours not counted</div>';
+                }
+            }
+            
             document.getElementById('recoveryReasonModal').classList.remove('hidden');
         }
 
         function closeRecoveryModal() {
             document.getElementById('recoveryReasonModal').classList.add('hidden');
+            currentLogId = null;
+        }
+
+        async function approveRecovery() {
+            if (!currentLogId) return;
+            
+            try {
+                const response = await fetch(`/coord/attendance/${currentLogId}/approve-recovery`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    closeRecoveryModal();
+                    location.reload(); // Reload to show updated status
+                } else {
+                    alert(data.message || 'Failed to approve recovery');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while approving the recovery');
+            }
+        }
+
+        async function rejectRecovery() {
+            if (!currentLogId) return;
+            
+            if (!confirm('Are you sure you want to reject this recovery? The hours will not be counted.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/coord/attendance/${currentLogId}/reject-recovery`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    closeRecoveryModal();
+                    location.reload(); // Reload to show updated status
+                } else {
+                    alert(data.message || 'Failed to reject recovery');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while rejecting the recovery');
+            }
         }
 
         // Close modal when clicking outside
