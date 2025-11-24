@@ -38,12 +38,12 @@
                                 <div class="flex items-start space-x-4">
                                     <!-- Supervisor Avatar -->
                                     <div class="flex-shrink-0">
-                                        @if($supervisor->supervisorProfile?->profile_image)
-                                            <img src="{{ Storage::url($supervisor->supervisorProfile->profile_image) }}" 
+                                        @if($supervisor->profile_image)
+                                            <img src="{{ $supervisor->profile_image }}" 
                                                  alt="{{ $supervisor->name }}" 
                                                  class="w-12 h-12 rounded-full object-cover border-2 border-ojt-primary">
                                         @else
-                                            <div class="w-12 h-12 bg-ojt-primary rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                            <div class="w-12 h-12 {{ $supervisor->getAvatarColor() }} rounded-full flex items-center justify-center text-white font-bold text-lg">
                                                 {{ substr($supervisor->name, 0, 1) }}
                                             </div>
                                         @endif
@@ -52,8 +52,12 @@
                                     <!-- Supervisor Info -->
                                     <div class="flex-1 min-w-0">
                                         <h3 class="text-lg font-semibold text-ojt-dark truncate">{{ $supervisor->name }}</h3>
-                                        <p class="text-sm text-gray-600">{{ $supervisor->supervisorProfile?->employee_id ?? 'No ID' }}</p>
-                                        <p class="text-sm text-gray-500">{{ $supervisor->supervisorProfile?->position ?? 'No Position' }}</p>
+                                        @if($supervisor->supervisorProfile?->employee_id)
+                                            <p class="text-sm text-gray-600">{{ $supervisor->supervisorProfile->employee_id }}</p>
+                                        @endif
+                                        @if($supervisor->supervisorProfile?->position)
+                                            <p class="text-sm text-gray-500">{{ $supervisor->supervisorProfile->position }}</p>
+                                        @endif
                                     </div>
                                     
                                     <!-- Status Badge -->
@@ -123,11 +127,19 @@
                                     <div class="space-y-2">
                                         @foreach($supervisor->studentProfiles as $studentProfile)
                                             <div class="flex items-center space-x-2 text-sm">
-                                                <div class="w-6 h-6 bg-ojt-primary rounded-full flex items-center justify-center text-white text-xs font-bold">
-                                                    {{ substr($studentProfile->user->name, 0, 1) }}
-                                                </div>
+                                                @if($studentProfile->user->profile_image)
+                                                    <img src="{{ $studentProfile->user->profile_image }}" 
+                                                         alt="{{ $studentProfile->user->name }}" 
+                                                         class="w-6 h-6 rounded-full object-cover">
+                                                @else
+                                                    <div class="w-6 h-6 {{ $studentProfile->user->getAvatarColor() }} rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                                        {{ substr($studentProfile->user->name, 0, 1) }}
+                                                    </div>
+                                                @endif
                                                 <span class="text-gray-700">{{ $studentProfile->user->name }}</span>
-                                                <span class="text-gray-500">({{ $studentProfile->student_id ?? 'No ID' }})</span>
+                                                @if($studentProfile->student_id)
+                                                    <span class="text-gray-500">({{ $studentProfile->student_id }})</span>
+                                                @endif
                                             </div>
                                         @endforeach
                                     </div>

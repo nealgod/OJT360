@@ -348,22 +348,40 @@
                 @php
                     $supervisor = Auth::user();
                     
-                    // Count supervised students
-                    $supervisedStudents = \App\Models\User::where('role', 'intern')
+                    // Get supervised student IDs
+                    $supervisedStudentIds = \App\Models\User::where('role', 'intern')
                         ->whereHas('studentProfile', function($q) use ($supervisor) {
                             $q->where('supervisor_id', $supervisor->id);
                         })
-                        ->count();
+                        ->pluck('id');
+
+                    // Count supervised students
+                    $supervisedStudents = $supervisedStudentIds->count();
                     
-                    // Count generated acceptance letters
-                    $generatedLetters = \App\Models\AcceptanceLetter::where('supervisor_user_id', $supervisor->id)
-                        ->count();
+                    // Original query kept for reference:
+                    // $supervisedStudents = \App\Models\User::where('role', 'intern')
+                    //     ->whereHas('studentProfile', function($q) use ($supervisor) {
+                    //         $q->where('supervisor_id', $supervisor->id);
+                    //     })
+                    //     ->count();
                     
-                    // Count this month's letters
-                    $thisMonthLetters = \App\Models\AcceptanceLetter::where('supervisor_user_id', $supervisor->id)
-                        ->whereMonth('created_at', now()->month)
-                        ->whereYear('created_at', now()->year)
+                    // Final evaluation stats
+                    $finalEvaluationsSubmitted = \App\Models\FinalEvaluation::where('supervisor_user_id', $supervisor->id)->count();
+                    $pendingFinalReviews = \App\Models\FinalEvaluation::where('supervisor_user_id', $supervisor->id)
+                        ->whereNull('reviewed_at')
                         ->count();
+
+                    // Monthly evaluation stats
+                    $monthlyEvaluationsSubmitted = \App\Models\MonthlyEvaluation::where('supervisor_user_id', $supervisor->id)->count();
+                    $monthlyEvaluationsThisMonth = \App\Models\MonthlyEvaluation::where('supervisor_user_id', $supervisor->id)
+                        ->whereMonth('submitted_at', now()->month)
+                        ->whereYear('submitted_at', now()->year)
+                        ->count();
+                    $pendingMonthlyReviews = \App\Models\MonthlyEvaluation::where('supervisor_user_id', $supervisor->id)
+                        ->whereNull('reviewed_at')
+                        ->count();
+
+                    $totalPendingReviews = $pendingFinalReviews + $pendingMonthlyReviews;
                 @endphp
                 
                 <!-- Supervisor Dashboard Stats -->
@@ -383,12 +401,13 @@
                         </div>
                     </div>
 
-                    <!-- Generated Letters -->
+                    <!-- Final Evaluations -->
                     <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-gray-600 text-sm font-medium">Generated Letters</p>
-                                <p class="text-2xl font-bold text-ojt-dark">{{ $generatedLetters }}</p>
+                                <p class="text-gray-600 text-sm font-medium">Final Evaluations</p>
+                                <p class="text-2xl font-bold text-ojt-dark">{{ $finalEvaluationsSubmitted }}</p>
+                                <p class="text-xs text-gray-500 mt-1">{{ $pendingFinalReviews }} pending review</p>
                             </div>
                             <div class="w-12 h-12 bg-ojt-success/10 rounded-lg flex items-center justify-center">
                                 <svg class="w-6 h-6 text-ojt-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -398,16 +417,33 @@
                         </div>
                     </div>
 
-                    <!-- This Month -->
+                    <!-- Monthly Evaluations -->
                     <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-gray-600 text-sm font-medium">This Month</p>
-                                <p class="text-2xl font-bold text-ojt-dark">{{ $thisMonthLetters }}</p>
+                                <p class="text-gray-600 text-sm font-medium">Monthly Evaluations</p>
+                                <p class="text-2xl font-bold text-ojt-dark">{{ $monthlyEvaluationsSubmitted }}</p>
+                                <p class="text-xs text-gray-500 mt-1">{{ $monthlyEvaluationsThisMonth }} submitted this month</p>
                             </div>
                             <div class="w-12 h-12 bg-ojt-accent/10 rounded-lg flex items-center justify-center">
                                 <svg class="w-6 h-6 text-ojt-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pending Reviews -->
+                    <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-600 text-sm font-medium">Pending Reviews</p>
+                                <p class="text-2xl font-bold text-ojt-dark">{{ $totalPendingReviews }}</p>
+                                <p class="text-xs text-gray-500 mt-1">{{ $pendingFinalReviews }} final • {{ $pendingMonthlyReviews }} monthly</p>
+                            </div>
+                            <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                                <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             </div>
                         </div>
@@ -526,7 +562,9 @@
                                             </div>
                                         @endif
 
-                                        @php($recentNotification = Auth::user()->notifications()->latest()->first())
+                                        @php
+                                            $recentNotification = Auth::user()->notifications()->latest()->first();
+                                        @endphp
                                         {{-- Debug: {{ Auth::user()->notifications()->count() }} notifications --}}
                                         @if($recentNotification)
                                             <div class="flex items-start space-x-3">
@@ -551,7 +589,9 @@
                                             </div>
                                         @endif
 
-                                        @php($recentMessage = Auth::user()->receivedMessages()->latest()->first())
+                                        @php
+                                            $recentMessage = Auth::user()->receivedMessages()->latest()->first();
+                                        @endphp
                                         @if($recentMessage)
                                             <div class="flex items-start space-x-3">
                                                 <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -621,8 +661,178 @@
                                         </div>
                                     </div>
                                 @endif
+                            @elseif(Auth::user()->isSupervisor())
+                                @php
+                                    $latestAcceptance = \App\Models\AcceptanceLetter::where('supervisor_user_id', Auth::id())->latest()->with('student')->first();
+                                    $latestMonthlyEval = \App\Models\MonthlyEvaluation::where('supervisor_user_id', Auth::id())->latest('submitted_at')->with('student')->first();
+                                    $latestFinalEval = \App\Models\FinalEvaluation::where('supervisor_user_id', Auth::id())->latest('submitted_at')->with('student')->first();
+                                    $pendingMonthlyReview = \App\Models\MonthlyEvaluation::where('supervisor_user_id', Auth::id())->whereNull('reviewed_at')->count();
+                                    $pendingFinalReview = \App\Models\FinalEvaluation::where('supervisor_user_id', Auth::id())->whereNull('reviewed_at')->count();
+                                @endphp
+                                <div class="space-y-4">
+                                    @if($latestAcceptance)
+                                        <div class="flex items-start space-x-3">
+                                            <div class="w-8 h-8 bg-ojt-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                                                <svg class="w-4 h-4 text-ojt-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                                </svg>
+                                            </div>
+                                            <div class="flex-1">
+                                                <p class="text-sm font-medium text-ojt-dark">Acceptance letter for {{ $latestAcceptance->student->name ?? 'student' }}</p>
+                                                <p class="text-xs text-gray-500">Issued {{ $latestAcceptance->created_at?->diffForHumans() }}</p>
+                                                <div class="mt-1">
+                                                    <a href="{{ route('supervisor.acceptance.index') }}" class="text-xs text-blue-600 hover:text-blue-800 underline">View letters</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    @if($latestMonthlyEval)
+                                        <div class="flex items-start space-x-3">
+                                            <div class="w-8 h-8 bg-ojt-success/10 rounded-full flex items-center justify-center flex-shrink-0">
+                                                <svg class="w-4 h-4 text-ojt-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                </svg>
+                                            </div>
+                                            <div class="flex-1">
+                                                <p class="text-sm font-medium text-ojt-dark">Monthly evaluation for {{ $latestMonthlyEval->student->name ?? 'student' }}</p>
+                                                <p class="text-xs text-gray-500">Submitted {{ $latestMonthlyEval->submitted_at?->diffForHumans() ?? 'recently' }}</p>
+                                                <div class="mt-1 flex items-center text-xs text-gray-500 gap-1">
+                                                    <span>{{ $pendingMonthlyReview }} pending review</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    @if($latestFinalEval)
+                                        <div class="flex items-start space-x-3">
+                                            <div class="w-8 h-8 bg-ojt-accent/10 rounded-full flex items-center justify-center flex-shrink-0">
+                                                <svg class="w-4 h-4 text-ojt-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                            </div>
+                                            <div class="flex-1">
+                                                <p class="text-sm font-medium text-ojt-dark">Final evaluation for {{ $latestFinalEval->student->name ?? 'student' }}</p>
+                                                <p class="text-xs text-gray-500">{{ $latestFinalEval->submitted_at?->diffForHumans() ?? 'recently' }}</p>
+                                                <div class="mt-1 text-xs text-gray-500">
+                                                    {{ $pendingFinalReview }} pending coordinator review
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    @if(!$latestAcceptance && !$latestMonthlyEval && !$latestFinalEval)
+                                        <p class="text-sm text-gray-500">No supervisor activities yet.</p>
+                                    @endif
+                                </div>
+                            @elseif(Auth::user()->isCoordinator())
+                                @php
+                                    $pendingDocs = \App\Models\StudentDocumentSubmission::where('status', 'pending')->latest()->with('student')->limit(3)->get();
+                                    $pendingFinalEval = \App\Models\FinalEvaluation::whereNull('reviewed_at')->latest('submitted_at')->with('student')->first();
+                                    $pendingMonthlyEval = \App\Models\MonthlyEvaluation::whereNull('reviewed_at')->latest('submitted_at')->with('student')->first();
+                                @endphp
+                                <div class="space-y-4">
+                                    @foreach($pendingDocs as $doc)
+                                        <div class="flex items-start space-x-3">
+                                            <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                                <svg class="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                            </div>
+                                            <div class="flex-1">
+                                                <p class="text-sm font-medium text-ojt-dark">{{ $doc->document_type }} from {{ $doc->student->name ?? 'student' }}</p>
+                                                <p class="text-xs text-gray-500">Submitted {{ $doc->created_at?->diffForHumans() }}</p>
+                                                <div class="mt-1">
+                                                    <a href="{{ route('coord.documents.index') }}" class="text-xs text-blue-600 hover:text-blue-800 underline">Review documents</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+
+                                    @if($pendingFinalEval)
+                                        <div class="flex items-start space-x-3">
+                                            <div class="w-8 h-8 bg-ojt-success/10 rounded-full flex items-center justify-center flex-shrink-0">
+                                                <svg class="w-4 h-4 text-ojt-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4" />
+                                                </svg>
+                                            </div>
+                                            <div class="flex-1">
+                                                <p class="text-sm font-medium text-ojt-dark">Final evaluation awaiting review</p>
+                                                <p class="text-xs text-gray-500">{{ $pendingFinalEval->student->name ?? 'Student' }} • submitted {{ $pendingFinalEval->submitted_at?->diffForHumans() }}</p>
+                                                <div class="mt-1">
+                                                    <a href="{{ route('coordinator.final-evaluations.show', $pendingFinalEval) }}" class="text-xs text-blue-600 hover:text-blue-800 underline">Open evaluation</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    @if($pendingMonthlyEval)
+                                        <div class="flex items-start space-x-3">
+                                            <div class="w-8 h-8 bg-ojt-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                                                <svg class="w-4 h-4 text-ojt-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                            </div>
+                                            <div class="flex-1">
+                                                <p class="text-sm font-medium text-ojt-dark">Monthly evaluation submitted</p>
+                                                <p class="text-xs text-gray-500">{{ $pendingMonthlyEval->student->name ?? 'Student' }} • {{ $pendingMonthlyEval->submitted_at?->diffForHumans() }}</p>
+                                                <div class="mt-1 text-xs text-gray-500">{{ $pendingMonthlyEval->getMonthYearLabel() ?? 'Latest month' }}</div>
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    @if($pendingDocs->isEmpty() && !$pendingFinalEval && !$pendingMonthlyEval)
+                                        <p class="text-sm text-gray-500">No pending coordinator activities.</p>
+                                    @endif
+                                </div>
+                            @elseif(Auth::user()->isAdmin())
+                                @php
+                                    $latestUser = \App\Models\User::latest()->first();
+                                    $latestCompany = \App\Models\Company::latest()->first();
+                                    $pendingSupervisors = \App\Models\SupervisorProfile::where('status', 'pending')->count();
+                                @endphp
+                                <div class="space-y-4">
+                                    @if($latestUser)
+                                        <div class="flex items-start space-x-3">
+                                            <div class="w-8 h-8 bg-ojt-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                                                <svg class="w-4 h-4 text-ojt-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                                                </svg>
+                                            </div>
+                                            <div class="flex-1">
+                                                <p class="text-sm font-medium text-ojt-dark">New user registered</p>
+                                                <p class="text-xs text-gray-500">{{ $latestUser->name }} • {{ $latestUser->created_at?->diffForHumans() }}</p>
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    @if($latestCompany)
+                                        <div class="flex items-start space-x-3">
+                                            <div class="w-8 h-8 bg-ojt-success/10 rounded-full flex items-center justify-center flex-shrink-0">
+                                                <svg class="w-4 h-4 text-ojt-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                                </svg>
+                                            </div>
+                                            <div class="flex-1">
+                                                <p class="text-sm font-medium text-ojt-dark">Company added: {{ $latestCompany->name }}</p>
+                                                <p class="text-xs text-gray-500">{{ $latestCompany->created_at?->diffForHumans() }}</p>
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    <div class="flex items-start space-x-3">
+                                        <div class="w-8 h-8 bg-ojt-warning/10 rounded-full flex items-center justify-center flex-shrink-0">
+                                            <svg class="w-4 h-4 text-ojt-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="text-sm font-medium text-ojt-dark">Pending supervisor approvals</p>
+                                            <p class="text-xs text-gray-500">{{ $pendingSupervisors }} profile(s) awaiting review</p>
+                                        </div>
+                                    </div>
+                                </div>
                             @else
-                                <!-- Other roles activities -->
                                 <div class="space-y-4">
                                     <div class="flex items-start space-x-3">
                                         <div class="w-8 h-8 bg-ojt-success/10 rounded-full flex items-center justify-center flex-shrink-0">

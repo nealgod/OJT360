@@ -31,10 +31,30 @@
                         return $student->documentSubmissions->where('status', 'rejected')->count();
                     });
                 @endphp
-                <div class="bg-white rounded-lg border border-gray-200 p-4"><div class="text-center"><p class="text-2xl font-bold text-gray-900">{{ $totalSubmissions }}</p><p class="text-sm text-gray-500">Total</p></div></div>
-                <div class="bg-white rounded-lg border border-gray-200 p-4"><div class="text-center"><p class="text-2xl font-bold text-yellow-600">{{ $pendingSubmissions }}</p><p class="text-sm text-gray-500">Pending</p></div></div>
-                <div class="bg-white rounded-lg border border-gray-200 p-4"><div class="text-center"><p class="text-2xl font-bold text-green-600">{{ $approvedSubmissions }}</p><p class="text-sm text-gray-500">Approved</p></div></div>
-                <div class="bg-white rounded-lg border border-gray-200 p-4"><div class="text-center"><p class="text-2xl font-bold text-red-600">{{ $rejectedSubmissions }}</p><p class="text-sm text-gray-500">Rejected</p></div></div>
+                <div class="bg-white rounded-lg border border-gray-200 p-4">
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-gray-900">{{ $totalSubmissions }}</p>
+                        <p class="text-sm text-gray-500">Total</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg border border-gray-200 p-4">
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-yellow-600">{{ $pendingSubmissions }}</p>
+                        <p class="text-sm text-gray-500">Pending</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg border border-gray-200 p-4">
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-green-600">{{ $approvedSubmissions }}</p>
+                        <p class="text-sm text-gray-500">Approved</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg border border-gray-200 p-4">
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-red-600">{{ $rejectedSubmissions }}</p>
+                        <p class="text-sm text-gray-500">Rejected</p>
+                    </div>
+                </div>
             </div>
 
             <!-- Tabs -->

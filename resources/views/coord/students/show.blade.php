@@ -334,6 +334,67 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Final Evaluation Section -->
+                    @php
+                        $finalEvaluation = $student->finalEvaluation;
+                    @endphp
+                    @if($finalEvaluation)
+                        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-900">Final Evaluation</h3>
+                                    <p class="text-sm text-gray-500">Submitted {{ $finalEvaluation->submitted_at?->diffForHumans() ?? 'recently' }}</p>
+                                </div>
+                                @if($finalEvaluation->reviewed_at)
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        ✓ Reviewed
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                        Pending Review
+                                    </span>
+                                @endif
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-4 mb-4">
+                                <div>
+                                    <p class="text-xs text-gray-500">Total Rating</p>
+                                    <p class="text-xl font-bold text-green-600">{{ number_format($finalEvaluation->total_rating, 2) }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Supervisor</p>
+                                    <p class="text-sm font-medium text-gray-900">{{ $finalEvaluation->supervisor_name }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Date</p>
+                                    <p class="text-sm font-medium text-gray-900">{{ $finalEvaluation->submitted_at?->format('M d, Y') }}</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                <a href="{{ route('coordinator.final-evaluations.show', $finalEvaluation) }}" 
+                                   class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 text-sm font-medium rounded hover:bg-gray-200">
+                                    View Details
+                                </a>
+                                <a href="{{ route('coordinator.final-evaluations.download-pdf', $finalEvaluation) }}" 
+                                   class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 text-sm font-medium rounded hover:bg-gray-200">
+                                    Download PDF
+                                </a>
+                                @if(!$finalEvaluation->reviewed_at)
+                                    <form method="POST" action="{{ route('coordinator.final-evaluations.mark-reviewed', $finalEvaluation) }}" class="inline">
+                                        @csrf
+                                        @method('PATCH')
+                                        <button type="submit" 
+                                                class="inline-flex items-center px-3 py-1.5 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700"
+                                                onclick="return confirm('Mark as reviewed?')">
+                                            Mark Reviewed
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
                 <!-- Sidebar -->

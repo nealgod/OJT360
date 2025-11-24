@@ -136,7 +136,8 @@ class CoordinatorStudentController extends Controller
             },
             'weeklyReports' => function($q) {
                 $q->orderBy('week_start_date', 'desc')->limit(10);
-            }
+            },
+            'finalEvaluation'
         ]);
 
         $attendanceStats = [
