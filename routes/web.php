@@ -128,6 +128,25 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
         Route::get('/users', [App\Http\Controllers\AdminController::class, 'users'])->name('users');
         Route::get('/users/create', [App\Http\Controllers\AdminController::class, 'createUser'])->name('users.create');
         Route::post('/users', [App\Http\Controllers\AdminController::class, 'storeUser'])->name('users.store');
+        
+        // Departments & Programs
+        Route::get('/departments', [App\Http\Controllers\AdminDepartmentController::class, 'index'])->name('departments.index');
+        Route::post('/departments', [App\Http\Controllers\AdminDepartmentController::class, 'store'])->name('departments.store');
+        Route::put('/departments/{department}', [App\Http\Controllers\AdminDepartmentController::class, 'update'])->name('departments.update');
+        Route::delete('/departments/{department}', [App\Http\Controllers\AdminDepartmentController::class, 'destroy'])->name('departments.destroy');
+        Route::post('/departments/{department}/programs', [App\Http\Controllers\AdminDepartmentController::class, 'storeProgram'])->name('departments.programs.store');
+        Route::put('/programs/{program}', [App\Http\Controllers\AdminDepartmentController::class, 'updateProgram'])->name('programs.update');
+        Route::delete('/programs/{program}', [App\Http\Controllers\AdminDepartmentController::class, 'destroyProgram'])->name('programs.destroy');
+        
+        // Reports & Analytics
+        Route::get('/reports', [App\Http\Controllers\AdminReportController::class, 'index'])->name('reports.index');
+        Route::get('/reports/attendance', [App\Http\Controllers\AdminReportController::class, 'attendance'])->name('reports.attendance');
+        Route::get('/reports/weekly', [App\Http\Controllers\AdminReportController::class, 'weeklyReports'])->name('reports.weekly');
+        Route::get('/reports/evaluations', [App\Http\Controllers\AdminReportController::class, 'evaluations'])->name('reports.evaluations');
+        
+        // Audit Logs
+        Route::get('/audit', [App\Http\Controllers\AdminAuditController::class, 'index'])->name('audit.index');
+        Route::get('/audit/{audit}', [App\Http\Controllers\AdminAuditController::class, 'show'])->name('audit.show');
     });
 });
 

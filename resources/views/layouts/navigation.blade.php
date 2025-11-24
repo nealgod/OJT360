@@ -124,14 +124,17 @@
                             @endif
                         </x-nav-link>
                     @elseif(Auth::user()->isAdmin())
-                        <x-nav-link :href="route('admin.users')" :active="request()->routeIs('admin.*')">
+                        <x-nav-link :href="route('admin.users')" :active="request()->routeIs('admin.users*')">
                             {{ __('Manage Users') }}
                         </x-nav-link>
-                        <x-nav-link href="#" :active="false">
-                            {{ __('Companies') }}
+                        <x-nav-link :href="route('admin.departments.index')" :active="request()->routeIs('admin.departments*') || request()->routeIs('admin.programs*')">
+                            {{ __('Departments & Programs') }}
                         </x-nav-link>
-                        <x-nav-link href="#" :active="false">
-                            {{ __('Settings') }}
+                        <x-nav-link :href="route('admin.reports.index')" :active="request()->routeIs('admin.reports*')">
+                            {{ __('Reports & Analytics') }}
+                        </x-nav-link>
+                        <x-nav-link :href="route('admin.audit.index')" :active="request()->routeIs('admin.audit*')">
+                            {{ __('Audit Logs') }}
                         </x-nav-link>
                     @endif
                 </div>

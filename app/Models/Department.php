@@ -18,6 +18,18 @@ class Department extends Model
     {
         return $this->hasMany(Program::class);
     }
+
+    public function coordinators()
+    {
+        return $this->hasManyThrough(
+            User::class,
+            CoordinatorProfile::class,
+            'department_id',
+            'id',
+            'id',
+            'user_id'
+        );
+    }
 }
 
 

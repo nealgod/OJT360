@@ -45,6 +45,22 @@ class AttendanceLog extends Model
         return $this->belongsTo(User::class, 'student_user_id');
     }
 
+    // Alias for student relationship (for consistency)
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'student_user_id');
+    }
+
+    public function company()
+    {
+        return $this->belongsTo(Company::class);
+    }
+
+    public function recoveryApprover()
+    {
+        return $this->belongsTo(User::class, 'recovery_approved_by');
+    }
+
     // Helper methods for time formatting
     public function getTimeInFormattedAttribute()
     {

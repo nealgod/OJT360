@@ -20,6 +20,18 @@ class Program extends Model
     {
         return $this->belongsTo(Department::class);
     }
+
+    public function coordinators()
+    {
+        return $this->hasManyThrough(
+            User::class,
+            CoordinatorProfile::class,
+            'program_id',
+            'id',
+            'id',
+            'user_id'
+        );
+    }
 }
 
 

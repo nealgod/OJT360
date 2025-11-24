@@ -13,13 +13,82 @@ use Illuminate\Support\Facades\Log;
 
 class AdminController extends Controller
 {
-    public function users()
+    public function dashboard()
     {
-        $users = User::with(['studentProfile', 'coordinatorProfile', 'supervisorProfile'])
-                    ->orderBy('created_at', 'desc')
-                    ->paginate(10);
+        // Get user counts
+        $stats = [
+            'total' => User::count(),
+            'coordinators' => User::where('role', 'coordinator')->count(),
+            'supervisors' => User::where('role', 'supervisor')->count(),
+            'students' => User::where('role', 'intern')->count(),
+            'active_interns' => User::where('role', 'intern')
+                ->whereHas('studentProfile', fn($q) => $q->where('ojt_status', 'active'))
+                ->count(),
+        ];
 
-        return view('admin.users', compact('users'));
+        // Get additional statistics
+        $stats['total_companies'] = \App\Models\Company::count();
+        $stats['total_departments'] = \App\Models\Department::count();
+        $stats['total_programs'] = \App\Models\Program::count();
+        
+        // Attendance statistics
+        $stats['total_attendance_logs'] = \App\Models\AttendanceLog::count();
+        $stats['total_hours'] = round(\App\Models\AttendanceLog::sum('minutes_worked') / 60, 1);
+        
+        // Report statistics
+        $stats['total_weekly_reports'] = \App\Models\WeeklyReport::count();
+        $stats['pending_weekly_reports'] = \App\Models\WeeklyReport::whereNull('coordinator_reviewed_at')->count();
+        
+        // Evaluation statistics
+        $stats['total_monthly_evaluations'] = \App\Models\MonthlyEvaluation::count();
+        $stats['pending_monthly_evaluations'] = \App\Models\MonthlyEvaluation::whereNull('reviewed_at')->count();
+        $stats['total_final_evaluations'] = \App\Models\FinalEvaluation::count();
+        $stats['pending_final_evaluations'] = \App\Models\FinalEvaluation::whereNull('reviewed_at')->count();
+
+        // Active companies (status = active)
+        $stats['active_companies'] = \App\Models\Company::where('status', 'active')->count();
+
+        // Pending approvals (recovery approvals pending)
+        $stats['pending_approvals'] = \App\Models\AttendanceLog::where('is_recovered', true)
+            ->whereNull('recovery_approved')
+            ->count();
+
+        // System health (percentage of verified users)
+        $verifiedUsers = User::whereNotNull('email_verified_at')->count();
+        $stats['system_health'] = $stats['total'] > 0 ? round(($verifiedUsers / $stats['total']) * 100) : 0;
+
+        return view('admin.dashboard', compact('stats'));
+    }
+
+    public function users(Request $request)
+    {
+        $query = User::with(['studentProfile', 'coordinatorProfile', 'supervisorProfile']);
+
+        // Filter by role if provided
+        if ($request->filled('role') && $request->role !== 'all') {
+            $query->where('role', $request->role);
+        }
+
+        // Filter by status if provided
+        if ($request->filled('status')) {
+            if ($request->status === 'verified') {
+                $query->whereNotNull('email_verified_at');
+            } elseif ($request->status === 'pending') {
+                $query->whereNull('email_verified_at');
+            }
+        }
+
+        $users = $query->orderBy('created_at', 'desc')->paginate(15);
+
+        // Get counts for quick stats
+        $stats = [
+            'total' => User::count(),
+            'coordinators' => User::where('role', 'coordinator')->count(),
+            'supervisors' => User::where('role', 'supervisor')->count(),
+            'students' => User::where('role', 'intern')->count(),
+        ];
+
+        return view('admin.users', compact('users', 'stats'));
     }
 
     public function createUser()

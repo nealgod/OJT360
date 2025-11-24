@@ -22,13 +22,13 @@
                     @csrf
                     
                     <!-- Role -->
-                    <div class="mb-8">
-                        <label for="role" class="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                    <div class="mb-6">
+                        <label for="role" class="block text-sm font-medium text-gray-700 mb-2">Select Role <span class="text-red-500">*</span></label>
                         <select id="role" 
                                 name="role" 
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ojt-primary focus:border-ojt-primary @error('role') border-red-500 @enderror"
                                 required>
-                            <option value="">Select a role</option>
+                            <option value="">-- Choose Role --</option>
                             <option value="coordinator" {{ old('role') === 'coordinator' ? 'selected' : '' }}>Coordinator</option>
                             <option value="supervisor" {{ old('role') === 'supervisor' ? 'selected' : '' }}>Supervisor</option>
                         </select>
@@ -37,28 +37,9 @@
                         @enderror
                     </div>
 
-                    <!-- Dynamic notice -->
-                    <div class="mb-6">
-                        <div id="role-notice" class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-700"></div>
-                    </div>
-
-                    <!-- Name -->
-                    <div id="name-field" class="mb-6">
-                        <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-                        <input type="text" 
-                               id="name" 
-                               name="name" 
-                               value="{{ old('name') }}"
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ojt-primary focus:border-ojt-primary @error('name') border-red-500 @enderror"
-                               placeholder="Enter full name">
-                        @error('name')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
                     <!-- Email -->
                     <div class="mb-6">
-                        <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                        <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email Address <span class="text-red-500">*</span></label>
                         <input type="email" 
                                id="email" 
                                name="email" 
@@ -69,6 +50,11 @@
                         @error('email')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
+                    </div>
+
+                    <!-- Dynamic notice -->
+                    <div id="role-notice-container" class="mb-6" style="display: none;">
+                        <div id="role-notice" class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800"></div>
                     </div>
 
                     <!-- Coordinator fields -->
@@ -113,8 +99,7 @@
                             const coordFields = document.getElementById('coordinator-fields');
                             const deptEl = document.getElementById('department_id');
                             const progEl = document.getElementById('program_id');
-                            const nameField = document.getElementById('name-field');
-                            const nameInput = document.getElementById('name');
+                            const noticeContainer = document.getElementById('role-notice-container');
                             const noticeEl = document.getElementById('role-notice');
                             const submitBtn = document.getElementById('submit-btn');
                             const departments = @json(($departments ?? []));
@@ -132,27 +117,22 @@
                             function toggleRoleFields() {
                                 const role = roleEl.value;
                                 const isCoordinator = role === 'coordinator';
+                                const isSupervisor = role === 'supervisor';
 
-                                // Show/hide coordinator-specific selects
+                                // Show/hide coordinator-specific fields
                                 coordFields.style.display = isCoordinator ? '' : 'none';
 
-                                // Hide name field for both coordinator and supervisor (invitation flow)
+                                // Show notice and update button text based on role
                                 if (isCoordinator) {
-                                    nameField.style.display = 'none';
-                                    nameInput.removeAttribute('required');
-                                    nameInput.setAttribute('disabled', 'disabled');
-                                    noticeEl.textContent = 'We will email an invitation link to complete the coordinator account (1 hour expiry).';
+                                    noticeContainer.style.display = '';
+                                    noticeEl.innerHTML = '<strong>📧 Invitation Email:</strong> An invitation link will be sent to complete the coordinator account setup (expires in 1 hour).';
                                     submitBtn.textContent = 'Send Coordinator Invitation';
-                                } else if (role === 'supervisor') {
-                                    nameField.style.display = 'none';
-                                    nameInput.removeAttribute('required');
-                                    nameInput.setAttribute('disabled', 'disabled');
-                                    noticeEl.textContent = 'We will email a registration link to complete the supervisor account (24 hour expiry). They will provide their name, company details, and set their password.';
+                                } else if (isSupervisor) {
+                                    noticeContainer.style.display = '';
+                                    noticeEl.innerHTML = '<strong>📧 Registration Email:</strong> A registration link will be sent to complete the supervisor account setup. They will provide their name, company details, and password (expires in 24 hours).';
                                     submitBtn.textContent = 'Send Supervisor Invitation';
                                 } else {
-                                    nameField.style.display = '';
-                                    nameInput.removeAttribute('disabled');
-                                    nameInput.setAttribute('required', 'required');
+                                    noticeContainer.style.display = 'none';
                                     noticeEl.textContent = '';
                                     submitBtn.textContent = 'Create User Account';
                                 }
@@ -161,7 +141,7 @@
                             roleEl.addEventListener('change', toggleRoleFields);
                             deptEl && deptEl.addEventListener('change', setPrograms);
 
-                            // init
+                            // Initialize on page load
                             toggleRoleFields();
                             if (deptEl && deptEl.value) setPrograms();
                         })();
