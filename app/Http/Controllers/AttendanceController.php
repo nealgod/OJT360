@@ -38,6 +38,24 @@ class AttendanceController extends Controller
                 return back()->with('error', 'You must have an active OJT status to use attendance. Please contact your coordinator.');
             }
 
+            $acceptance = \App\Models\AcceptanceLetter::where('student_user_id', $user->id)
+                ->latest('start_date')
+                ->first();
+
+            if ($acceptance && $acceptance->start_date) {
+                $startDate = $acceptance->start_date->startOfDay();
+                if (now()->startOfDay()->lt($startDate)) {
+                    $message = 'Your OJT schedule begins on ' . $acceptance->start_date->format('F j, Y') . '. Time in will be available on that date.';
+                    if ($request->ajax()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => $message,
+                        ], 422);
+                    }
+                    return back()->with('error', $message);
+                }
+            }
+
             $today = now()->toDateString();
             
             // Check if already timed in today
@@ -117,6 +135,24 @@ class AttendanceController extends Controller
                 return back()->with('error', 'You must have an active OJT status to use attendance. Please contact your coordinator.');
             }
 
+            $acceptance = \App\Models\AcceptanceLetter::where('student_user_id', $user->id)
+                ->latest('start_date')
+                ->first();
+
+            if ($acceptance && $acceptance->start_date) {
+                $startDate = $acceptance->start_date->startOfDay();
+                if (now()->startOfDay()->lt($startDate)) {
+                    $message = 'Your OJT schedule begins on ' . $acceptance->start_date->format('F j, Y') . '. Time out will be available on that date.';
+                    if ($request->ajax()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => $message,
+                        ], 422);
+                    }
+                    return back()->with('error', $message);
+                }
+            }
+
             $today = now()->toDateString();
             $log = AttendanceLog::where('student_user_id', $user->id)
                 ->where('work_date', $today)
@@ -159,7 +195,7 @@ class AttendanceController extends Controller
             
             $totalMinutes = $timeIn->diffInMinutes($timeOut);
 
-            $acceptance = \App\Models\AcceptanceLetter::where('student_user_id', $user->id)
+            $acceptance = $acceptance ?? \App\Models\AcceptanceLetter::where('student_user_id', $user->id)
                 ->latest()
                 ->first();
             $scheduledBreakMinutes = $acceptance?->work_schedule['break_minutes'] ?? config('timezone.default_break_duration', 60);
@@ -402,13 +438,23 @@ class AttendanceController extends Controller
                 ?? $user->getRequiredHours() 
                 ?? 500;
 
-            // If completed hours >= required hours, mark as completed
-            if ($completedHours >= $requiredHours) {
-                $studentProfile->update([
-                    'ojt_status' => 'completed',
-                    'completed_hours' => $completedHours
-                ]);
+            $studentProfileUpdates = [
+                'completed_hours' => round($completedHours, 2),
+            ];
 
+            if (is_null($studentProfile->required_hours)) {
+                $studentProfileUpdates['required_hours'] = $requiredHours;
+            }
+
+            if ($completedHours >= $requiredHours) {
+                $studentProfileUpdates['ojt_status'] = 'completed';
+            }
+
+            if (!empty($studentProfileUpdates)) {
+                $studentProfile->update($studentProfileUpdates);
+            }
+
+            if ($completedHours >= $requiredHours) {
                 \Log::info('Student OJT status auto-updated to completed', [
                     'user_id' => $user->id,
                     'completed_hours' => $completedHours,

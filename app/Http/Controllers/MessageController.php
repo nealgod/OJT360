@@ -24,12 +24,16 @@ class MessageController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->paginate(15);
         } elseif ($user->isCoordinator()) {
-            // Coordinators see messages from students in their department
             $department = $user->coordinatorProfile?->department;
-            $messages = Message::whereHas('sender.studentProfile', function($query) use ($department) {
-                    $query->where('department', $department);
+            $messages = Message::where(function ($query) use ($user, $department) {
+                    $query->where('sender_id', $user->id)
+                        ->orWhere('recipient_id', $user->id)
+                        ->orWhere(function ($subQuery) use ($department) {
+                            $subQuery->whereHas('sender.studentProfile', function ($studentQuery) use ($department) {
+                                $studentQuery->where('department', $department);
+                            });
+                        });
                 })
-                ->orWhere('recipient_id', $user->id)
                 ->with(['sender', 'recipient'])
                 ->orderBy('created_at', 'desc')
                 ->paginate(15);
@@ -96,15 +100,25 @@ class MessageController extends Controller
                 }
             }
         } elseif ($user->isCoordinator()) {
+            $department = $user->coordinatorProfile?->department;
+
             // Coordinators can message students in their department
             $students = User::where('role', 'intern')
-                ->whereHas('studentProfile', function($query) use ($user) {
-                    $query->where('department', $user->coordinatorProfile?->department);
+                ->whereHas('studentProfile', function($query) use ($department) {
+                    $query->where('department', $department);
                 })
                 ->with('studentProfile')
                 ->get();
+
+            // Coordinators can also message supervisors handling their students
+            $supervisors = User::where('role', 'supervisor')
+                ->whereHas('studentProfiles', function($query) use ($department) {
+                    $query->where('department', $department);
+                })
+                ->with('supervisorProfile')
+                ->get();
             
-            $recipients = $students;
+            $recipients = $students->merge($supervisors)->unique('id');
         } elseif ($user->isSupervisor()) {
             // Supervisors can message their supervised students
             $students = User::where('role', 'intern')
@@ -248,6 +262,15 @@ class MessageController extends Controller
             // Coordinators can message students in their department
             if ($recipient->isStudent()) {
                 return $sender->coordinatorProfile?->department === $recipient->studentProfile?->department;
+            }
+            // Coordinators can message supervisors who oversee their students
+            if ($recipient->isSupervisor()) {
+                return User::where('role', 'intern')
+                    ->whereHas('studentProfile', function($query) use ($sender, $recipient) {
+                        $query->where('department', $sender->coordinatorProfile?->department)
+                              ->where('supervisor_id', $recipient->id);
+                    })
+                    ->exists();
             }
         } elseif ($sender->isSupervisor()) {
             // Supervisors can message their supervised students

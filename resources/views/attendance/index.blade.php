@@ -407,7 +407,9 @@
                             } else {
                                 console.error('Server error:', responseData);
                                 showError(responseData.message || 'Failed to time in');
-                                throw new Error(responseData.message || 'Request failed');
+                                button.textContent = originalText;
+                                button.disabled = false;
+                                return;
                             }
                             
                         } catch (err) {
@@ -541,7 +543,9 @@
                                 }, 1500);
                             } else {
                                 showError(responseData.message || 'Failed to time out');
-                                throw new Error(responseData.message || 'Request failed');
+                                button.textContent = originalText;
+                                button.disabled = false;
+                                return;
                             }
                             
                         } catch (err) {

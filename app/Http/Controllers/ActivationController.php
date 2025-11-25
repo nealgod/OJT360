@@ -151,7 +151,7 @@ class ActivationController extends Controller
             $validated['section']
         );
 
-        $user->studentProfile()->create([
+        $studentProfile = $user->studentProfile()->create([
             'student_id' => $row->student_id,
             'course' => $row->program?->name,
             'year_level' => $validated['year_level'],
@@ -162,6 +162,12 @@ class ActivationController extends Controller
             'phone' => $validated['phone'] ?? $row->contact_number,
             'address' => $validated['address'],
         ]);
+
+        if ($studentProfile) {
+            $studentProfile->update([
+                'required_hours' => $user->getRequiredHours(),
+            ]);
+        }
 
         $row->update(['status' => 'activated']);
 
@@ -215,7 +221,7 @@ class ActivationController extends Controller
         ]);
 
         // Minimal student profile, auto-filled from whitelist (including phone)
-        $user->studentProfile()->create([
+        $studentProfile = $user->studentProfile()->create([
             'student_id' => $row->student_id,
             'course' => $row->program?->name,
             'department' => $row->program?->department?->name,
@@ -223,6 +229,12 @@ class ActivationController extends Controller
             'phone' => $row->contact_number,
             'address' => $row->address ?? null,
         ]);
+
+        if ($studentProfile) {
+            $studentProfile->update([
+                'required_hours' => $user->getRequiredHours(),
+            ]);
+        }
 
         $row->update(['status' => 'activated']);
 

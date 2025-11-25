@@ -101,10 +101,18 @@ class ProfileController extends Controller
             $profileData['profile_image'] = $request->file('profile_image')->store('profile-images', 'public');
         }
 
-        if ($user->studentProfile) {
-            $user->studentProfile->update($profileData);
+        $studentProfile = $user->studentProfile;
+
+        if ($studentProfile) {
+            $studentProfile->update($profileData);
         } else {
-            $user->studentProfile()->create($profileData);
+            $studentProfile = $user->studentProfile()->create($profileData);
+        }
+
+        if ($studentProfile && is_null($studentProfile->required_hours)) {
+            $studentProfile->update([
+                'required_hours' => $user->getRequiredHours(),
+            ]);
         }
     }
 

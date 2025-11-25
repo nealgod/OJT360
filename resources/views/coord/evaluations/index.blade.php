@@ -171,8 +171,10 @@
                     </div>
 
                     <!-- Desktop: Table View -->
-                    <div class="hidden lg:block overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
+                    <div class="hidden lg:block">
+                        <div class="overflow-x-auto">
+                            <div class="max-h-[640px] overflow-y-auto border border-gray-200 rounded-lg">
+                                <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
@@ -232,7 +234,9 @@
                                     </tr>
                                 @endforeach
                             </tbody>
-                        </table>
+                                </table>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="mt-6">

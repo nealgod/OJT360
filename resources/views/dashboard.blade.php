@@ -648,17 +648,6 @@
                                                 <p class="text-xs text-gray-500">Your profile has been set up</p>
                                             </div>
                                         </div>
-                                        <div class="flex items-start space-x-3">
-                                            <div class="w-8 h-8 bg-ojt-warning/10 rounded-full flex items-center justify-center flex-shrink-0">
-                                                <svg class="w-4 h-4 text-ojt-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3" />
-                                                </svg>
-                                            </div>
-                                            <div class="flex-1">
-                                                <p class="text-sm font-medium text-ojt-dark">Placement (Next)</p>
-                                                <p class="text-xs text-gray-500">Available after your pre-requirements are approved by your coordinator.</p>
-                                                    </div>
-                                        </div>
                                     </div>
                                 @endif
                             @elseif(Auth::user()->isSupervisor())
@@ -727,9 +716,37 @@
                                 </div>
                             @elseif(Auth::user()->isCoordinator())
                                 @php
-                                    $pendingDocs = \App\Models\StudentDocumentSubmission::where('status', 'pending')->latest()->with('student')->limit(3)->get();
-                                    $pendingFinalEval = \App\Models\FinalEvaluation::whereNull('reviewed_at')->latest('submitted_at')->with('student')->first();
-                                    $pendingMonthlyEval = \App\Models\MonthlyEvaluation::whereNull('reviewed_at')->latest('submitted_at')->with('student')->first();
+                                    $coordinatorProfile = Auth::user()->coordinatorProfile;
+                                    $programId = $coordinatorProfile?->program_id;
+
+                                    $pendingDocsQuery = \App\Models\StudentDocumentSubmission::where('status', 'pending')
+                                        ->latest()
+                                        ->with(['student.studentProfile'])
+                                        ->limit(3);
+
+                                    $pendingFinalEvalQuery = \App\Models\FinalEvaluation::whereNull('reviewed_at')
+                                        ->latest('submitted_at')
+                                        ->with(['student.studentProfile']);
+
+                                    $pendingMonthlyEvalQuery = \App\Models\MonthlyEvaluation::whereNull('reviewed_at')
+                                        ->latest('submitted_at')
+                                        ->with(['student.studentProfile']);
+
+                                    if ($programId) {
+                                        $filterByProgram = function ($query) use ($programId) {
+                                            $query->whereHas('student.studentProfile', function ($studentQuery) use ($programId) {
+                                                $studentQuery->where('program_id', $programId);
+                                            });
+                                        };
+
+                                        $filterByProgram($pendingDocsQuery);
+                                        $filterByProgram($pendingFinalEvalQuery);
+                                        $filterByProgram($pendingMonthlyEvalQuery);
+                                    }
+
+                                    $pendingDocs = $pendingDocsQuery->get();
+                                    $pendingFinalEval = $pendingFinalEvalQuery->first();
+                                    $pendingMonthlyEval = $pendingMonthlyEvalQuery->first();
                                 @endphp
                                 <div class="space-y-4">
                                     @foreach($pendingDocs as $doc)
@@ -1201,6 +1218,7 @@
         });
     </script>
 </x-app-layout>
+
 
 
 

@@ -135,7 +135,7 @@ class DocumentController extends Controller
         abort_unless($user->isStudent(), 403);
 
         // Get the dynamic max files limit for this requirement
-        $maxFiles = $requirement->max_files_per_submission ?? 2;
+        $maxFiles = $requirement->max_files_per_submission ?? 1;
         
         $request->validate([
             'files' => [

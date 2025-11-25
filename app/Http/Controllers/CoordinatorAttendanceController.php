@@ -115,13 +115,23 @@ class CoordinatorAttendanceController extends Controller
                 ?? $user->getRequiredHours() 
                 ?? 500;
 
-            // If completed hours >= required hours, mark as completed
-            if ($completedHours >= $requiredHours) {
-                $studentProfile->update([
-                    'ojt_status' => 'completed',
-                    'completed_hours' => $completedHours
-                ]);
+            $studentProfileUpdates = [
+                'completed_hours' => round($completedHours, 2),
+            ];
 
+            if (is_null($studentProfile->required_hours)) {
+                $studentProfileUpdates['required_hours'] = $requiredHours;
+            }
+
+            if ($completedHours >= $requiredHours) {
+                $studentProfileUpdates['ojt_status'] = 'completed';
+            }
+
+            if (!empty($studentProfileUpdates)) {
+                $studentProfile->update($studentProfileUpdates);
+            }
+
+            if ($completedHours >= $requiredHours) {
                 \Log::info('Student OJT status auto-updated to completed', [
                     'user_id' => $user->id,
                     'completed_hours' => $completedHours,

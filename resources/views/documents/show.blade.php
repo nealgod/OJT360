@@ -231,7 +231,7 @@
                             
                             <!-- Selected Files Preview -->
                             <div id="selectedFiles" class="mt-4 hidden">
-                                <h4 class="text-sm font-medium text-gray-700 mb-2">Selected Files (<span id="fileCount">0</span>/{{ $requirement->max_files_per_submission ?? 2 }}):</h4>
+                                <h4 class="text-sm font-medium text-gray-700 mb-2">Selected Files (<span id="fileCount">0</span>/{{ $requirement->max_files_per_submission ?? 1 }}):</h4>
                                 <div id="fileList" class="space-y-2"></div>
                             </div>
                             
@@ -271,7 +271,7 @@
             const selectedFilesDiv = document.getElementById('selectedFiles');
             const fileListDiv = document.getElementById('fileList');
             const fileCountSpan = document.getElementById('fileCount');
-            const maxFiles = {{ $requirement->max_files_per_submission ?? 2 }};
+            const maxFiles = {{ $requirement->max_files_per_submission ?? 1 }};
             const maxFileSize = {{ $requirement->max_file_size ?? 5 }} * 1024 * 1024; // Convert MB to bytes
             
             // Store selected files
