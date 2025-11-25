@@ -141,7 +141,7 @@
                 <div class="bg-white shadow sm:rounded-lg p-6">
                     <h3 class="text-lg font-semibold text-ojt-dark mb-4">Comments and Recommendations</h3>
                     <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                        <p class="text-sm text-gray-700 whitespace-pre-line break-words overflow-wrap-anywhere">{{ $evaluation->comments_recommendations }}</p>
+                        <p class="text-sm text-gray-700 whitespace-pre-wrap break-words">{{ $evaluation->comments_recommendations }}</p>
                     </div>
                 </div>
             @endif

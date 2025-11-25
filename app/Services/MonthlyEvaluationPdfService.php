@@ -103,6 +103,15 @@ class MonthlyEvaluationPdfService
         // Student Signature - X: 4.99", Y: 9.66"
         $this->writeText($pdf, 4.99, 9.66, $evaluation->student_name ?? '', 9, 'B');
 
+        // Signature Dates (9pt, BOLD)
+        // Supervisor Date - X: 1.33", Y: 10.05"
+        $supervisorDate = Carbon::parse($dateSource)->format('F d, Y');
+        $this->writeText($pdf, 1.33, 10.05, $supervisorDate, 9, 'B');
+
+        // Student Date - X: 5.35", Y: 10.05"
+        $studentDate = Carbon::parse($dateSource)->format('F d, Y');
+        $this->writeText($pdf, 5.35, 10.05, $studentDate, 9, 'B');
+
         return $pdf->Output('S');
     }
 
@@ -214,6 +223,28 @@ class MonthlyEvaluationPdfService
         $currentLine = '';
 
         foreach ($words as $word) {
+            // Handle long words that exceed max chars per line
+            if (strlen($word) > $maxCharsPerLine) {
+                // Add current line if it has content
+                if ($currentLine) {
+                    $lines[] = $currentLine;
+                    $currentLine = '';
+                    if (count($lines) >= $maxLines) {
+                        break;
+                    }
+                }
+                
+                // Break long word into chunks
+                $chunks = str_split($word, $maxCharsPerLine);
+                foreach ($chunks as $chunk) {
+                    if (count($lines) >= $maxLines) {
+                        break 2;
+                    }
+                    $lines[] = $chunk;
+                }
+                continue;
+            }
+            
             $testLine = $currentLine ? $currentLine . ' ' . $word : $word;
             
             if (strlen($testLine) > $maxCharsPerLine) {
