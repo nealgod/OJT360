@@ -84,8 +84,6 @@
                         <select id="statusFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-ojt-primary focus:border-ojt-primary">
                             <option value="all">All Status</option>
                             <option value="submitted">Submitted</option>
-                            <option value="approved">Approved</option>
-                            <option value="rejected">Rejected</option>
                             <option value="pending">Not Submitted</option>
                         </select>
                         <select id="typeFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-ojt-primary focus:border-ojt-primary">
@@ -273,11 +271,9 @@
                     const cardType = card.getAttribute('data-type');
 
                     const matchesSearch = cardName.includes(searchTerm);
-                                const matchesStatus = statusValue === 'all' || 
+                    const matchesStatus = statusValue === 'all' ||
                         (statusValue === 'pending' && cardStatus === 'pending') ||
-                        (statusValue === 'submitted' && cardStatus === 'submitted') ||
-                        (statusValue === 'approved' && cardStatus === 'approved') ||
-                        (statusValue === 'rejected' && cardStatus === 'rejected');
+                        (statusValue === 'submitted' && cardStatus !== 'pending');
                     const matchesType = typeValue === 'all' || cardType === typeValue;
 
                     if (matchesSearch && matchesStatus && matchesType) {

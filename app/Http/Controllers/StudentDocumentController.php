@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use TCPDF;
 
 class StudentDocumentController extends Controller
@@ -38,7 +39,7 @@ class StudentDocumentController extends Controller
         if ($resumeRequirement) {
             $hasActiveResumeSubmission = \App\Models\StudentDocumentSubmission::where('student_user_id', $user->id)
                 ->where('document_requirement_id', $resumeRequirement->id)
-                ->whereIn('status', ['submitted', 'pending', 'approved'])
+                ->whereIn('status', ['submitted', 'pending'])
                 ->exists();
         }
 
@@ -51,7 +52,7 @@ class StudentDocumentController extends Controller
         if ($letterRequirement) {
             $hasActiveLetterSubmission = \App\Models\StudentDocumentSubmission::where('student_user_id', $user->id)
                 ->where('document_requirement_id', $letterRequirement->id)
-                ->whereIn('status', ['submitted', 'pending', 'approved'])
+                ->whereIn('status', ['submitted', 'pending'])
                 ->exists();
         }
         
@@ -471,78 +472,97 @@ class StudentDocumentController extends Controller
             return back()->with('error', 'You can only submit your own documents.');
         }
 
-        // Find the Resume/PDS document requirement
-        $requirement = \App\Models\DocumentRequirement::where('name', 'LIKE', '%Resume%')
-            ->orWhere('name', 'LIKE', '%PDS%')
-            ->where('type', 'pre_placement')
-            ->first();
+        $requirements = \App\Models\DocumentRequirement::where(function($query) {
+                $query->where('name', 'LIKE', '%Resume%')
+                    ->orWhere('name', 'LIKE', '%PDS%');
+            })
+            ->whereIn('type', ['pre_placement', 'post_placement'])
+            ->get()
+            ->keyBy('type');
 
-        if (!$requirement) {
+        $primaryRequirement = $requirements->get('pre_placement');
+
+        if (!$primaryRequirement) {
             return back()->with('error', 'Resume document requirement not found. Please contact your coordinator.');
         }
 
-        // Use database transaction to prevent race conditions
-        return \DB::transaction(function () use ($user, $resume, $requirement) {
-            // Re-check inside transaction to prevent duplicate submissions
-            $existingSubmission = \App\Models\StudentDocumentSubmission::where('student_user_id', $user->id)
+        return \DB::transaction(function () use ($user, $resume, $requirements, $primaryRequirement) {
+            $activeSubmissions = [];
+
+            foreach ($requirements as $type => $requirement) {
+            $activeSubmissions[$type] = \App\Models\StudentDocumentSubmission::where('student_user_id', $user->id)
                 ->where('document_requirement_id', $requirement->id)
-                ->whereIn('status', ['submitted', 'pending', 'approved'])
-                ->lockForUpdate() // Lock the rows to prevent concurrent submissions
+                ->whereIn('status', ['submitted', 'pending'])
+                ->lockForUpdate()
                 ->first();
 
-            if ($existingSubmission) {
-                return back()->with('error', 'You already have a resume submitted for review. Only ONE resume can be submitted at a time. Please wait for coordinator approval or cancellation before submitting another one.');
+                if ($type === 'pre_placement' && $activeSubmissions[$type]) {
+                    return back()->with('error', 'You already have a resume submitted for review. Only ONE resume can be submitted at a time. Please wait for coordinator approval or cancellation before submitting another one.');
+                }
             }
 
-            // Check if this specific resume was already submitted
             if ($resume->submitted_to_documents) {
                 return back()->with('error', 'This resume has already been submitted.');
             }
 
             try {
-            // Generate PDF
-            $pdfContent = app(ResumeController::class)->download($resume)->getContent();
-            
-            // Store PDF file
-            $filename = 'resume_' . $user->id . '_' . time() . '.pdf';
-            $path = 'document-submissions/' . $filename;
-            Storage::disk('public')->put($path, $pdfContent);
+                $pdfContent = app(ResumeController::class)->download($resume)->getContent();
+                $preSubmissionCreated = false;
 
-            // Create document submission
-            \App\Models\StudentDocumentSubmission::create([
-                'student_user_id' => $user->id,
-                'document_requirement_id' => $requirement->id,
-                'file_path' => $path,
-                'original_filename' => $filename,
-                'file_size' => strlen($pdfContent),
-                'mime_type' => 'application/pdf',
-            ]);
+                foreach ($requirements as $type => $requirement) {
+                    if ($type !== 'pre_placement' && $activeSubmissions[$type]) {
+                        continue;
+                    }
 
-            // Mark resume as submitted
-            $resume->update([
-                'submitted_to_documents' => true,
-                'submitted_at' => now(),
-            ]);
+                    $filename = sprintf(
+                        'resume_%s_%d_%s.pdf',
+                        $type,
+                        $user->id,
+                        now()->format('YmdHis') . '_' . Str::random(4)
+                    );
 
-            // Notify coordinator
-            $coordinator = \App\Models\User::where('role', 'coordinator')
-                ->whereHas('coordinatorProfile', function($q) use ($user) {
-                    $q->where('department', $user->studentProfile?->department);
-                })
-                ->first();
+                    $path = 'document-submissions/' . $filename;
+                    Storage::disk('public')->put($path, $pdfContent);
 
-            if ($coordinator) {
-                \App\Models\Notification::create([
-                    'user_id' => $coordinator->id,
-                    'type' => 'document_submitted',
-                    'title' => 'New Resume Submission',
-                    'message' => $user->name . ' has submitted a resume for review.',
-                    'data' => json_encode([
-                        'student_id' => $user->id,
-                        'requirement_id' => $requirement->id,
-                    ]),
-                ]);
-            }
+                    \App\Models\StudentDocumentSubmission::create([
+                        'student_user_id' => $user->id,
+                        'document_requirement_id' => $requirement->id,
+                        'file_path' => $path,
+                        'original_filename' => $filename,
+                        'file_size' => strlen($pdfContent),
+                        'mime_type' => 'application/pdf',
+                    ]);
+
+                    if ($type === 'pre_placement') {
+                        $preSubmissionCreated = true;
+                    }
+                }
+
+                if ($preSubmissionCreated) {
+                    $resume->update([
+                        'submitted_to_documents' => true,
+                        'submitted_at' => now(),
+                    ]);
+
+                    $coordinator = \App\Models\User::where('role', 'coordinator')
+                        ->whereHas('coordinatorProfile', function($q) use ($user) {
+                            $q->where('department', $user->studentProfile?->department);
+                        })
+                        ->first();
+
+                    if ($coordinator) {
+                        \App\Models\Notification::create([
+                            'user_id' => $coordinator->id,
+                            'type' => 'document_submitted',
+                            'title' => 'New Resume Submission',
+                            'message' => $user->name . ' has submitted a resume for review.',
+                            'data' => json_encode([
+                                'student_id' => $user->id,
+                                'requirement_id' => $primaryRequirement->id,
+                            ]),
+                        ]);
+                    }
+                }
 
                 return back()->with('success', 'Resume submitted successfully! Your coordinator will review it.');
             } catch (\Exception $e) {
@@ -563,77 +583,94 @@ class StudentDocumentController extends Controller
             return back()->with('error', 'You can only submit your own documents.');
         }
 
-        // Find the Application Letter document requirement
-        $requirement = \App\Models\DocumentRequirement::where('name', 'LIKE', '%Application Letter%')
-            ->where('type', 'pre_placement')
-            ->first();
+        $requirements = \App\Models\DocumentRequirement::where('name', 'LIKE', '%Application Letter%')
+            ->whereIn('type', ['pre_placement', 'post_placement'])
+            ->get()
+            ->keyBy('type');
 
-        if (!$requirement) {
+        $primaryRequirement = $requirements->get('pre_placement');
+
+        if (!$primaryRequirement) {
             return back()->with('error', 'Application Letter document requirement not found. Please contact your coordinator.');
         }
 
-        // Use database transaction to prevent race conditions
-        return \DB::transaction(function () use ($user, $letter, $requirement) {
-            // Re-check inside transaction to prevent duplicate submissions
-            $existingSubmission = \App\Models\StudentDocumentSubmission::where('student_user_id', $user->id)
+        return \DB::transaction(function () use ($user, $letter, $requirements, $primaryRequirement) {
+            $activeSubmissions = [];
+
+            foreach ($requirements as $type => $requirement) {
+            $activeSubmissions[$type] = \App\Models\StudentDocumentSubmission::where('student_user_id', $user->id)
                 ->where('document_requirement_id', $requirement->id)
-                ->whereIn('status', ['submitted', 'pending', 'approved'])
-                ->lockForUpdate() // Lock the rows to prevent concurrent submissions
+                ->whereIn('status', ['submitted', 'pending'])
+                ->lockForUpdate()
                 ->first();
 
-            if ($existingSubmission) {
-                return back()->with('error', 'You already have an application letter submitted for review. Only ONE application letter can be submitted at a time. Please wait for coordinator approval or cancellation before submitting another one.');
+                if ($type === 'pre_placement' && $activeSubmissions[$type]) {
+                    return back()->with('error', 'You already have an application letter submitted for review. Only ONE application letter can be submitted at a time. Please wait for coordinator approval or cancellation before submitting another one.');
+                }
             }
 
-            // Check if this specific letter was already submitted
             if ($letter->submitted_to_documents) {
                 return back()->with('error', 'This application letter has already been submitted.');
             }
 
             try {
-            // Generate PDF
-            $pdfContent = $this->downloadApplicationLetter($letter)->getContent();
-            
-            // Store PDF file
-            $filename = 'application_letter_' . $user->id . '_' . time() . '.pdf';
-            $path = 'document-submissions/' . $filename;
-            Storage::disk('public')->put($path, $pdfContent);
+                $pdfContent = $this->downloadApplicationLetter($letter)->getContent();
+                $preSubmissionCreated = false;
 
-            // Create document submission
-            \App\Models\StudentDocumentSubmission::create([
-                'student_user_id' => $user->id,
-                'document_requirement_id' => $requirement->id,
-                'file_path' => $path,
-                'original_filename' => $filename,
-                'file_size' => strlen($pdfContent),
-                'mime_type' => 'application/pdf',
-            ]);
+                foreach ($requirements as $type => $requirement) {
+                    if ($type !== 'pre_placement' && $activeSubmissions[$type]) {
+                        continue;
+                    }
 
-            // Mark letter as submitted
-            $letter->update([
-                'submitted_to_documents' => true,
-                'submitted_at' => now(),
-            ]);
+                    $filename = sprintf(
+                        'application_letter_%s_%d_%s.pdf',
+                        $type,
+                        $user->id,
+                        now()->format('YmdHis') . '_' . Str::random(4)
+                    );
 
-            // Notify coordinator
-            $coordinator = \App\Models\User::where('role', 'coordinator')
-                ->whereHas('coordinatorProfile', function($q) use ($user) {
-                    $q->where('department', $user->studentProfile?->department);
-                })
-                ->first();
+                    $path = 'document-submissions/' . $filename;
+                    Storage::disk('public')->put($path, $pdfContent);
 
-            if ($coordinator) {
-                \App\Models\Notification::create([
-                    'user_id' => $coordinator->id,
-                    'type' => 'document_submitted',
-                    'title' => 'New Application Letter Submission',
-                    'message' => $user->name . ' has submitted an application letter for review.',
-                    'data' => json_encode([
-                        'student_id' => $user->id,
-                        'requirement_id' => $requirement->id,
-                    ]),
-                ]);
-            }
+                    \App\Models\StudentDocumentSubmission::create([
+                        'student_user_id' => $user->id,
+                        'document_requirement_id' => $requirement->id,
+                        'file_path' => $path,
+                        'original_filename' => $filename,
+                        'file_size' => strlen($pdfContent),
+                        'mime_type' => 'application/pdf',
+                    ]);
+
+                    if ($type === 'pre_placement') {
+                        $preSubmissionCreated = true;
+                    }
+                }
+
+                if ($preSubmissionCreated) {
+                    $letter->update([
+                        'submitted_to_documents' => true,
+                        'submitted_at' => now(),
+                    ]);
+
+                    $coordinator = \App\Models\User::where('role', 'coordinator')
+                        ->whereHas('coordinatorProfile', function($q) use ($user) {
+                            $q->where('department', $user->studentProfile?->department);
+                        })
+                        ->first();
+
+                    if ($coordinator) {
+                        \App\Models\Notification::create([
+                            'user_id' => $coordinator->id,
+                            'type' => 'document_submitted',
+                            'title' => 'New Application Letter Submission',
+                            'message' => $user->name . ' has submitted an application letter for review.',
+                            'data' => json_encode([
+                                'student_id' => $user->id,
+                                'requirement_id' => $primaryRequirement->id,
+                            ]),
+                        ]);
+                    }
+                }
 
                 return back()->with('success', 'Application letter submitted successfully! Your coordinator will review it.');
             } catch (\Exception $e) {

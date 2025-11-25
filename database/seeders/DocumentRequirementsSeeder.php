@@ -108,15 +108,6 @@ class DocumentRequirementsSeeder extends Seeder
 
             // Post-deployment Requirements
             [
-                'name' => 'Documentation Report',
-                'description' => 'Comprehensive documentation of OJT activities and achievements',
-                'type' => 'post_placement',
-                'is_required' => true,
-                'file_types' => ['pdf', 'doc', 'docx'],
-                'max_file_size_mb' => 10,
-                'instructions' => 'Submit a detailed documentation report of your OJT activities, projects, and achievements.',
-            ],
-            [
                 'name' => 'Company Profile',
                 'description' => 'Profile of the training company',
                 'type' => 'post_placement',
@@ -132,7 +123,7 @@ class DocumentRequirementsSeeder extends Seeder
                 'is_required' => true,
                 'file_types' => ['pdf', 'doc', 'docx'],
                 'max_file_size_mb' => 5,
-                'max_files_per_submission' => 4, // Allow up to 4 weekly reports
+                'max_files_per_submission' => 50,
                 'instructions' => 'Submit your weekly accomplishment reports. You can submit up to 4 reports (one per week for a month).',
             ],
             [
@@ -143,15 +134,6 @@ class DocumentRequirementsSeeder extends Seeder
                 'file_types' => ['pdf', 'doc', 'docx'],
                 'max_file_size_mb' => 5,
                 'instructions' => 'Submit your learning experience journal documenting your OJT journey.',
-            ],
-            [
-                'name' => 'Pertinent Documents',
-                'description' => 'Other relevant documents from OJT experience',
-                'type' => 'post_placement',
-                'is_required' => true,
-                'file_types' => ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
-                'max_file_size_mb' => 10,
-                'instructions' => 'Submit any other relevant documents from your OJT experience.',
             ],
             [
                 'name' => 'Personal Data Sheet or Resume',
@@ -214,6 +196,7 @@ class DocumentRequirementsSeeder extends Seeder
                 'is_required' => true,
                 'file_types' => ['pdf', 'jpg', 'jpeg', 'png'],
                 'max_file_size_mb' => 5,
+                'max_files_per_submission' => 10,
                 'instructions' => 'Submit an authenticated copy of your Daily Time Record.',
             ],
             [
@@ -233,6 +216,7 @@ class DocumentRequirementsSeeder extends Seeder
                 'is_required' => false,
                 'file_types' => ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
                 'max_file_size_mb' => 10,
+                'max_files_per_submission' => 5,
                 'instructions' => 'Submit any other documents that may be required by your school.',
             ],
 

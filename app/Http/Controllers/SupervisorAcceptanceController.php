@@ -259,20 +259,38 @@ class SupervisorAcceptanceController extends Controller
             'document_id' => $documentId,
         ]);
 
-        // Create document submission for student
-        $requirement = DocumentRequirement::where('name', 'Letter of Acceptance')->first();
-        
-        if ($requirement) {
+        $requirements = DocumentRequirement::where('name', 'LIKE', 'Letter of Acceptance%')
+            ->whereIn('type', ['pre_placement', 'post_placement'])
+            ->get();
+
+        $prePlacementSubmissionCreated = false;
+
+        foreach ($requirements as $requirement) {
+            $existingSubmission = StudentDocumentSubmission::where('student_user_id', $student->id)
+                ->where('document_requirement_id', $requirement->id)
+                ->whereIn('status', ['submitted', 'pending', 'approved'])
+                ->exists();
+
+            if ($existingSubmission) {
+                continue;
+            }
+
             StudentDocumentSubmission::create([
                 'student_user_id' => $student->id,
                 'document_requirement_id' => $requirement->id,
                 'file_path' => $letterPath,
-                'original_filename' => 'acceptance_letter_' . $documentId . '.pdf',
+                'original_filename' => sprintf('acceptance_letter_%s_%s.pdf', $requirement->type, $documentId),
                 'file_size' => Storage::disk('public')->size($letterPath),
                 'mime_type' => 'application/pdf',
                 'status' => 'submitted',
             ]);
 
+            if ($requirement->type === 'pre_placement') {
+                $prePlacementSubmissionCreated = true;
+            }
+        }
+
+        if ($prePlacementSubmissionCreated) {
             PrePlacementService::recalculateForStudent($student->id);
         }
 
