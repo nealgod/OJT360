@@ -26,5 +26,3 @@ class CoordinatorInvitationMail extends Mailable
             ]);
     }
 }
-
-

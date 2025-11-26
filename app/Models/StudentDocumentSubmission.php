@@ -66,7 +66,7 @@ class StudentDocumentSubmission extends Model
     // Helper methods
     public function getStatusBadgeAttribute()
     {
-        return match($this->status) {
+        return match ($this->status) {
             'submitted' => 'bg-blue-100 text-blue-800',
             'under_review' => 'bg-yellow-100 text-yellow-800',
             'approved' => 'bg-green-100 text-green-800',
@@ -77,7 +77,7 @@ class StudentDocumentSubmission extends Model
 
     public function getStatusTextAttribute()
     {
-        return match($this->status) {
+        return match ($this->status) {
             'submitted' => 'Submitted',
             'under_review' => 'Under Review',
             'approved' => 'Approved',
@@ -90,11 +90,11 @@ class StudentDocumentSubmission extends Model
     {
         $bytes = (int) $this->file_size;
         $units = ['B', 'KB', 'MB', 'GB'];
-        
+
         for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
             $bytes /= 1024;
         }
-        
-        return round($bytes, 2) . ' ' . $units[$i];
+
+        return round($bytes, 2).' '.$units[$i];
     }
 }

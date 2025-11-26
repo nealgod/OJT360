@@ -20,7 +20,7 @@ class MonthlyEvaluationPolicy
      */
     public function update(User $user, MonthlyEvaluation $evaluation): bool
     {
-        return $user->isSupervisor() 
+        return $user->isSupervisor()
             && $evaluation->supervisor_user_id === $user->id
             && $evaluation->status === 'draft';
     }
@@ -30,7 +30,7 @@ class MonthlyEvaluationPolicy
      */
     public function submit(User $user, MonthlyEvaluation $evaluation): bool
     {
-        return $user->isSupervisor() 
+        return $user->isSupervisor()
             && $evaluation->supervisor_user_id === $user->id
             && $evaluation->status === 'draft';
     }

@@ -17,7 +17,7 @@ class WeeklyReportPdfService
 
     public function generate(WeeklyReport $report): string
     {
-        if (!file_exists($this->templatePath)) {
+        if (! file_exists($this->templatePath)) {
             throw new \RuntimeException('Weekly accomplishment template not found.');
         }
 
@@ -48,13 +48,13 @@ class WeeklyReportPdfService
         // Company Name and Address (BOLD, single line, no wrapping unless overflow)
         $companyName = $acceptance?->company?->name ?? $profile?->company?->name ?? 'Not Assigned';
         $companyAddress = $acceptance?->company?->address ?? $profile?->company?->address ?? '';
-        
+
         // Combine name and address on same line if address exists
         $companyInfo = $companyName;
         if ($companyAddress) {
-            $companyInfo .= ', ' . $companyAddress;
+            $companyInfo .= ', '.$companyAddress;
         }
-        
+
         // Write company info in BOLD
         $this->writeText($pdf, 0.47, 2.60, $companyInfo, 11, 'B');
 
@@ -108,7 +108,7 @@ class WeeklyReportPdfService
     {
         $wrapped = preg_split('/\r\n|\r|\n/', wordwrap($text, 60, "\n"));
         foreach ($lines as $index => $coords) {
-            if (!isset($wrapped[$index])) {
+            if (! isset($wrapped[$index])) {
                 break;
             }
             $this->writeText($pdf, $coords['x'], $coords['y'], $wrapped[$index]);
@@ -121,10 +121,10 @@ class WeeklyReportPdfService
         foreach ($entries as $entry) {
             // Skip entries with no hours (absent days)
             $hours = $entry['hours'] ?? 0;
-            if (empty($hours) || (float)$hours <= 0) {
+            if (empty($hours) || (float) $hours <= 0) {
                 continue;
             }
-            
+
             $normalized[] = [
                 'date' => isset($entry['date']) ? date('M d, Y', strtotime($entry['date'])) : '',
                 'activity' => $entry['activity'] ?? '',
@@ -135,9 +135,4 @@ class WeeklyReportPdfService
         // Pad to 8 rows with empty entries (for template consistency)
         return array_pad($normalized, 8, ['date' => '', 'activity' => '', 'hours' => '']);
     }
-
-
 }
-
-
-

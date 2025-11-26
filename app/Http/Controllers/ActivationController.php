@@ -2,20 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\CoordinatorInvitationMail;
+use App\Mail\StudentVerificationMail;
+use App\Models\CoordinatorInvitation;
 use App\Models\EnrollmentWhitelist;
 use App\Models\StudentVerification;
-use App\Models\CoordinatorInvitation;
 use App\Models\User;
+use App\Support\ProgramCodeResolver;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\StudentVerificationMail;
-use App\Mail\CoordinatorInvitationMail;
-use App\Support\ProgramCodeResolver;
 use Illuminate\Validation\Rule;
 
 class ActivationController extends Controller
@@ -35,7 +34,7 @@ class ActivationController extends Controller
             ->where('status', 'pending')
             ->first();
 
-        if (!$row) {
+        if (! $row) {
             return back()->withErrors(['student_id' => 'Student ID not found or already activated.'])->withInput();
         }
 
@@ -44,7 +43,7 @@ class ActivationController extends Controller
             ->where('expires_at', '>', now())
             ->first();
 
-        if (!$existing) {
+        if (! $existing) {
             $existing = StudentVerification::create([
                 'student_id' => $row->student_id,
                 'token' => Str::random(64),
@@ -65,7 +64,7 @@ class ActivationController extends Controller
         // Fetch record by token regardless of expiry to handle friendly expired view
         $recordAny = StudentVerification::where('token', $token)->first();
 
-        if (!$recordAny) {
+        if (! $recordAny) {
             return view('auth.link-expired', [
                 'studentId' => null,
                 'name' => null,
@@ -77,6 +76,7 @@ class ActivationController extends Controller
         // If expired, show expired view with quick resend
         if ($recordAny->expires_at->isPast()) {
             $row = EnrollmentWhitelist::where('student_id', $recordAny->student_id)->first();
+
             return view('auth.link-expired', [
                 'studentId' => $recordAny->student_id,
                 'name' => $row?->name,
@@ -110,7 +110,7 @@ class ActivationController extends Controller
             ->where('expires_at', '>', now())
             ->first();
 
-        if (!$record) {
+        if (! $record) {
             return back()->withErrors(['token' => 'The verification link is invalid or expired.']);
         }
 
@@ -118,7 +118,7 @@ class ActivationController extends Controller
             ->where('status', 'pending')
             ->first();
 
-        if (!$row) {
+        if (! $row) {
             return back()->withErrors(['token' => 'Student record not available for activation.']);
         }
 
@@ -181,6 +181,7 @@ class ActivationController extends Controller
 
         return redirect()->route('dashboard')->with('success', 'Welcome to OJT360! Your account is ready.');
     }
+
     public function show()
     {
         return view('auth.activate');
@@ -195,7 +196,7 @@ class ActivationController extends Controller
         ]);
 
         $email = strtolower($request->email);
-        if (!str_ends_with($email, '@evsu.edu.ph')) {
+        if (! str_ends_with($email, '@evsu.edu.ph')) {
             return back()->withErrors(['email' => 'Only EVSU emails are allowed.'])->withInput();
         }
 
@@ -204,7 +205,7 @@ class ActivationController extends Controller
             ->where('status', 'pending')
             ->first();
 
-        if (!$row) {
+        if (! $row) {
             return back()->withErrors(['student_id' => 'No matching pending record found. Please contact your coordinator.'])->withInput();
         }
 
@@ -254,7 +255,7 @@ class ActivationController extends Controller
             ->where('token', $token)
             ->first();
 
-        if (!$invite) {
+        if (! $invite) {
             return view('auth.link-expired', [
                 'studentId' => null,
                 'name' => null,
@@ -295,7 +296,7 @@ class ActivationController extends Controller
             ->where('expires_at', '>', now())
             ->first();
 
-        if (!$invite) {
+        if (! $invite) {
             return back()->withErrors(['token' => 'The invitation link is invalid or expired.']);
         }
 
@@ -313,7 +314,7 @@ class ActivationController extends Controller
         ]);
 
         // Mark email as verified explicitly (fillable doesn't include email_verified_at)
-        if (!$user->hasVerifiedEmail()) {
+        if (! $user->hasVerifiedEmail()) {
             $user->markEmailAsVerified();
         }
 
@@ -334,6 +335,7 @@ class ActivationController extends Controller
         $invite->delete();
 
         Auth::login($user);
+
         return redirect()->route('dashboard');
     }
 
@@ -348,7 +350,7 @@ class ActivationController extends Controller
             ->orderByDesc('created_at')
             ->first();
 
-        if (!$invite) {
+        if (! $invite) {
             return back()->withErrors(['email' => 'No pending invitation found for this email. Please contact your admin.']);
         }
 
@@ -362,11 +364,9 @@ class ActivationController extends Controller
         try {
             Mail::to($invite->email)->send(new CoordinatorInvitationMail($link));
         } catch (\Exception $e) {
-            \Log::error('Coordinator invite resend failed: ' . $e->getMessage());
+            \Log::error('Coordinator invite resend failed: '.$e->getMessage());
         }
 
         return back()->with('status', 'A new invitation link has been sent to your email.');
     }
 }
-
-

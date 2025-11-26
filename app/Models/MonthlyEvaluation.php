@@ -6,7 +6,6 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Models\AcceptanceLetter;
 
 class MonthlyEvaluation extends Model
 {
@@ -64,7 +63,7 @@ class MonthlyEvaluation extends Model
 
     public function getMonthYearLabel(): string
     {
-        return $this->getMonthName() . ' ' . $this->evaluation_year;
+        return $this->getMonthName().' '.$this->evaluation_year;
     }
 
     /**
@@ -104,6 +103,7 @@ class MonthlyEvaluation extends Model
                 return false;
             }
         }
+
         return $this->status === 'draft';
     }
 

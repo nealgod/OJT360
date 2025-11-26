@@ -16,13 +16,13 @@ class FinalEvaluation extends Model
         'student_name', 'student_id', 'course', 'department',
         'hte_name', 'hte_address', 'internship_start_date', 'internship_end_date',
         'total_hours_rendered',
-        'rating_quality_thoroughness', 'rating_dependability', 
+        'rating_quality_thoroughness', 'rating_dependability',
         'rating_quality_completion', 'rating_attendance',
         'rating_cooperation', 'rating_judgement', 'rating_personality',
         'total_rating', 'comments_recommendations',
         'supervisor_name', 'supervisor_signature_date',
         'student_confirmed', 'student_signature_date',
-        'status', 'submitted_at', 'reviewed_at'
+        'status', 'submitted_at', 'reviewed_at',
     ];
 
     protected $casts = [
@@ -72,13 +72,13 @@ class FinalEvaluation extends Model
 
     public function canBeSubmitted(): bool
     {
-        return !empty($this->rating_quality_thoroughness) &&
-               !empty($this->rating_dependability) &&
-               !empty($this->rating_quality_completion) &&
-               !empty($this->rating_attendance) &&
-               !empty($this->rating_cooperation) &&
-               !empty($this->rating_judgement) &&
-               !empty($this->rating_personality);
+        return ! empty($this->rating_quality_thoroughness) &&
+               ! empty($this->rating_dependability) &&
+               ! empty($this->rating_quality_completion) &&
+               ! empty($this->rating_attendance) &&
+               ! empty($this->rating_cooperation) &&
+               ! empty($this->rating_judgement) &&
+               ! empty($this->rating_personality);
     }
 
     public function isEditable(): bool

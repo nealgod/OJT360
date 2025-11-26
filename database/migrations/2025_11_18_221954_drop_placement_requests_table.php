@@ -41,7 +41,7 @@ return new class extends Migration
             $table->timestamp('decided_at')->nullable();
             $table->timestamp('dismissed_at')->nullable();
             $table->timestamps();
-            
+
             $table->index('student_user_id');
             $table->index('company_id');
             $table->index('status');

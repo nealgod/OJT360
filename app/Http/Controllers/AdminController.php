@@ -2,14 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Department;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-use App\Notifications\VerifyWithTemporaryPassword;
-use App\Models\Department;
-use App\Models\CoordinatorProfile;
-use Illuminate\Support\Facades\Log;
 
 class AdminController extends Controller
 {
@@ -22,7 +18,7 @@ class AdminController extends Controller
             'supervisors' => User::where('role', 'supervisor')->count(),
             'students' => User::where('role', 'intern')->count(),
             'active_interns' => User::where('role', 'intern')
-                ->whereHas('studentProfile', fn($q) => $q->where('ojt_status', 'active'))
+                ->whereHas('studentProfile', fn ($q) => $q->where('ojt_status', 'active'))
                 ->count(),
         ];
 
@@ -30,15 +26,15 @@ class AdminController extends Controller
         $stats['total_companies'] = \App\Models\Company::count();
         $stats['total_departments'] = \App\Models\Department::count();
         $stats['total_programs'] = \App\Models\Program::count();
-        
+
         // Attendance statistics
         $stats['total_attendance_logs'] = \App\Models\AttendanceLog::count();
         $stats['total_hours'] = round(\App\Models\AttendanceLog::sum('minutes_worked') / 60, 1);
-        
+
         // Report statistics
         $stats['total_weekly_reports'] = \App\Models\WeeklyReport::count();
         $stats['pending_weekly_reports'] = \App\Models\WeeklyReport::whereNull('coordinator_reviewed_at')->count();
-        
+
         // Evaluation statistics
         $stats['total_monthly_evaluations'] = \App\Models\MonthlyEvaluation::count();
         $stats['pending_monthly_evaluations'] = \App\Models\MonthlyEvaluation::whereNull('reviewed_at')->count();
@@ -94,7 +90,7 @@ class AdminController extends Controller
     public function createUser()
     {
         $departments = Department::with('programs:id,department_id,name')
-            ->get(['id','name']);
+            ->get(['id', 'name']);
 
         return view('admin.create-user', compact('departments'));
     }
@@ -133,7 +129,7 @@ class AdminController extends Controller
             try {
                 \Illuminate\Support\Facades\Mail::to($invite->email)->send(new \App\Mail\CoordinatorInvitationMail($link));
             } catch (\Exception $e) {
-                \Log::error('Coordinator invite email failed: ' . $e->getMessage());
+                \Log::error('Coordinator invite email failed: '.$e->getMessage());
             }
 
             return redirect()->route('admin.users')->with('success', 'Coordinator invite sent successfully.');
@@ -146,7 +142,7 @@ class AdminController extends Controller
 
         // Check if there's already a pending registration
         $existingRegistration = \App\Models\SupervisorRegistration::where('email', strtolower($request->email))->first();
-        
+
         if ($existingRegistration) {
             // Update existing registration with new token and expiration
             $existingRegistration->update([
@@ -168,7 +164,7 @@ class AdminController extends Controller
         try {
             \Illuminate\Support\Facades\Mail::to($registration->email)->send(new \App\Mail\SupervisorVerificationEmail($registration));
         } catch (\Exception $e) {
-            \Log::error('Supervisor invite email failed: ' . $e->getMessage());
+            \Log::error('Supervisor invite email failed: '.$e->getMessage());
         }
 
         return redirect()->route('admin.users')->with('success', 'Supervisor registration invitation sent successfully.');

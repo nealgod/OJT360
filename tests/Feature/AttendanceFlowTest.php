@@ -56,6 +56,3 @@ class AttendanceFlowTest extends TestCase
         $this->assertEquals(580, $log->minutes_worked);
     }
 }
-
-
-

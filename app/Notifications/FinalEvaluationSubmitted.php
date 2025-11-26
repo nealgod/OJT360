@@ -29,7 +29,7 @@ class FinalEvaluationSubmitted extends Notification
             'url' => route('evaluations.final.status'),
         ];
     }
-    
+
     public function toDatabase($notifiable)
     {
         return [

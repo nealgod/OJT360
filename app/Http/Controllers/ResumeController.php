@@ -16,13 +16,13 @@ class ResumeController extends Controller
     public function index()
     {
         $user = Auth::user();
-        
-        if (!$user->isStudent()) {
+
+        if (! $user->isStudent()) {
             abort(403, 'Only students can access resume builder.');
         }
 
         $resumes = Resume::where('user_id', $user->id)->orderBy('created_at', 'desc')->get();
-        
+
         return view('resume.index', compact('resumes'));
     }
 
@@ -32,8 +32,8 @@ class ResumeController extends Controller
     public function create()
     {
         $user = Auth::user();
-        
-        if (!$user->isStudent()) {
+
+        if (! $user->isStudent()) {
             abort(403, 'Only students can create resumes.');
         }
 
@@ -58,7 +58,7 @@ class ResumeController extends Controller
                     'degree' => $studentProfile->course ?? '',
                     'department' => $studentProfile->department ?? '',
                     'year_level' => $yearLabel,
-                ]
+                ],
             ],
         ];
 
@@ -74,8 +74,8 @@ class ResumeController extends Controller
     public function store(Request $request)
     {
         $user = Auth::user();
-        
-        if (!$user->isStudent()) {
+
+        if (! $user->isStudent()) {
             abort(403);
         }
 
@@ -108,7 +108,7 @@ class ResumeController extends Controller
                 'type' => $type,
                 'institution' => trim($edu['institution'] ?? ''),
             ];
-            
+
             // Add type-specific fields
             if ($type === 'college') {
                 $data['degree'] = trim($edu['degree'] ?? '');
@@ -121,11 +121,11 @@ class ResumeController extends Controller
                 // junior_high or elementary
                 $data['year_period'] = trim($edu['year_period'] ?? '');
             }
-            
+
             return $data;
         })->filter(function ($edu) {
             // Keep entry if institution is not empty
-            return !empty($edu['institution']);
+            return ! empty($edu['institution']);
         })->values()->all();
 
         $workExperience = collect($validated['work_experience'] ?? [])->map(function ($exp) {
@@ -144,6 +144,7 @@ class ResumeController extends Controller
 
         $certifications = collect($validated['certifications'] ?? [])->map(function ($cert) {
             $name = trim($cert['name'] ?? '');
+
             return $name ? ['name' => $name] : null;
         })->filter()->values()->all();
 
@@ -172,7 +173,7 @@ class ResumeController extends Controller
     public function edit(Resume $resume)
     {
         $user = Auth::user();
-        
+
         if ($resume->user_id !== $user->id) {
             abort(403);
         }
@@ -189,7 +190,7 @@ class ResumeController extends Controller
     public function update(Request $request, Resume $resume)
     {
         $user = Auth::user();
-        
+
         if ($resume->user_id !== $user->id) {
             abort(403);
         }
@@ -221,7 +222,7 @@ class ResumeController extends Controller
                 'type' => $type,
                 'institution' => trim($edu['institution'] ?? ''),
             ];
-            
+
             // Add type-specific fields
             if ($type === 'college') {
                 $data['degree'] = trim($edu['degree'] ?? '');
@@ -234,11 +235,11 @@ class ResumeController extends Controller
                 // junior_high or elementary
                 $data['year_period'] = trim($edu['year_period'] ?? '');
             }
-            
+
             return $data;
         })->filter(function ($edu) {
             // Keep entry if institution is not empty
-            return !empty($edu['institution']);
+            return ! empty($edu['institution']);
         })->values()->all();
 
         $workExperience = collect($validated['work_experience'] ?? [])->map(function ($exp) {
@@ -257,6 +258,7 @@ class ResumeController extends Controller
 
         $certifications = collect($validated['certifications'] ?? [])->map(function ($cert) {
             $name = trim($cert['name'] ?? '');
+
             return $name ? ['name' => $name] : null;
         })->filter()->values()->all();
 
@@ -288,7 +290,7 @@ class ResumeController extends Controller
     public function destroy(Resume $resume)
     {
         $user = Auth::user();
-        
+
         if ($resume->user_id !== $user->id) {
             abort(403);
         }
@@ -309,10 +311,10 @@ class ResumeController extends Controller
     public function download(Resume $resume)
     {
         $user = Auth::user();
-        
+
         // Allow owner, supervisor, or coordinator to download
         $canDownload = false;
-        
+
         if ($resume->user_id === $user->id) {
             $canDownload = true;
         } elseif ($user->isSupervisor()) {
@@ -324,14 +326,14 @@ class ResumeController extends Controller
         } elseif ($user->isCoordinator()) {
             $canDownload = true;
         }
-        
-        if (!$canDownload) {
+
+        if (! $canDownload) {
             abort(403);
         }
 
         $templatePath = resource_path('templates/resume-template.pdf');
-        
-        if (!file_exists($templatePath)) {
+
+        if (! file_exists($templatePath)) {
             abort(404, 'Resume template not found');
         }
 
@@ -339,27 +341,27 @@ class ResumeController extends Controller
             $pdf = new \setasign\Fpdi\Fpdi();
             $pageCount = $pdf->setSourceFile($templatePath);
             $tplId = $pdf->importPage(1);
-            
+
             // Get page dimensions
             $size = $pdf->getTemplateSize($tplId);
             $pdf->addPage($size['orientation'], [$size['width'], $size['height']]);
             $pdf->useTemplate($tplId);
             $pdf->SetMargins(0, 0, 0);
             $pdf->SetAutoPageBreak(false);
-            
+
             // Set font
             $pdf->SetFont('Arial', '', 12);
             $pdf->SetTextColor(0, 0, 0); // Black text
-            
+
             // Convert inches to millimeters (FPDF default unit)
             // Coordinates provided by user are in inches
-            $inchToMm = function($inch) {
+            $inchToMm = function ($inch) {
                 return $inch * 25.4;
             };
-            $pointsToMm = function($pt) {
+            $pointsToMm = function ($pt) {
                 return $pt * 25.4 / 72;
             };
-            
+
             // Calculate text box widths based on template layout
             // Standard page width is 8.5 inches = 612 points
             // Left column (personal info, contact, skills) is approximately 2.5 inches wide
@@ -369,7 +371,7 @@ class ResumeController extends Controller
             $bodyFontPt = 14;
             $lineHeight = $pointsToMm($bodyFontPt * 1.25);
             $bulletChar = chr(149); // CP1252 bullet character
-            
+
             // Format data for display
             $name = trim($resume->personal_info['name'] ?? '');
             $jobTitle = trim($resume->personal_info['job_title'] ?? '');
@@ -377,69 +379,84 @@ class ResumeController extends Controller
             $phone = trim($resume->personal_info['phone'] ?? '');
             $address = trim($resume->personal_info['address'] ?? '');
             $objective = trim($resume->objective ?? '');
-            
+
             // Format education - handle new structure with types
             $educationText = '';
-            if (!empty($resume->education)) {
+            if (! empty($resume->education)) {
                 foreach ($resume->education as $index => $edu) {
-                    if ($index > 0) $educationText .= "\n";
-                    
+                    if ($index > 0) {
+                        $educationText .= "\n";
+                    }
+
                     $type = trim($edu['type'] ?? '');
                     $institution = trim($edu['institution'] ?? '');
-                    
+
                     // Skip if no institution
-                    if (empty($institution)) continue;
-                    
+                    if (empty($institution)) {
+                        continue;
+                    }
+
                     if ($type === 'college') {
                         // College: Institution, Degree - Department, Year Level
                         $degree = trim($edu['degree'] ?? '');
                         $department = trim($edu['department'] ?? '');
                         $yearLevel = trim($edu['year_level'] ?? '');
-                        
-                        $educationText .= $institution . "\n";
+
+                        $educationText .= $institution."\n";
                         if ($degree) {
                             $educationText .= $degree;
-                            if ($department) $educationText .= ' - ' . $department;
+                            if ($department) {
+                                $educationText .= ' - '.$department;
+                            }
                             $educationText .= "\n";
                         }
-                        if ($yearLevel) $educationText .= $yearLevel . "\n";
-                        
+                        if ($yearLevel) {
+                            $educationText .= $yearLevel."\n";
+                        }
                     } elseif ($type === 'senior_high') {
                         // Senior High: School, Strand, Year/Period
                         $strand = trim($edu['strand'] ?? '');
                         $yearPeriod = trim($edu['year_period'] ?? '');
-                        
-                        $educationText .= $institution . "\n";
-                        if ($strand) $educationText .= $strand . "\n";
-                        if ($yearPeriod) $educationText .= $yearPeriod . "\n";
-                        
+
+                        $educationText .= $institution."\n";
+                        if ($strand) {
+                            $educationText .= $strand."\n";
+                        }
+                        if ($yearPeriod) {
+                            $educationText .= $yearPeriod."\n";
+                        }
                     } elseif ($type === 'junior_high' || $type === 'elementary') {
                         // Junior High / Elementary: School, Year/Period
                         $yearPeriod = trim($edu['year_period'] ?? '');
-                        
-                        $educationText .= $institution . "\n";
-                        if ($yearPeriod) $educationText .= $yearPeriod . "\n";
-                        
+
+                        $educationText .= $institution."\n";
+                        if ($yearPeriod) {
+                            $educationText .= $yearPeriod."\n";
+                        }
                     } else {
                         // Fallback for old format (backward compatibility)
                         $degree = trim($edu['degree'] ?? '');
                         $department = trim($edu['department'] ?? '');
                         $year = trim($edu['year'] ?? '');
-                        
-                        $educationText .= $institution . "\n";
+
+                        $educationText .= $institution."\n";
                         if ($degree) {
                             $educationText .= $degree;
-                            if ($department) $educationText .= ' - ' . $department;
+                            if ($department) {
+                                $educationText .= ' - '.$department;
+                            }
                             $educationText .= "\n";
                         }
-                        if ($year) $educationText .= $year . "\n";
+                        if ($year) {
+                            $educationText .= $year."\n";
+                        }
                     }
                 }
             }
-            
+
             // Format work experience - cleaner formatting
             $experienceText = '';
-            if (!empty($resume->work_experience)) {
+            if (! empty($resume->work_experience)) {
                 $experienceBlocks = [];
                 foreach ($resume->work_experience as $exp) {
                     $position = trim($exp['position'] ?? '');
@@ -453,51 +470,51 @@ class ResumeController extends Controller
                     }
 
                     $lines = [];
-                    $titleLine = $bulletChar . ' ';
+                    $titleLine = $bulletChar.' ';
                     if ($position) {
                         $titleLine .= $position;
                     }
                     if ($company) {
-                        $titleLine .= ($position ? ', ' : '') . $company;
+                        $titleLine .= ($position ? ', ' : '').$company;
                     }
-                    if ($titleLine === $bulletChar . ' ') {
+                    if ($titleLine === $bulletChar.' ') {
                         $titleLine .= 'Experience';
                     }
                     $lines[] = $titleLine;
 
                     if ($startDate || $endDate) {
-                        $lines[] = '  ' . ($startDate ?: 'N/A') . ' - ' . ($endDate ?: 'Present');
+                        $lines[] = '  '.($startDate ?: 'N/A').' - '.($endDate ?: 'Present');
                     }
 
                     if ($description) {
-                        $lines[] = '  ' . $description;
+                        $lines[] = '  '.$description;
                     }
 
                     $experienceBlocks[] = implode("\n", $lines);
                 }
                 $experienceText = implode("\n\n", $experienceBlocks);
             }
-            
+
             // Format skills - one per line or comma separated
             $skillsText = '';
-            if (!empty($resume->skills)) {
+            if (! empty($resume->skills)) {
                 $filteredSkills = array_filter(array_map('trim', $resume->skills));
-                if (!empty($filteredSkills)) {
-                    $skillsText = implode("\n", array_map(fn($skill) => $bulletChar . ' ' . $skill, $filteredSkills));
+                if (! empty($filteredSkills)) {
+                    $skillsText = implode("\n", array_map(fn ($skill) => $bulletChar.' '.$skill, $filteredSkills));
                 }
             }
-            
+
             // Format certifications (only names now)
             $certificationsText = '';
-            if (!empty($resume->certifications)) {
-                $certNames = array_filter(array_map(function($cert) {
+            if (! empty($resume->certifications)) {
+                $certNames = array_filter(array_map(function ($cert) {
                     return trim($cert['name'] ?? '');
                 }, $resume->certifications));
-                if (!empty($certNames)) {
-                    $certificationsText = implode("\n", array_map(fn($cert) => $bulletChar . ' ' . $cert, $certNames));
+                if (! empty($certNames)) {
+                    $certificationsText = implode("\n", array_map(fn ($cert) => $bulletChar.' '.$cert, $certNames));
                 }
             }
-            
+
             // Draw text at specified coordinates (converting inches to points)
             // {{ name }} positioned at 3.49" x 1.18"
             if ($name) {
@@ -506,7 +523,7 @@ class ResumeController extends Controller
                 $nameLineHeight = $pointsToMm(25 * 1.2);
                 $pdf->MultiCell($rightColumnWidth, $nameLineHeight, $name, 0, 'L');
             }
-            
+
             // Determine baseline for job title (ensuring it appears below name if name wraps)
             $jobTitleBaseY = $inchToMm(2.03);
             $nextLineY = $pdf->GetY();
@@ -519,51 +536,51 @@ class ResumeController extends Controller
                 $jobLineHeight = $pointsToMm(20 * 1.2);
                 $pdf->MultiCell($rightColumnWidth, $jobLineHeight, $jobTitle, 0, 'L');
             }
- 
+
             $pdf->SetFont('Times', '', $bodyFontPt);
             if ($email) {
                 $pdf->SetXY($inchToMm(0.62), $inchToMm(4.08));
-                $pdf->MultiCell($leftColumnWidth, $lineHeight, 'Email: ' . $email, 0, 'L');
+                $pdf->MultiCell($leftColumnWidth, $lineHeight, 'Email: '.$email, 0, 'L');
             }
             if ($phone) {
                 $pdf->SetXY($inchToMm(0.62), $inchToMm(4.58));
-                $pdf->MultiCell($leftColumnWidth, $lineHeight, 'Phone: ' . $phone, 0, 'L');
+                $pdf->MultiCell($leftColumnWidth, $lineHeight, 'Phone: '.$phone, 0, 'L');
             }
             if ($address) {
                 $pdf->SetXY($inchToMm(0.62), $inchToMm(5.08));
-                $pdf->MultiCell($leftColumnWidth, $lineHeight, 'Address: ' . $address, 0, 'L');
+                $pdf->MultiCell($leftColumnWidth, $lineHeight, 'Address: '.$address, 0, 'L');
             }
- 
+
             // {{ Summary }} x 3.76 and y 3.01
             if ($objective) {
                 $pdf->SetXY($inchToMm(3.76), $inchToMm(3.01));
                 $pdf->SetFont('Times', '', $bodyFontPt);
                 $pdf->MultiCell($rightColumnWidth, $lineHeight, $objective, 0, 'L');
             }
- 
+
             // {{ education }} x 3.71 and y 5.14
             if ($educationText) {
                 $pdf->SetXY($inchToMm(3.71), $inchToMm(5.14));
                 $pdf->SetFont('Times', '', $bodyFontPt);
                 $pdf->MultiCell($rightColumnWidth, $lineHeight, trim($educationText), 0, 'L');
             }
- 
+
             // {{ experience }} x 3.71 and y 9.08
             if ($experienceText) {
                 $pdf->SetXY($inchToMm(3.71), $inchToMm(9.08));
                 $pdf->SetFont('Times', '', $bodyFontPt);
                 $pdf->MultiCell($rightColumnWidth, $lineHeight, trim($experienceText), 0, 'L');
             }
- 
+
             // {{ skills }} x 0.64 and y 6.65
             if ($skillsText) {
                 $pdf->SetXY($inchToMm(0.64), $inchToMm(6.65));
                 $pdf->SetFont('Times', '', $bodyFontPt);
                 $pdf->MultiCell($leftColumnWidth, $lineHeight, $skillsText, 0, 'L');
             }
- 
+
             // {{ certifications }} x 0.82 and y 10.13 (unchanged)
-            if (!empty($certificationsText)) {
+            if (! empty($certificationsText)) {
                 $pdf->SetXY($inchToMm(0.82), $inchToMm(10.13));
                 $pdf->SetFont('Times', '', $bodyFontPt);
                 $pdf->MultiCell($leftColumnWidth, $lineHeight, $certificationsText, 0, 'L');
@@ -582,12 +599,12 @@ class ResumeController extends Controller
                             @unlink($processedImage);
                         }
                     } catch (\Exception $e) {
-                        \Log::warning('Could not add image to PDF: ' . $e->getMessage());
+                        \Log::warning('Could not add image to PDF: '.$e->getMessage());
                     }
                 }
             }
-            
-            $filename = 'resume_' . str_replace(' ', '_', $name ?: 'resume') . '.pdf';
+
+            $filename = 'resume_'.str_replace(' ', '_', $name ?: 'resume').'.pdf';
             $pdfContent = $pdf->Output('S');
 
             return response($pdfContent, 200)
@@ -595,12 +612,11 @@ class ResumeController extends Controller
                 ->header('Content-Length', strlen($pdfContent))
                 ->header('Cache-Control', 'private, max-age=0, must-revalidate')
                 ->header('Pragma', 'public')
-                ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
-                
+                ->header('Content-Disposition', 'attachment; filename="'.$filename.'"');
         } catch (\Exception $e) {
-            \Log::error('PDF Generation Error: ' . $e->getMessage());
-            \Log::error('Stack trace: ' . $e->getTraceAsString());
-            abort(500, 'Error generating PDF: ' . $e->getMessage());
+            \Log::error('PDF Generation Error: '.$e->getMessage());
+            \Log::error('Stack trace: '.$e->getTraceAsString());
+            abort(500, 'Error generating PDF: '.$e->getMessage());
         }
     }
 
@@ -609,7 +625,7 @@ class ResumeController extends Controller
      */
     protected function createCircularImage(string $imagePath, float $targetDiameterMm): ?string
     {
-        if (!extension_loaded('gd')) {
+        if (! extension_loaded('gd')) {
             return null;
         }
 
@@ -619,7 +635,7 @@ class ResumeController extends Controller
         }
 
         $src = @imagecreatefromstring($imageData);
-        if (!$src) {
+        if (! $src) {
             return null;
         }
 
@@ -628,6 +644,7 @@ class ResumeController extends Controller
         $size = min($width, $height);
         if ($size <= 0) {
             imagedestroy($src);
+
             return null;
         }
 
@@ -669,13 +686,14 @@ class ResumeController extends Controller
         imagesavealpha($circle, true);
 
         $tmpDir = storage_path('app/resume-templates/tmp');
-        if (!is_dir($tmpDir)) {
+        if (! is_dir($tmpDir)) {
             mkdir($tmpDir, 0775, true);
         }
 
-        $tempPath = $tmpDir . '/' . uniqid('profile_', true) . '.png';
-        if (!imagepng($circle, $tempPath)) {
+        $tempPath = $tmpDir.'/'.uniqid('profile_', true).'.png';
+        if (! imagepng($circle, $tempPath)) {
             imagedestroy($circle);
+
             return null;
         }
 

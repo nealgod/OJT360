@@ -21,7 +21,7 @@ return new class extends Migration
             $table->foreignId('reviewed_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('reviewed_at')->nullable();
             $table->timestamps();
-            
+
             // Prevent duplicate submissions for the same requirement
             $table->unique(['student_user_id', 'document_requirement_id'], 'student_doc_submissions_unique');
         });

@@ -28,4 +28,3 @@ return new class extends Migration
         DB::statement('ALTER TABLE document_requirements MODIFY max_files_per_submission INT DEFAULT 2');
     }
 };
-

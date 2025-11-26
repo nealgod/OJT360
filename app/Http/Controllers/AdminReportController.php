@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use App\Models\AttendanceLog;
-use App\Models\WeeklyReport;
-use App\Models\MonthlyEvaluation;
-use App\Models\FinalEvaluation;
 use App\Models\Company;
+use App\Models\FinalEvaluation;
+use App\Models\MonthlyEvaluation;
+use App\Models\User;
+use App\Models\WeeklyReport;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class AdminReportController extends Controller
 {
@@ -20,7 +19,7 @@ class AdminReportController extends Controller
             'total_users' => User::count(),
             'total_interns' => User::where('role', 'intern')->count(),
             'active_interns' => User::where('role', 'intern')
-                ->whereHas('studentProfile', fn($q) => $q->where('ojt_status', 'active'))
+                ->whereHas('studentProfile', fn ($q) => $q->where('ojt_status', 'active'))
                 ->count(),
             'total_coordinators' => User::where('role', 'coordinator')->count(),
             'total_supervisors' => User::where('role', 'supervisor')->count(),

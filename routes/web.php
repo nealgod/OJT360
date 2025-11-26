@@ -37,10 +37,10 @@ Route::middleware(['auth', 'profile.complete'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    
+
     // Company routes
     Route::get('/companies', [App\Http\Controllers\CompanyController::class, 'index'])->name('companies.index');
-    
+
     // Notification routes
     Route::get('/notifications', [App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
     Route::patch('/notifications/{notification}/read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.read');
@@ -64,7 +64,7 @@ Route::middleware(['auth', 'profile.complete'])->group(function () {
         Route::delete('/{weekly}', [App\Http\Controllers\WeeklyReportController::class, 'destroy'])->name('destroy');
         Route::get('/{weekly}/pdf', [App\Http\Controllers\WeeklyReportController::class, 'downloadPdf'])->name('pdf');
     });
-    
+
     // Attendance & Reports (students)
     Route::middleware(['placement.started'])->group(function () {
         Route::get('/attendance', [App\Http\Controllers\AttendanceController::class, 'index'])->name('attendance.index');
@@ -73,15 +73,15 @@ Route::middleware(['auth', 'profile.complete'])->group(function () {
         Route::post('/attendance/recovery', [App\Http\Controllers\AttendanceController::class, 'recovery'])->name('attendance.recovery');
         Route::post('/attendance/report-absence', [App\Http\Controllers\AttendanceController::class, 'reportAbsence'])->name('attendance.reportAbsence');
     });
-    
+
     // Monthly Evaluations (status only for students)
     Route::get('/evaluations', [App\Http\Controllers\StudentEvaluationController::class, 'index'])->name('evaluations.index');
-    
+
     // Final Evaluation Status (status only for students)
     Route::get('/evaluations/final/status', [App\Http\Controllers\StudentFinalEvaluationController::class, 'status'])->name('evaluations.final.status');
-    
+
     // Daily reports removed - now using weekly reports only
-    
+
     // Document Requirements
     Route::get('/documents', [App\Http\Controllers\DocumentController::class, 'index'])->name('documents.index');
     Route::get('/documents/{requirement}', [App\Http\Controllers\DocumentController::class, 'show'])->name('documents.show');
@@ -89,13 +89,13 @@ Route::middleware(['auth', 'profile.complete'])->group(function () {
     Route::delete('/documents/submissions/{submission}/cancel', [App\Http\Controllers\DocumentController::class, 'cancel'])->name('documents.cancel');
     Route::get('/documents/submissions/{submission}/download', [App\Http\Controllers\DocumentController::class, 'download'])->name('documents.download');
     Route::get('/documents/submissions/{submission}/stream', [App\Http\Controllers\DocumentController::class, 'stream'])->name('documents.stream');
-    
+
     // Acceptance Letter Download (auth required)
     Route::get('/acceptance-letters/{letter}/download', [App\Http\Controllers\AcceptanceLetterController::class, 'download'])->name('acceptance-letters.download');
-    
+
     // Student Documents (Resume & Application Letter)
     Route::get('/student-documents', [App\Http\Controllers\StudentDocumentController::class, 'index'])->name('student-documents.index');
-    
+
     // Resume routes
     Route::get('/student-documents/resume/create', [App\Http\Controllers\StudentDocumentController::class, 'createResume'])->name('student-documents.resume.create');
     Route::post('/student-documents/resume', [App\Http\Controllers\StudentDocumentController::class, 'storeResume'])->name('student-documents.resume.store');
@@ -103,7 +103,7 @@ Route::middleware(['auth', 'profile.complete'])->group(function () {
     Route::patch('/student-documents/resume/{resume}', [App\Http\Controllers\StudentDocumentController::class, 'updateResume'])->name('student-documents.resume.update');
     Route::delete('/student-documents/resume/{resume}', [App\Http\Controllers\StudentDocumentController::class, 'destroyResume'])->name('student-documents.resume.destroy');
     Route::get('/student-documents/resume/{resume}/download', [App\Http\Controllers\StudentDocumentController::class, 'downloadResume'])->name('student-documents.resume.download');
-    
+
     // Application Letter routes
     Route::get('/student-documents/application-letter/create', [App\Http\Controllers\StudentDocumentController::class, 'createApplicationLetter'])->name('student-documents.application-letter.create');
     Route::post('/student-documents/application-letter', [App\Http\Controllers\StudentDocumentController::class, 'storeApplicationLetter'])->name('student-documents.application-letter.store');
@@ -111,14 +111,18 @@ Route::middleware(['auth', 'profile.complete'])->group(function () {
     Route::patch('/student-documents/application-letter/{letter}', [App\Http\Controllers\StudentDocumentController::class, 'updateApplicationLetter'])->name('student-documents.application-letter.update');
     Route::delete('/student-documents/application-letter/{letter}', [App\Http\Controllers\StudentDocumentController::class, 'destroyApplicationLetter'])->name('student-documents.application-letter.destroy');
     Route::get('/student-documents/application-letter/{letter}/download', [App\Http\Controllers\StudentDocumentController::class, 'downloadApplicationLetter'])->name('student-documents.application-letter.download');
-    
+
     // Submit documents to coordinator
     Route::post('/student-documents/resume/{resume}/submit', [App\Http\Controllers\StudentDocumentController::class, 'submitResume'])->name('student-documents.resume.submit');
     Route::post('/student-documents/application-letter/{letter}/submit', [App\Http\Controllers\StudentDocumentController::class, 'submitApplicationLetter'])->name('student-documents.application-letter.submit');
-    
+
     // Legacy resume routes (redirect to new routes for backward compatibility)
-    Route::get('/resume', function() { return redirect()->route('student-documents.index'); });
-    Route::get('/resume/create', function() { return redirect()->route('student-documents.resume.create'); });
+    Route::get('/resume', function () {
+    return redirect()->route('student-documents.index');
+    });
+    Route::get('/resume/create', function () {
+    return redirect()->route('student-documents.resume.create');
+    });
 });
 
 // Admin routes
@@ -128,7 +132,7 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
         Route::get('/users', [App\Http\Controllers\AdminController::class, 'users'])->name('users');
         Route::get('/users/create', [App\Http\Controllers\AdminController::class, 'createUser'])->name('users.create');
         Route::post('/users', [App\Http\Controllers\AdminController::class, 'storeUser'])->name('users.store');
-        
+
         // Departments & Programs
         Route::get('/departments', [App\Http\Controllers\AdminDepartmentController::class, 'index'])->name('departments.index');
         Route::post('/departments', [App\Http\Controllers\AdminDepartmentController::class, 'store'])->name('departments.store');
@@ -137,13 +141,13 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
         Route::post('/departments/{department}/programs', [App\Http\Controllers\AdminDepartmentController::class, 'storeProgram'])->name('departments.programs.store');
         Route::put('/programs/{program}', [App\Http\Controllers\AdminDepartmentController::class, 'updateProgram'])->name('programs.update');
         Route::delete('/programs/{program}', [App\Http\Controllers\AdminDepartmentController::class, 'destroyProgram'])->name('programs.destroy');
-        
+
         // Reports & Analytics
         Route::get('/reports', [App\Http\Controllers\AdminReportController::class, 'index'])->name('reports.index');
         Route::get('/reports/attendance', [App\Http\Controllers\AdminReportController::class, 'attendance'])->name('reports.attendance');
         Route::get('/reports/weekly', [App\Http\Controllers\AdminReportController::class, 'weeklyReports'])->name('reports.weekly');
         Route::get('/reports/evaluations', [App\Http\Controllers\AdminReportController::class, 'evaluations'])->name('reports.evaluations');
-        
+
         // Audit Logs
         Route::get('/audit', [App\Http\Controllers\AdminAuditController::class, 'index'])->name('audit.index');
         Route::get('/audit/{audit}', [App\Http\Controllers\AdminAuditController::class, 'show'])->name('audit.show');
@@ -176,7 +180,7 @@ Route::middleware(['auth'])->group(function () {
     // Acceptance Letters Management
     Route::get('/supervisor/acceptance-letters', [App\Http\Controllers\SupervisorAcceptanceController::class, 'index'])->name('supervisor.acceptance.index');
     Route::get('/supervisor/students', [App\Http\Controllers\SupervisorAcceptanceController::class, 'students'])->name('supervisor.students');
-    
+
     // Student Search & Direct Acceptance (NEW FLOW)
     Route::get('/supervisor/students/search', [App\Http\Controllers\SupervisorAcceptanceController::class, 'searchForm'])->name('supervisor.students.search');
     Route::get('/api/supervisor/students/autocomplete', [App\Http\Controllers\SupervisorAcceptanceController::class, 'autocomplete'])->name('supervisor.students.autocomplete');
@@ -185,7 +189,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/supervisor/students/{student}/accept', [App\Http\Controllers\SupervisorAcceptanceController::class, 'acceptStudent'])->name('supervisor.students.accept');
     Route::post('/supervisor/students/{student}/generate-letter', [App\Http\Controllers\SupervisorAcceptanceController::class, 'generateLetter'])->name('supervisor.students.generate');
     Route::get('/supervisor/students/success/{letter}', [App\Http\Controllers\SupervisorAcceptanceController::class, 'showSuccess'])->name('supervisor.students.success');
-    
+
     // Supervisor Monthly Evaluations
     Route::prefix('supervisor/evaluations')->name('supervisor.evaluations.')->group(function () {
         Route::get('/', [App\Http\Controllers\SupervisorEvaluationController::class, 'index'])->name('index');
@@ -194,7 +198,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{evaluation}', [App\Http\Controllers\SupervisorEvaluationController::class, 'show'])->name('show');
         Route::get('/{evaluation}/pdf', [App\Http\Controllers\SupervisorEvaluationController::class, 'downloadPdf'])->name('pdf');
     });
-    
+
     // Supervisor Final Evaluations
     Route::prefix('supervisor/final-evaluations')->name('supervisor.final-evaluations.')->group(function () {
         Route::get('/', [App\Http\Controllers\SupervisorFinalEvaluationController::class, 'index'])->name('index');
@@ -219,7 +223,7 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
     Route::get('/coord/supervisors', [App\Http\Controllers\CoordinatorSupervisorController::class, 'index'])->name('coord.supervisors.index');
     Route::get('/coord/supervisors/create', [App\Http\Controllers\CoordinatorSupervisorController::class, 'create'])->name('coord.supervisors.create');
     Route::post('/coord/supervisors', [App\Http\Controllers\CoordinatorSupervisorController::class, 'store'])->name('coord.supervisors.store');
-    
+
     // Coordinator manage program hours
     Route::get('/coord/program/hours', [App\Http\Controllers\CoordinatorProgramController::class, 'showHours'])->name('coord.program.hours');
     Route::patch('/coord/program/hours', [App\Http\Controllers\CoordinatorProgramController::class, 'updateHours'])->name('coord.program.update-hours');
@@ -237,7 +241,7 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
         Route::get('/{evaluation}/pdf', [App\Http\Controllers\CoordinatorEvaluationController::class, 'downloadPdf'])->name('download-pdf');
         Route::patch('/{evaluation}/review', [App\Http\Controllers\CoordinatorEvaluationController::class, 'markReviewed'])->name('mark-reviewed');
     });
-    
+
     // Coordinator view final evaluations
     Route::prefix('coord/final-evaluations')->name('coordinator.final-evaluations.')->group(function () {
         Route::get('/', [App\Http\Controllers\CoordinatorFinalEvaluationController::class, 'index'])->name('index');
@@ -262,11 +266,11 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
     Route::post('/coord/students/{student}/update-company', [App\Http\Controllers\CoordinatorStudentController::class, 'updateCompany'])->name('coord.students.update-company');
     Route::post('/coord/students/{student}/update-status', [App\Http\Controllers\CoordinatorStudentController::class, 'updateStatus'])->name('coord.students.update-status');
     Route::post('/coord/students/{student}/assign-supervisor', [App\Http\Controllers\CoordinatorStudentController::class, 'assignSupervisor'])->name('coord.students.assign-supervisor');
-    
+
     // Coordinator attendance recovery approval
     Route::post('/coord/attendance/{log}/approve-recovery', [App\Http\Controllers\CoordinatorAttendanceController::class, 'approveRecovery'])->name('coord.attendance.approve-recovery');
     Route::post('/coord/attendance/{log}/reject-recovery', [App\Http\Controllers\CoordinatorAttendanceController::class, 'rejectRecovery'])->name('coord.attendance.reject-recovery');
-    
+
     // Coordinator document review
     Route::get('/coord/documents', [App\Http\Controllers\DocumentController::class, 'index'])->name('coord.documents.index');
     Route::post('/coord/documents/submissions/{submission}/review', [App\Http\Controllers\DocumentController::class, 'review'])->name('coord.documents.review');
@@ -276,20 +280,20 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
     Route::get('/api/attendance/{date}', function (Request $request, $date) {
         try {
             $user = Auth::user();
-            
+
             // Only allow students
-            if (!$user->isStudent()) {
+            if (! $user->isStudent()) {
                 return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
             }
-            
+
             // Validate date format
             $dateObj = \Carbon\Carbon::parse($date);
-            
+
             // Get attendance for the selected date
             $attendance = \App\Models\AttendanceLog::where('student_user_id', $user->id)
                 ->whereDate('work_date', $dateObj->format('Y-m-d'))
                 ->first();
-            
+
             if ($attendance) {
                 return response()->json([
                     'success' => true,
@@ -300,18 +304,18 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
                         'time_out_formatted' => $attendance->time_out_formatted,
                         'hours_worked_formatted' => $attendance->hours_worked_formatted,
                         'minutes_worked' => $attendance->minutes_worked,
-                    ]
+                    ],
                 ]);
             }
-            
+
             return response()->json([
                 'success' => false,
-                'message' => 'No attendance found for this date'
+                'message' => 'No attendance found for this date',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid date format'
+                'message' => 'Invalid date format',
             ], 400);
         }
     })->name('api.attendance');

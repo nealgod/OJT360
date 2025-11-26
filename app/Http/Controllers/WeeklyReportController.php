@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AcceptanceLetter;
 use App\Models\AttendanceLog;
+use App\Models\AuditLog;
 use App\Models\WeeklyReport;
 use App\Services\WeeklyReportPdfService;
 use Carbon\Carbon;
@@ -28,7 +29,7 @@ class WeeklyReportController extends Controller
             ->orderByDesc('start_date')
             ->first();
 
-        if (!$acceptance || !$acceptance->start_date) {
+        if (! $acceptance || ! $acceptance->start_date) {
             return redirect()->route('student.placement.show')
                 ->with('error', 'You need an acceptance letter with a start date before creating weekly reports.');
         }
@@ -81,17 +82,17 @@ class WeeklyReportController extends Controller
         foreach ($existingReports as $report) {
             $reportStart = Carbon::parse($report->week_start_date);
             $reportEnd = Carbon::parse($report->week_end_date);
-            
+
             // Find overlapping date range
             $overlapStart = $weekStart->greaterThan($reportStart) ? $weekStart : $reportStart;
             $overlapEnd = $weekEnd->lessThan($reportEnd) ? $weekEnd : $reportEnd;
-            
+
             // Check if student had attendance during overlap
             $hasAttendance = AttendanceLog::where('student_user_id', Auth::id())
                 ->whereBetween('work_date', [$overlapStart->toDateString(), $overlapEnd->toDateString()])
                 ->whereNotNull('time_in')
                 ->exists();
-            
+
             if ($hasAttendance) {
                 return redirect()->route('reports.weekly.show', $report)
                     ->with('info', 'You already have a report covering dates with attendance. You can only create new reports for dates you were absent.');
@@ -111,7 +112,7 @@ class WeeklyReportController extends Controller
             })->join(', ');
 
             return redirect()->route('reports.weekly.index')
-                ->with('error', 'Cannot create report yet. You have incomplete attendance (no time out) on: ' . $incompleteDates . '. Please complete your time out first or wait until the day is complete.');
+                ->with('error', 'Cannot create report yet. You have incomplete attendance (no time out) on: '.$incompleteDates.'. Please complete your time out first or wait until the day is complete.');
         }
 
         $attendanceSummary = $this->getAttendanceSummary($weekStart, $weekEnd);
@@ -146,10 +147,10 @@ class WeeklyReportController extends Controller
         // Check if at least one day with attendance has an activity
         $hasContent = collect($validated['entries'])->contains(function ($entry) {
             // Only check entries that have hours (meaning they have attendance)
-            return !empty($entry['activity']) && (!empty($entry['hours']) && (float) $entry['hours'] > 0);
+            return ! empty($entry['activity']) && (! empty($entry['hours']) && (float) $entry['hours'] > 0);
         });
 
-        if (!$hasContent) {
+        if (! $hasContent) {
             return back()
                 ->withErrors(['entries' => 'Please add activities for at least one day with attendance.'])
                 ->withInput();
@@ -182,17 +183,17 @@ class WeeklyReportController extends Controller
         foreach ($existingReports as $report) {
             $reportStart = Carbon::parse($report->week_start_date);
             $reportEnd = Carbon::parse($report->week_end_date);
-            
+
             // Find overlapping date range
             $overlapStart = $weekStart->greaterThan($reportStart) ? $weekStart : $reportStart;
             $overlapEnd = $weekEnd->lessThan($reportEnd) ? $weekEnd : $reportEnd;
-            
+
             // Check if student had attendance during overlap
             $hasAttendance = AttendanceLog::where('student_user_id', Auth::id())
                 ->whereBetween('work_date', [$overlapStart->toDateString(), $overlapEnd->toDateString()])
                 ->whereNotNull('time_in')
                 ->exists();
-            
+
             if ($hasAttendance) {
                 return redirect()->route('reports.weekly.index')
                     ->with('info', 'A report already exists covering dates with attendance. You can only create new reports for dates you were absent.');
@@ -212,7 +213,7 @@ class WeeklyReportController extends Controller
             })->join(', ');
 
             return back()
-                ->withErrors(['week_end_date' => 'Cannot submit report yet. You have incomplete attendance (no time out) on: ' . $incompleteDates . '. Please complete your time out first.'])
+                ->withErrors(['week_end_date' => 'Cannot submit report yet. You have incomplete attendance (no time out) on: '.$incompleteDates.'. Please complete your time out first.'])
                 ->withInput();
         }
 
@@ -223,7 +224,7 @@ class WeeklyReportController extends Controller
         $studentProfile = Auth::user()->studentProfile;
         if ($studentProfile && $studentProfile->program_id) {
             $coordinator = \App\Models\User::where('role', 'coordinator')
-                ->whereHas('coordinatorProfile', function($q) use ($studentProfile) {
+                ->whereHas('coordinatorProfile', function ($q) use ($studentProfile) {
                     $q->where('program_id', $studentProfile->program_id);
                 })
                 ->first();
@@ -291,12 +292,12 @@ class WeeklyReportController extends Controller
         $daysPresent = $logs->filter(function ($log) {
             return $log->time_in !== null || ($log->minutes_worked ?? 0) > 0;
         })->count();
-        
+
         $daysLate = $logs->where('status', 'late')->count();
-        
+
         // Calculate total days in selected range
         $totalDaysInRange = $weekStart->diffInDays($weekEnd) + 1;
-        
+
         // Days absent = total days in range - days present
         $daysAbsent = max(0, $totalDaysInRange - $daysPresent);
 
@@ -308,8 +309,6 @@ class WeeklyReportController extends Controller
             'hours_by_date' => $hoursByDate,
         ];
     }
-
-
 
     private function buildWeekEntriesFromAttendance(Carbon $weekStart, Carbon $weekEnd): array
     {
@@ -380,6 +379,7 @@ class WeeklyReportController extends Controller
                     $entry['activity'] = $oldEntries[$index]['activity'] ?? $entry['activity'];
                     $entry['hours'] = $oldEntries[$index]['hours'] ?? $entry['hours'];
                 }
+
                 return $entry;
             })
             ->all();
@@ -406,10 +406,10 @@ class WeeklyReportController extends Controller
 
         // Check if at least one entry has activity
         $hasActivity = collect($weekly->entries)->some(function ($entry) {
-            return !empty($entry['activity']);
+            return ! empty($entry['activity']);
         });
 
-        if (!$hasActivity) {
+        if (! $hasActivity) {
             return redirect()->route('reports.weekly.show', $weekly)
                 ->with('error', 'Please add at least one activity before submitting.');
         }
@@ -417,8 +417,10 @@ class WeeklyReportController extends Controller
         // Update status to submitted
         $weekly->update([
             'status' => 'submitted',
-            'submitted_at' => now()
+            'submitted_at' => now(),
         ]);
+
+        AuditLog::log('weekly_submitted', 'Weekly report submitted', 'WeeklyReport', $weekly->id);
 
         return redirect()->route('reports.weekly.show', $weekly)
             ->with('success', 'Weekly report submitted successfully! Your coordinator will review it.');
@@ -444,4 +446,3 @@ class WeeklyReportController extends Controller
             ->with('success', "Weekly report (Week {$weekNumber}) has been deleted successfully.");
     }
 }
-

@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use App\Models\CoordinatorProfile;
 use App\Models\Company;
+use App\Models\CoordinatorProfile;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -79,4 +79,3 @@ class CompanyAuditTest extends TestCase
         ]);
     }
 }
-

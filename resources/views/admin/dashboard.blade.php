@@ -139,17 +139,19 @@
                     </div>
                 </div>
 
-                <!-- System Health -->
-                <div class="bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg p-6 text-white hover:shadow-md transition-shadow">
+                <!-- Active OJT Rate -->
+                <div class="bg-gradient-to-br from-ojt-primary to-maroon-700 rounded-lg p-6 text-white hover:shadow-md transition-shadow">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm text-white/80 mb-1">System Health</p>
-                            <p class="text-3xl font-bold">{{ $stats['system_health'] }}%</p>
-                            <p class="text-xs text-white/70 mt-1">Verified users</p>
+                            <p class="text-sm text-white/80 mb-1">Active OJT Rate</p>
+                            <p class="text-3xl font-bold">
+                                {{ ($stats['students'] ?? 0) > 0 ? round((($stats['active_interns'] ?? 0) / max($stats['students'], 1)) * 100) : 0 }}%
+                            </p>
+                            <p class="text-xs text-white/70 mt-1">{{ $stats['active_interns'] }} of {{ $stats['students'] }} interns active</p>
                         </div>
                         <div class="bg-white/20 rounded-full p-3">
                             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m4 4v-1a4 4 0 10-8 0v1m8 0h2m-10 0H5"/>
                             </svg>
                         </div>
                     </div>

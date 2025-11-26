@@ -31,5 +31,3 @@ class Department extends Model
         );
     }
 }
-
-

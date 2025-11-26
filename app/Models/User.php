@@ -131,7 +131,7 @@ class User extends Authenticatable implements MustVerifyEmail
     // Check if user has active OJT (for students)
     public function hasActiveOJT()
     {
-        if (!$this->isStudent() || !$this->studentProfile) {
+        if (! $this->isStudent() || ! $this->studentProfile) {
             return false;
         }
 
@@ -143,23 +143,27 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         if ($this->isStudent()) {
             $profile = $this->studentProfile;
+
             return (bool) ($profile && $profile->student_id && $profile->course && $profile->department);
         }
         if ($this->isCoordinator()) {
             $profile = $this->coordinatorProfile;
+
             return (bool) ($profile && $profile->employee_id && $profile->department);
         }
         if ($this->isSupervisor()) {
             $profile = $this->supervisorProfile;
+
             return (bool) ($profile && $profile->company_id);
         }
+
         return true; // Admins considered complete
     }
 
     // Get the appropriate profile based on role
     public function getProfile()
     {
-        return match($this->role) {
+        return match ($this->role) {
             'intern' => $this->studentProfile,
             'coordinator' => $this->coordinatorProfile,
             'supervisor' => $this->supervisorProfile,
@@ -168,8 +172,9 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     // Get required OJT hours for student's course
-    public function getRequiredHours() {
-        if (!$this->isStudent() || !$this->studentProfile) {
+    public function getRequiredHours()
+    {
+        if (! $this->isStudent() || ! $this->studentProfile) {
             return 0;
         }
 
@@ -202,8 +207,9 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     // Get completed hours
-    public function getCompletedHours() {
-        if (!$this->isStudent() || !$this->studentProfile) {
+    public function getCompletedHours()
+    {
+        if (! $this->isStudent() || ! $this->studentProfile) {
             return 0;
         }
 
@@ -211,7 +217,8 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     // Get remaining hours
-    public function getRemainingHours() {
+    public function getRemainingHours()
+    {
         return $this->getRequiredHours() - $this->getCompletedHours();
     }
 
@@ -222,19 +229,19 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         // For students, check StudentProfile
         if ($this->isStudent() && $this->studentProfile && $this->studentProfile->profile_image) {
-            return asset('storage/' . $this->studentProfile->profile_image);
+            return asset('storage/'.$this->studentProfile->profile_image);
         }
-        
+
         // For coordinators, check CoordinatorProfile
         if ($this->isCoordinator() && $this->coordinatorProfile && $this->coordinatorProfile->profile_image) {
-            return asset('storage/' . $this->coordinatorProfile->profile_image);
+            return asset('storage/'.$this->coordinatorProfile->profile_image);
         }
-        
+
         // For supervisors, check SupervisorProfile
         if ($this->isSupervisor() && $this->supervisorProfile && $this->supervisorProfile->profile_image) {
-            return asset('storage/' . $this->supervisorProfile->profile_image);
+            return asset('storage/'.$this->supervisorProfile->profile_image);
         }
-        
+
         return null;
     }
 
@@ -246,6 +253,7 @@ class User extends Authenticatable implements MustVerifyEmail
         $initials = strtoupper(substr($this->name, 0, 1));
         $colors = ['bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500'];
         $colorIndex = ord($initials) % count($colors);
+
         return $colors[$colorIndex];
     }
 
@@ -257,11 +265,11 @@ class User extends Authenticatable implements MustVerifyEmail
         $profileImage = $this->profile_image;
         $initials = strtoupper(substr($this->name, 0, 1));
         $avatarColor = $this->getAvatarColor();
-        
+
         if ($profileImage) {
-            return '<img src="' . $profileImage . '" alt="' . $this->name . '" class="' . $size . ' rounded-full object-cover">';
+            return '<img src="'.$profileImage.'" alt="'.$this->name.'" class="'.$size.' rounded-full object-cover">';
         } else {
-            return '<div class="' . $size . ' ' . $avatarColor . ' rounded-full flex items-center justify-center text-white font-bold">' . $initials . '</div>';
+            return '<div class="'.$size.' '.$avatarColor.' rounded-full flex items-center justify-center text-white font-bold">'.$initials.'</div>';
         }
     }
 }

@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
 use App\Models\StudentProfile;
+use App\Models\User;
 use App\Models\WeeklyReport;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -40,7 +40,7 @@ class WeeklyReportAuditTest extends TestCase
             'week_number' => 1,
             'week_start_date' => now()->startOfWeek(),
             'week_end_date' => now()->endOfWeek(),
-            'entries' => [ ['date' => now()->toDateString(), 'activity' => 'A', 'hours' => 8] ],
+            'entries' => [['date' => now()->toDateString(), 'activity' => 'A', 'hours' => 8]],
         ]);
 
         $this->actingAs($student);

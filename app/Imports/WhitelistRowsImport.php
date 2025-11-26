@@ -12,5 +12,3 @@ class WhitelistRowsImport implements ToArray, WithHeadingRow
         return $array; // handled in controller via Excel::toArray
     }
 }
-
-

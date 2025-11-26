@@ -3,11 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\AcceptanceLetter;
-use App\Models\User;
-use App\Support\ProgramCodeResolver;
-use App\Models\StudentDocumentSubmission;
 use App\Models\DocumentRequirement;
+use App\Models\StudentDocumentSubmission;
+use App\Models\User;
 use App\Services\PrePlacementService;
+use App\Support\ProgramCodeResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -20,20 +20,20 @@ class SupervisorAcceptanceController extends Controller
     public function index()
     {
         $supervisor = Auth::user();
-        
+
         // Get generated letters
         $generatedLetters = AcceptanceLetter::where('supervisor_user_id', $supervisor->id)
             ->with('student', 'company')
             ->latest()
             ->paginate(10);
-        
+
         // Count of students supervised
         $studentsCount = User::where('role', 'intern')
-            ->whereHas('studentProfile', function($q) use ($supervisor) {
+            ->whereHas('studentProfile', function ($q) use ($supervisor) {
                 $q->where('supervisor_id', $supervisor->id);
             })
             ->count();
-        
+
         return view('supervisor.acceptance.index', compact('generatedLetters', 'studentsCount'));
     }
 
@@ -75,34 +75,34 @@ class SupervisorAcceptanceController extends Controller
     public function autocomplete(Request $request)
     {
         $query = $request->get('q', '');
-        
+
         if (strlen($query) < 2) {
             return response()->json([]);
         }
 
         // Search students by student_id, limit to 5 results
         $students = User::where('role', 'intern')
-            ->whereHas('studentProfile', function($q) use ($query) {
-                $q->where('student_id', 'LIKE', '%' . $query . '%');
+            ->whereHas('studentProfile', function ($q) use ($query) {
+                $q->where('student_id', 'LIKE', '%'.$query.'%');
             })
-            ->with(['studentProfile' => function($q) {
+            ->with(['studentProfile' => function ($q) {
                 $q->select('user_id', 'student_id', 'course', 'department', 'supervisor_id', 'profile_image');
             }])
             ->limit(5)
             ->get()
-            ->map(function($student) {
+            ->map(function ($student) {
                 $profileImage = null;
                 if ($student->studentProfile && $student->studentProfile->profile_image) {
                     $profileImage = Storage::url($student->studentProfile->profile_image);
                 }
-                
+
                 return [
                     'id' => $student->id,
                     'student_id' => $student->studentProfile->student_id ?? '',
                     'name' => $student->name,
                     'course' => $student->studentProfile->course ?? 'N/A',
                     'department' => $student->studentProfile->department ?? 'N/A',
-                    'has_supervisor' => !is_null($student->studentProfile->supervisor_id ?? null),
+                    'has_supervisor' => ! is_null($student->studentProfile->supervisor_id ?? null),
                     'profile_image' => $profileImage,
                     'initials' => substr($student->name, 0, 1),
                 ];
@@ -124,13 +124,13 @@ class SupervisorAcceptanceController extends Controller
 
         // Search for student by student_id in student_profiles table
         $student = User::where('role', 'intern')
-            ->whereHas('studentProfile', function($q) use ($studentId) {
+            ->whereHas('studentProfile', function ($q) use ($studentId) {
                 $q->where('student_id', $studentId);
             })
             ->with(['studentProfile', 'documentSubmissions.requirement'])
             ->first();
 
-        if (!$student) {
+        if (! $student) {
             return back()->with('error', 'Student not found. Please check the Student ID and try again.');
         }
 
@@ -209,7 +209,7 @@ class SupervisorAcceptanceController extends Controller
 
         $user = Auth::user();
 
-        if (!$user->isSupervisor()) {
+        if (! $user->isSupervisor()) {
             abort(403);
         }
 
@@ -227,14 +227,14 @@ class SupervisorAcceptanceController extends Controller
             'signature_data' => 'nullable|string',
             'additional_notes' => 'nullable|string',
         ]);
-        
+
         // Add shift times and break minutes to work schedule
         $validated['work_schedule']['shift_start'] = $validated['shift_start'];
         $validated['work_schedule']['shift_end'] = $validated['shift_end'];
         $validated['work_schedule']['break_minutes'] = $validated['break_minutes'] ?? 0;
 
         // Generate document ID
-        $documentId = 'ACC-' . date('Y') . '-' . str_pad(AcceptanceLetter::count() + 1, 6, '0', STR_PAD_LEFT);
+        $documentId = 'ACC-'.date('Y').'-'.str_pad(AcceptanceLetter::count() + 1, 6, '0', STR_PAD_LEFT);
 
         // Generate PDF
         $letterPath = $this->generateAcceptanceLetterPDF($student, $validated, $documentId);
@@ -306,15 +306,15 @@ class SupervisorAcceptanceController extends Controller
         try {
             $student->notify(new \App\Notifications\AcceptanceLetterGenerated($letter));
         } catch (\Exception $e) {
-            \Log::error('Failed to send email notification: ' . $e->getMessage());
+            \Log::error('Failed to send email notification: '.$e->getMessage());
         }
-        
+
         // Create in-app notification for student
         \App\Models\Notification::create([
             'user_id' => $student->id,
             'type' => 'acceptance_letter_generated',
             'title' => '✅ Acceptance Letter Generated',
-            'message' => 'Your supervisor has generated your OJT Acceptance Letter for ' . $letter->job_title . ' at ' . $letter->company->name . '. The letter is now available in your documents.',
+            'message' => 'Your supervisor has generated your OJT Acceptance Letter for '.$letter->job_title.' at '.$letter->company->name.'. The letter is now available in your documents.',
             'data' => [
                 'letter_id' => $letter->id,
                 'document_id' => $letter->document_id,
@@ -327,28 +327,28 @@ class SupervisorAcceptanceController extends Controller
             ],
             'read' => false,
         ]);
-        
+
         // Notify coordinator
         if ($student->studentProfile && $student->studentProfile->department && $student->studentProfile->course) {
-            $coordinator = \App\Models\User::whereHas('coordinatorProfile', function($query) use ($student) {
+            $coordinator = \App\Models\User::whereHas('coordinatorProfile', function ($query) use ($student) {
                 $query->where('department', $student->studentProfile->department)
-                      ->whereHas('program', function($q) use ($student) {
+                      ->whereHas('program', function ($q) use ($student) {
                           $q->where('name', $student->studentProfile->course);
                       });
             })->first();
-            
+
             if ($coordinator) {
                 try {
                     $coordinator->notify(new \App\Notifications\AcceptanceLetterGenerated($letter));
                 } catch (\Exception $e) {
-                    \Log::error('Failed to send email notification to coordinator: ' . $e->getMessage());
+                    \Log::error('Failed to send email notification to coordinator: '.$e->getMessage());
                 }
-                
+
                 \App\Models\Notification::create([
                     'user_id' => $coordinator->id,
                     'type' => 'acceptance_letter_generated',
                     'title' => '✅ Acceptance Letter Generated',
-                    'message' => 'A supervisor has generated an acceptance letter for ' . $student->name . ' (' . $letter->job_title . ' at ' . $letter->company->name . ').',
+                    'message' => 'A supervisor has generated an acceptance letter for '.$student->name.' ('.$letter->job_title.' at '.$letter->company->name.').',
                     'data' => [
                         'letter_id' => $letter->id,
                         'document_id' => $letter->document_id,
@@ -378,17 +378,17 @@ class SupervisorAcceptanceController extends Controller
         $studentProfile = $student->studentProfile;
         $supervisor = Auth::user();
         $company = $supervisor->supervisorProfile->company;
-        
+
         // Create PDF using FPDI
         $pdf = new \setasign\Fpdi\Fpdi();
-        
+
         // Get appropriate template based on student's program
         $templatePath = $this->getTemplatePath($studentProfile->course);
-        
+
         if (file_exists($templatePath)) {
             $pdf->setSourceFile($templatePath);
             $tplId = $pdf->importPage(1);
-            
+
             // Get page dimensions from template
             $size = $pdf->getTemplateSize($tplId);
             $pdf->addPage($size['orientation'], [$size['width'], $size['height']]);
@@ -406,7 +406,7 @@ class SupervisorAcceptanceController extends Controller
             $supervisorDepartment = $data['department'] ?? ($supervisor->supervisorProfile->department ?? '');
             $supervisorContact = $supervisor->supervisorProfile->phone ?: $supervisor->email;
             $schedule = $this->formatWorkSchedule($data['work_schedule']);
-            $totalHours = $data['total_hours'] . ' hours';
+            $totalHours = $data['total_hours'].' hours';
             $effectiveDate = date('M d, Y', strtotime($data['effective_date']));
 
             $writeField = function (float $x, float $y, ?string $text, array $options = []) use ($pdf) {
@@ -428,7 +428,7 @@ class SupervisorAcceptanceController extends Controller
             };
 
             // Header section
-            $writeField(1.23 * 25.4, 1.97 * 25.4, ': ' . now()->format('F d, Y'), ['width' => 70]);
+            $writeField(1.23 * 25.4, 1.97 * 25.4, ': '.now()->format('F d, Y'), ['width' => 70]);
             $writeField(0.76 * 25.4, 2.70 * 25.4, $student->name, ['width' => 95, 'font' => ['Arial', 'B', 13]]);
             $writeField(3.21 * 25.4, 3.55 * 25.4, $companyName, [
                 'width' => 80,
@@ -473,21 +473,20 @@ class SupervisorAcceptanceController extends Controller
                 'align' => 'L',
                 'font' => ['Arial', 'B', 12],
             ]);
-            
         } else {
             // Fallback: Generate simple PDF without template
             $pdf->AddPage('P', [215.9, 330.2]);
             $pdf->SetFont('Arial', 'B', 16);
             $pdf->Cell(0, 10, 'OJT ACCEPTANCE FORM', 0, 1, 'C');
             $pdf->Ln(10);
-            
+
             $pdf->SetFont('Arial', '', 11);
-            $pdf->Cell(0, 8, 'Date: ' . now()->format('F d, Y'), 0, 1);
+            $pdf->Cell(0, 8, 'Date: '.now()->format('F d, Y'), 0, 1);
             $pdf->Ln(5);
-            
+
             $pdf->MultiCell(0, 6, "This is to signify the approval of on-the-job request allowing {$student->name}, a {$studentProfile->course} student, to render practicum at {$company->name}.");
             $pdf->Ln(10);
-            
+
             $pdf->SetFont('Arial', 'B', 11);
             $pdf->Cell(0, 8, 'Job Assignment Details:', 0, 1);
             $pdf->SetFont('Arial', '', 10);
@@ -498,11 +497,11 @@ class SupervisorAcceptanceController extends Controller
             $pdf->Cell(60, 7, 'Immediate Supervisor:', 0, 0);
             $pdf->Cell(0, 7, $data['immediate_supervisor'], 0, 1);
             $pdf->Cell(60, 7, 'Total Hours:', 0, 0);
-            $pdf->Cell(0, 7, $data['total_hours'] . ' hours', 0, 1);
+            $pdf->Cell(0, 7, $data['total_hours'].' hours', 0, 1);
             $pdf->Cell(60, 7, 'Effective Date:', 0, 0);
             $pdf->Cell(0, 7, date('M d, Y', strtotime($data['effective_date'])), 0, 1);
             $pdf->Ln(10);
-            
+
             $pdf->SetFont('Arial', 'B', 11);
             $pdf->Cell(0, 8, 'Company Representative:', 0, 1);
             $pdf->SetFont('Arial', '', 10);
@@ -510,22 +509,22 @@ class SupervisorAcceptanceController extends Controller
             $pdf->Cell(0, 7, $supervisor->supervisorProfile->position ?? '', 0, 1);
             $pdf->Cell(0, 7, $supervisor->email, 0, 1);
         }
-        
+
         // Save PDF
-        $filename = 'acceptance_letter_' . $documentId . '.pdf';
-        $path = 'acceptance-letters/' . $filename;
-        $fullPath = storage_path('app/public/' . $path);
-        
+        $filename = 'acceptance_letter_'.$documentId.'.pdf';
+        $path = 'acceptance-letters/'.$filename;
+        $fullPath = storage_path('app/public/'.$path);
+
         $directory = dirname($fullPath);
-        if (!file_exists($directory)) {
+        if (! file_exists($directory)) {
             mkdir($directory, 0755, true);
         }
-        
+
         $pdf->Output('F', $fullPath);
-        
+
         return $path;
     }
-    
+
     /**
      * Format work schedule for display in PDF
      */
@@ -539,9 +538,9 @@ class SupervisorAcceptanceController extends Controller
             'thursday' => 'Thu',
             'friday' => 'Fri',
             'saturday' => 'Sat',
-            'sunday' => 'Sun'
+            'sunday' => 'Sun',
         ];
-        
+
         $days = [];
         foreach ($schedule as $day => $data) {
             if ($day === 'shift_start' || $day === 'shift_end') {
@@ -551,19 +550,19 @@ class SupervisorAcceptanceController extends Controller
                 $days[] = $dayAbbreviations[$day] ?? ucfirst($day);
             }
         }
-        
+
         if (empty($days)) {
             return 'Not specified';
         }
-        
+
         // Convert 24-hour format to 12-hour format
         $start = $schedule['shift_start'] ?? '08:00';
         $end = $schedule['shift_end'] ?? '17:00';
-        
+
         $startTime = date('g:i A', strtotime($start));
         $endTime = date('g:i A', strtotime($end));
-        
-        return implode(', ', $days) . ' (' . $startTime . ' - ' . $endTime . ')';
+
+        return implode(', ', $days).' ('.$startTime.' - '.$endTime.')';
     }
 
     /**
@@ -572,12 +571,12 @@ class SupervisorAcceptanceController extends Controller
     public function showSuccess($letterId)
     {
         $letter = AcceptanceLetter::with('student', 'company')->findOrFail($letterId);
-        
+
         // Ensure the logged-in supervisor owns this letter
         if ($letter->supervisor_user_id !== Auth::id()) {
             abort(403);
         }
-        
+
         return view('supervisor.students.success', compact('letter'));
     }
 
@@ -588,24 +587,26 @@ class SupervisorAcceptanceController extends Controller
     {
         $programCode = ProgramCodeResolver::resolve($course);
         $templatePath = resource_path("templates/{$programCode}-acceptance-letter.pdf");
-        
+
         if (file_exists($templatePath)) {
             \Log::info("Using template for {$programCode}: {$templatePath}");
+
             return $templatePath;
         }
-        
+
         // Fallback to BSIT template if program-specific not found
         $fallbackPath = resource_path('templates/BSIT-acceptance-letter.pdf');
-        
+
         if (file_exists($fallbackPath)) {
             \Log::warning("Template not found for {$programCode}, using BSIT template");
+
             return $fallbackPath;
         }
-        
+
         // Last resort: use old template name
         $legacyPath = resource_path('templates/BSITacceptancelettertemplate.pdf');
         \Log::warning("Using legacy BSIT template for {$programCode}");
+
         return $legacyPath;
     }
 }
-

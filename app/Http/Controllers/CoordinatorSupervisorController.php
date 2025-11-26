@@ -18,7 +18,7 @@ class CoordinatorSupervisorController extends Controller
         $department = $coordinator->coordinatorProfile?->department;
         $programName = optional($coordinator->coordinatorProfile?->program)->name;
         $programFilter = $programName ? strtolower($programName) : null;
-        
+
         $supervisors = User::where('role', 'supervisor')
             ->whereHas('studentProfiles', function ($query) use ($department, $programFilter) {
                 $query->where('department', $department);
@@ -46,7 +46,7 @@ class CoordinatorSupervisorController extends Controller
             ])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
-            
+
         return view('coord.supervisors.index', compact('supervisors', 'department', 'programName'));
     }
 
@@ -91,7 +91,7 @@ class CoordinatorSupervisorController extends Controller
         try {
             Mail::to($email)->send(new SupervisorVerificationEmail($registration));
         } catch (\Exception $e) {
-            Log::error('Coordinator supervisor invite failed: ' . $e->getMessage());
+            Log::error('Coordinator supervisor invite failed: '.$e->getMessage());
 
             return back()->with('error', 'Failed to send the invitation email. Please try again.')->withInput();
         }

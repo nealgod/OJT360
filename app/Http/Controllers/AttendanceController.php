@@ -11,17 +11,17 @@ class AttendanceController extends Controller
     public function index()
     {
         $today = now()->toDateString();
-        
+
         // Get today's log specifically for the JavaScript
         $todayLog = AttendanceLog::where('student_user_id', Auth::id())
             ->where('work_date', $today)
             ->first();
-            
+
         // Get all logs for pagination
         $logs = AttendanceLog::where('student_user_id', Auth::id())
             ->orderByDesc('work_date')
             ->paginate(10);
-            
+
         return view('attendance.index', compact('logs', 'todayLog'));
     }
 
@@ -34,7 +34,7 @@ class AttendanceController extends Controller
 
             $user = Auth::user();
 
-            if (!$user->hasActiveOJT()) {
+            if (! $user->hasActiveOJT()) {
                 return back()->with('error', 'You must have an active OJT status to use attendance. Please contact your coordinator.');
             }
 
@@ -45,19 +45,20 @@ class AttendanceController extends Controller
             if ($acceptance && $acceptance->start_date) {
                 $startDate = $acceptance->start_date->startOfDay();
                 if (now()->startOfDay()->lt($startDate)) {
-                    $message = 'Your OJT schedule begins on ' . $acceptance->start_date->format('F j, Y') . '. Time in will be available on that date.';
+                    $message = 'Your OJT schedule begins on '.$acceptance->start_date->format('F j, Y').'. Time in will be available on that date.';
                     if ($request->ajax()) {
                         return response()->json([
                             'success' => false,
                             'message' => $message,
                         ], 422);
                     }
+
                     return back()->with('error', $message);
                 }
             }
 
             $today = now()->toDateString();
-            
+
             // Check if already timed in today
             $existingLog = AttendanceLog::where('student_user_id', $user->id)
                 ->where('work_date', $today)
@@ -73,20 +74,19 @@ class AttendanceController extends Controller
                 ->where('work_date', $today)
                 ->first();
 
-            if (!$log) {
+            if (! $log) {
                 $log = AttendanceLog::create([
                     'student_user_id' => $user->id,
                     'work_date' => $today,
-                    'company_id' => $user->studentProfile?->assigned_company_id
+                    'company_id' => $user->studentProfile?->assigned_company_id,
                 ]);
             }
-            
 
             $path = $request->file('photo_in')->store('attendance-photos', 'public');
-            
+
             // Ensure consistent timezone handling
             $timeIn = now()->setTimezone(config('timezone.default', 'Asia/Manila'));
-            
+
             $log->update([
                 'time_in' => $timeIn->format('H:i:s'), // Store in 24-hour format for database
                 'photo_in_path' => $path,
@@ -95,31 +95,30 @@ class AttendanceController extends Controller
                 'lng_in' => $request->input('lng_in'),
             ]);
 
-            
             // Check if this is an AJAX request
             if (request()->ajax()) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Timed in successfully.',
-                    'time_in' => $log->time_in
+                    'time_in' => $log->time_in,
                 ]);
             }
-            
+
             return back()->with('success', 'Timed in successfully.');
         } catch (\Exception $e) {
-            \Log::error('Time in error: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
+            \Log::error('Time in error: '.$e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
             ]);
-            
+
             // Check if this is an AJAX request
             if (request()->ajax()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Failed to time in: ' . $e->getMessage()
+                    'message' => 'Failed to time in: '.$e->getMessage(),
                 ], 400);
             }
-            
-            return back()->with('error', 'Failed to time in: ' . $e->getMessage());
+
+            return back()->with('error', 'Failed to time in: '.$e->getMessage());
         }
     }
 
@@ -131,7 +130,7 @@ class AttendanceController extends Controller
             ]);
 
             $user = Auth::user();
-            if (!$user->hasActiveOJT()) {
+            if (! $user->hasActiveOJT()) {
                 return back()->with('error', 'You must have an active OJT status to use attendance. Please contact your coordinator.');
             }
 
@@ -142,13 +141,14 @@ class AttendanceController extends Controller
             if ($acceptance && $acceptance->start_date) {
                 $startDate = $acceptance->start_date->startOfDay();
                 if (now()->startOfDay()->lt($startDate)) {
-                    $message = 'Your OJT schedule begins on ' . $acceptance->start_date->format('F j, Y') . '. Time out will be available on that date.';
+                    $message = 'Your OJT schedule begins on '.$acceptance->start_date->format('F j, Y').'. Time out will be available on that date.';
                     if ($request->ajax()) {
                         return response()->json([
                             'success' => false,
                             'message' => $message,
                         ], 422);
                     }
+
                     return back()->with('error', $message);
                 }
             }
@@ -158,7 +158,7 @@ class AttendanceController extends Controller
                 ->where('work_date', $today)
                 ->first();
 
-            if (!$log || !$log->time_in) {
+            if (! $log || ! $log->time_in) {
                 return back()->with('error', 'Please time in first.');
             }
             if ($log->time_out) {
@@ -175,38 +175,40 @@ class AttendanceController extends Controller
                     'user_id' => $user->id,
                     'work_date' => $log->work_date,
                     'time_in' => $log->time_in,
-                    'error' => $e->getMessage()
+                    'error' => $e->getMessage(),
                 ]);
+
                 return back()->with('error', 'Invalid time in record. Please contact your coordinator.');
             }
-            
+
             // Ensure consistent timezone for time out
             $timeOut = now()->setTimezone(config('timezone.default', 'Asia/Manila'));
-            
+
             // Validate time out is after time in
             if ($timeOut->lt($timeIn)) {
                 \Log::warning('Time out before time in', [
                     'user_id' => $user->id,
                     'time_in' => $timeIn->format('H:i:s'),
-                    'time_out' => $timeOut->format('H:i:s')
+                    'time_out' => $timeOut->format('H:i:s'),
                 ]);
+
                 return back()->with('error', 'Time out cannot be before time in. Please check your device clock.');
             }
-            
+
             $totalMinutes = $timeIn->diffInMinutes($timeOut);
 
             $acceptance = $acceptance ?? \App\Models\AcceptanceLetter::where('student_user_id', $user->id)
                 ->latest()
                 ->first();
             $scheduledBreakMinutes = $acceptance?->work_schedule['break_minutes'] ?? config('timezone.default_break_duration', 60);
-            if (!is_numeric($scheduledBreakMinutes)) {
+            if (! is_numeric($scheduledBreakMinutes)) {
                 $scheduledBreakMinutes = config('timezone.default_break_duration', 60);
             }
             $scheduledBreakMinutes = (int) $scheduledBreakMinutes;
             if ($scheduledBreakMinutes > config('timezone.max_break_duration', 240)) {
                 \Log::warning('Excessive break time', [
                     'user_id' => $user->id,
-                    'break_minutes' => $scheduledBreakMinutes
+                    'break_minutes' => $scheduledBreakMinutes,
                 ]);
                 $scheduledBreakMinutes = config('timezone.default_break_duration', 60);
             }
@@ -221,7 +223,7 @@ class AttendanceController extends Controller
                 'lat_out' => $request->input('lat_out'),
                 'lng_out' => $request->input('lng_out'),
             ]);
-            
+
             \Log::info('Time out recorded', [
                 'user_id' => $user->id,
                 'work_date' => $today,
@@ -230,7 +232,7 @@ class AttendanceController extends Controller
                 'total_minutes' => $totalMinutes,
                 'break_minutes' => $scheduledBreakMinutes,
                 'minutes_worked' => $minutes,
-                'timezone' => 'Asia/Manila'
+                'timezone' => 'Asia/Manila',
             ]);
 
             // Check if student has completed required hours and auto-update status
@@ -242,23 +244,23 @@ class AttendanceController extends Controller
                     'success' => true,
                     'message' => 'Timed out successfully.',
                     'time_out' => $log->time_out,
-                    'minutes_worked' => $minutes
+                    'minutes_worked' => $minutes,
                 ]);
             }
-            
+
             return back()->with('success', 'Timed out successfully.');
         } catch (\Exception $e) {
-            \Log::error('Time out error: ' . $e->getMessage());
-            
+            \Log::error('Time out error: '.$e->getMessage());
+
             // Check if this is an AJAX request
             if (request()->ajax()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Failed to time out: ' . $e->getMessage()
+                    'message' => 'Failed to time out: '.$e->getMessage(),
                 ], 400);
             }
-            
-            return back()->with('error', 'Failed to time out: ' . $e->getMessage());
+
+            return back()->with('error', 'Failed to time out: '.$e->getMessage());
         }
     }
 
@@ -269,14 +271,14 @@ class AttendanceController extends Controller
                 'log_id' => 'required|exists:attendance_logs,id',
                 'time_out' => 'required|date_format:H:i',
                 'reason' => 'required|string|max:500',
-                'photo_out' => 'required|image|mimes:jpg,jpeg,png|max:5120'
+                'photo_out' => 'required|image|mimes:jpg,jpeg,png|max:5120',
             ]);
 
             $user = Auth::user();
-            if (!$user->hasActiveOJT()) {
+            if (! $user->hasActiveOJT()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'You must have an active OJT status to use attendance.'
+                    'message' => 'You must have an active OJT status to use attendance.',
                 ]);
             }
 
@@ -287,10 +289,10 @@ class AttendanceController extends Controller
                 ->whereNull('time_out')
                 ->first();
 
-            if (!$log) {
+            if (! $log) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Incomplete attendance record not found or already completed.'
+                    'message' => 'Incomplete attendance record not found or already completed.',
                 ]);
             }
 
@@ -305,32 +307,34 @@ class AttendanceController extends Controller
                     'user_id' => $user->id,
                     'work_date' => $log->work_date,
                     'time_in' => $log->time_in,
-                    'error' => $e->getMessage()
+                    'error' => $e->getMessage(),
                 ]);
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid time in record. Please contact your coordinator.'
+                    'message' => 'Invalid time in record. Please contact your coordinator.',
                 ]);
             }
-            
+
             // Parse recovery time out with timezone
             $timeOut = $log->work_date->setTimeFromTimeString($request->time_out)->setTimezone('Asia/Manila');
-            
+
             // Validate time out is after time in
             if ($timeOut->lt($timeIn)) {
                 \Log::warning('Recovery time out before time in', [
                     'user_id' => $user->id,
                     'time_in' => $timeIn->format('H:i:s'),
-                    'time_out' => $timeOut->format('H:i:s')
+                    'time_out' => $timeOut->format('H:i:s'),
                 ]);
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'Time out cannot be before time in. Please enter a valid time.'
+                    'message' => 'Time out cannot be before time in. Please enter a valid time.',
                 ]);
             }
-            
+
             $totalMinutes = $timeIn->diffInMinutes($timeOut);
-            
+
             // Validate reasonable work duration (not more than 16 hours)
             // Removed hard cap on recovery duration per updated requirements
 
@@ -339,25 +343,26 @@ class AttendanceController extends Controller
                 ->latest()
                 ->first();
 
-            if (!$acceptance) {
+            if (! $acceptance) {
                 \Log::warning('Recovery no acceptance letter found', ['user_id' => $user->id]);
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'No acceptance letter found. Please contact your coordinator.'
+                    'message' => 'No acceptance letter found. Please contact your coordinator.',
                 ]);
             }
 
-            $scheduledBreakMinutes = isset($acceptance->work_schedule['break_minutes']) ? (int)$acceptance->work_schedule['break_minutes'] : 0;
-            
+            $scheduledBreakMinutes = isset($acceptance->work_schedule['break_minutes']) ? (int) $acceptance->work_schedule['break_minutes'] : 0;
+
             // Validate break time is reasonable (0-4 hours)
             if ($scheduledBreakMinutes > 240) { // 4 hours
                 \Log::warning('Recovery excessive break time', [
                     'user_id' => $user->id,
-                    'break_minutes' => $scheduledBreakMinutes
+                    'break_minutes' => $scheduledBreakMinutes,
                 ]);
                 $scheduledBreakMinutes = 60; // Default to 1 hour
             }
-            
+
             $minutes = max(0, $totalMinutes - $scheduledBreakMinutes);
 
             // Update the attendance log - set as pending until coordinator approves
@@ -368,7 +373,7 @@ class AttendanceController extends Controller
                 'status' => 'pending', // Pending coordinator approval
                 'is_recovered' => true,
                 'recovery_reason' => $request->reason,
-                'recovery_approved' => null // Waiting for approval
+                'recovery_approved' => null, // Waiting for approval
             ]);
 
             // Log the recovery action for audit purposes
@@ -382,7 +387,7 @@ class AttendanceController extends Controller
                 'break_minutes' => $scheduledBreakMinutes,
                 'minutes_worked' => $minutes,
                 'reason' => $request->reason,
-                'timezone' => 'Asia/Manila'
+                'timezone' => 'Asia/Manila',
             ]);
 
             // Check if student has completed required hours and auto-update status
@@ -392,14 +397,14 @@ class AttendanceController extends Controller
                 'success' => true,
                 'message' => 'Attendance completed successfully! Your hours have been recorded.',
                 'minutes_worked' => $minutes,
-                'hours_worked' => round($minutes / 60, 1)
+                'hours_worked' => round($minutes / 60, 1),
             ]);
-
         } catch (\Exception $e) {
-            \Log::error('Recovery attendance error: ' . $e->getMessage());
+            \Log::error('Recovery attendance error: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to complete attendance: ' . $e->getMessage()
+                'message' => 'Failed to complete attendance: '.$e->getMessage(),
             ]);
         }
     }
@@ -411,16 +416,16 @@ class AttendanceController extends Controller
     {
         try {
             $studentProfile = $user->studentProfile;
-            
-            if (!$studentProfile || $studentProfile->ojt_status !== 'active') {
+
+            if (! $studentProfile || $studentProfile->ojt_status !== 'active') {
                 return; // Only check for active students
             }
 
             // Calculate total hours completed (exclude pending recovered logs)
             $totalMinutes = AttendanceLog::where('student_user_id', $user->id)
-                ->where(function($query) {
+                ->where(function ($query) {
                     $query->where('is_recovered', false)
-                          ->orWhere(function($q) {
+                          ->orWhere(function ($q) {
                               $q->where('is_recovered', true)
                                 ->where('recovery_approved', true);
                           });
@@ -432,10 +437,10 @@ class AttendanceController extends Controller
             $acceptance = \App\Models\AcceptanceLetter::where('student_user_id', $user->id)
                 ->latest()
                 ->first();
-            
-            $requiredHours = $acceptance?->total_hours 
-                ?? $studentProfile->required_hours 
-                ?? $user->getRequiredHours() 
+
+            $requiredHours = $acceptance?->total_hours
+                ?? $studentProfile->required_hours
+                ?? $user->getRequiredHours()
                 ?? 500;
 
             $studentProfileUpdates = [
@@ -450,7 +455,7 @@ class AttendanceController extends Controller
                 $studentProfileUpdates['ojt_status'] = 'completed';
             }
 
-            if (!empty($studentProfileUpdates)) {
+            if (! empty($studentProfileUpdates)) {
                 $studentProfile->update($studentProfileUpdates);
             }
 
@@ -458,14 +463,11 @@ class AttendanceController extends Controller
                 \Log::info('Student OJT status auto-updated to completed', [
                     'user_id' => $user->id,
                     'completed_hours' => $completedHours,
-                    'required_hours' => $requiredHours
+                    'required_hours' => $requiredHours,
                 ]);
             }
         } catch (\Exception $e) {
-            \Log::error('Error checking completion status: ' . $e->getMessage());
+            \Log::error('Error checking completion status: '.$e->getMessage());
         }
     }
-
 }
-
-

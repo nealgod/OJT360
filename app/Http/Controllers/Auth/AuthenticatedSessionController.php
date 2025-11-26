@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\AuditLog;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -31,9 +32,11 @@ class AuthenticatedSessionController extends Controller
 
         // For coordinators/supervisors, verify email on successful login
         $user = Auth::user();
-        if (in_array($user->role, ['coordinator', 'supervisor']) && !$user->hasVerifiedEmail()) {
+        if (in_array($user->role, ['coordinator', 'supervisor']) && ! $user->hasVerifiedEmail()) {
             $user->markEmailAsVerified();
         }
+
+        AuditLog::log('login', 'User logged in', 'User', $user->id);
 
         return redirect()->intended(RouteServiceProvider::HOME);
     }
@@ -43,9 +46,13 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        $userId = Auth::id();
+        if ($userId) {
+            AuditLog::log('logout', 'User logged out', 'User', $userId);
+        }
         // Logout current session
         Auth::logout();
-        
+
         // Invalidate current session
         $request->session()->invalidate();
         $request->session()->regenerateToken();

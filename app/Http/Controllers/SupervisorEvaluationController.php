@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AcceptanceLetter;
 use App\Models\MonthlyEvaluation;
 use App\Models\User;
-use App\Models\AcceptanceLetter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -25,7 +25,7 @@ class SupervisorEvaluationController extends Controller
     public function create(User $student)
     {
         // Verify student has a profile
-        if (!$student->studentProfile) {
+        if (! $student->studentProfile) {
             return redirect()->back()
                 ->with('error', 'Student profile not found.');
         }
@@ -40,7 +40,7 @@ class SupervisorEvaluationController extends Controller
             ->orderByDesc('start_date')
             ->first();
 
-        if (!$acceptance || !$acceptance->start_date) {
+        if (! $acceptance || ! $acceptance->start_date) {
             return redirect()->back()
                 ->with('error', 'Student must have an acceptance letter with a start date.');
         }
@@ -48,11 +48,11 @@ class SupervisorEvaluationController extends Controller
         // Default to current month and year (but allow selection)
         $currentMonth = now()->month;
         $currentYear = now()->year;
-        
+
         // Calculate internship period for validation
         $internshipStart = Carbon::parse($acceptance->start_date)->startOfMonth();
-        $internshipEnd = $acceptance->end_date 
-            ? Carbon::parse($acceptance->end_date)->endOfMonth() 
+        $internshipEnd = $acceptance->end_date
+            ? Carbon::parse($acceptance->end_date)->endOfMonth()
             : now()->addMonths(12)->endOfMonth(); // Default to 12 months if no end date
 
         // Calculate month number for current month (default)
@@ -79,7 +79,7 @@ class SupervisorEvaluationController extends Controller
         $validated = $request->validate([
             'student_user_id' => 'required|exists:users,id',
             'evaluation_month' => 'required|integer|min:1|max:12',
-            'evaluation_year' => 'required|integer|min:2020|max:' . (now()->year + 1),
+            'evaluation_year' => 'required|integer|min:2020|max:'.(now()->year + 1),
             'work_assignment' => 'required|string|max:500',
             'rating_row_1' => 'required|integer|min:1|max:5',
             'rating_row_2' => 'required|integer|min:1|max:5',
@@ -115,12 +115,12 @@ class SupervisorEvaluationController extends Controller
 
         // Validate selected month/year is within internship period
         $internshipStart = Carbon::parse($acceptance->start_date)->startOfMonth();
-        $internshipEnd = $acceptance->end_date 
-            ? Carbon::parse($acceptance->end_date)->endOfMonth() 
+        $internshipEnd = $acceptance->end_date
+            ? Carbon::parse($acceptance->end_date)->endOfMonth()
             : now()->addMonths(12)->endOfMonth();
-        
+
         $selectedDate = Carbon::create($validated['evaluation_year'], $validated['evaluation_month'], 1);
-        
+
         if ($selectedDate->lt($internshipStart) || $selectedDate->gt($internshipEnd)) {
             return redirect()->back()
                 ->withInput()
@@ -136,13 +136,13 @@ class SupervisorEvaluationController extends Controller
         if ($existing) {
             return redirect()->back()
                 ->withInput()
-                ->withErrors(['evaluation_month' => 'An evaluation for ' . date('F Y', mktime(0, 0, 0, $validated['evaluation_month'], 1, $validated['evaluation_year'])) . ' already exists for this student.']);
+                ->withErrors(['evaluation_month' => 'An evaluation for '.date('F Y', mktime(0, 0, 0, $validated['evaluation_month'], 1, $validated['evaluation_year'])).' already exists for this student.']);
         }
 
         // Calculate month number based on selected month/year
         $selectedMonthStart = $selectedDate->startOfMonth();
         $monthNumber = $internshipStart->diffInMonths($selectedMonthStart) + 1;
-        
+
         // Ensure month_number is at least 1
         if ($monthNumber < 1) {
             $monthNumber = 1;
@@ -152,7 +152,7 @@ class SupervisorEvaluationController extends Controller
         $coordinatorId = null;
         if ($studentProfile && $studentProfile->program_id) {
             $coordinator = User::where('role', 'coordinator')
-                ->whereHas('coordinatorProfile', function($q) use ($studentProfile) {
+                ->whereHas('coordinatorProfile', function ($q) use ($studentProfile) {
                     $q->where('program_id', $studentProfile->program_id);
                 })
                 ->first();

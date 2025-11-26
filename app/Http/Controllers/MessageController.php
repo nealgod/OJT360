@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditLog;
 use App\Models\Message;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -15,7 +16,7 @@ class MessageController extends Controller
     public function index()
     {
         $user = Auth::user();
-        
+
         if ($user->isStudent()) {
             // Students see messages they sent and received
             $messages = Message::where('sender_id', $user->id)
@@ -26,14 +27,14 @@ class MessageController extends Controller
         } elseif ($user->isCoordinator()) {
             $department = $user->coordinatorProfile?->department;
             $messages = Message::where(function ($query) use ($user, $department) {
-                    $query->where('sender_id', $user->id)
-                        ->orWhere('recipient_id', $user->id)
-                        ->orWhere(function ($subQuery) use ($department) {
-                            $subQuery->whereHas('sender.studentProfile', function ($studentQuery) use ($department) {
-                                $studentQuery->where('department', $department);
-                            });
+                $query->where('sender_id', $user->id)
+                    ->orWhere('recipient_id', $user->id)
+                    ->orWhere(function ($subQuery) use ($department) {
+                        $subQuery->whereHas('sender.studentProfile', function ($studentQuery) use ($department) {
+                            $studentQuery->where('department', $department);
                         });
-                })
+                    });
+            })
                 ->with(['sender', 'recipient'])
                 ->orderBy('created_at', 'desc')
                 ->paginate(15);
@@ -61,7 +62,7 @@ class MessageController extends Controller
         if (request()->has('recipient')) {
             $selectedRecipient = User::find(request('recipient'));
         }
-        
+
         // Handle reply_to parameter (for reply button)
         if (request()->has('reply_to')) {
             $selectedRecipient = User::find(request('reply_to'));
@@ -69,13 +70,13 @@ class MessageController extends Controller
             if (request()->has('message_id')) {
                 $originalMessage = Message::find(request('message_id'));
                 if ($originalMessage) {
-                    $prefilledSubject = str_starts_with($originalMessage->subject, 'Re: ') 
-                        ? $originalMessage->subject 
-                        : 'Re: ' . $originalMessage->subject;
+                    $prefilledSubject = str_starts_with($originalMessage->subject, 'Re: ')
+                        ? $originalMessage->subject
+                        : 'Re: '.$originalMessage->subject;
                 }
             }
         }
-        
+
         if (request()->has('subject')) {
             $prefilledSubject = request('subject');
         }
@@ -83,11 +84,11 @@ class MessageController extends Controller
         if ($user->isStudent()) {
             // Students can message their coordinator
             $coordinator = User::where('role', 'coordinator')
-                ->whereHas('coordinatorProfile', function($query) use ($user) {
+                ->whereHas('coordinatorProfile', function ($query) use ($user) {
                     $query->where('department', $user->studentProfile?->department);
                 })
                 ->first();
-            
+
             if ($coordinator) {
                 $recipients->push($coordinator);
             }
@@ -104,7 +105,7 @@ class MessageController extends Controller
 
             // Coordinators can message students in their department
             $students = User::where('role', 'intern')
-                ->whereHas('studentProfile', function($query) use ($department) {
+                ->whereHas('studentProfile', function ($query) use ($department) {
                     $query->where('department', $department);
                 })
                 ->with('studentProfile')
@@ -112,28 +113,28 @@ class MessageController extends Controller
 
             // Coordinators can also message supervisors handling their students
             $supervisors = User::where('role', 'supervisor')
-                ->whereHas('studentProfiles', function($query) use ($department) {
+                ->whereHas('studentProfiles', function ($query) use ($department) {
                     $query->where('department', $department);
                 })
                 ->with('supervisorProfile')
                 ->get();
-            
+
             $recipients = $students->merge($supervisors)->unique('id');
         } elseif ($user->isSupervisor()) {
             // Supervisors can message their supervised students
             $students = User::where('role', 'intern')
-                ->whereHas('studentProfile', function($query) use ($user) {
+                ->whereHas('studentProfile', function ($query) use ($user) {
                     $query->where('supervisor_id', $user->id);
                 })
                 ->with('studentProfile')
                 ->get();
-            
+
             // Supervisors can also message coordinators of their students
             $coordinatorIds = $students->pluck('studentProfile.department')
                 ->unique()
-                ->map(function($department) {
+                ->map(function ($department) {
                     return User::where('role', 'coordinator')
-                        ->whereHas('coordinatorProfile', function($query) use ($department) {
+                        ->whereHas('coordinatorProfile', function ($query) use ($department) {
                             $query->where('department', $department);
                         })
                         ->first();
@@ -141,9 +142,9 @@ class MessageController extends Controller
                 ->filter()
                 ->pluck('id')
                 ->unique();
-            
+
             $coordinators = User::whereIn('id', $coordinatorIds)->get();
-            
+
             $recipients = $students->merge($coordinators);
         }
 
@@ -164,16 +165,18 @@ class MessageController extends Controller
         $user = Auth::user();
 
         // Check if user can send message to this recipient
-        if (!$this->canSendMessageTo($user, $request->recipient_id)) {
+        if (! $this->canSendMessageTo($user, $request->recipient_id)) {
             return back()->with('error', 'You are not authorized to send messages to this user.');
         }
 
-        Message::create([
+        $message = Message::create([
             'sender_id' => $user->id,
             'recipient_id' => $request->recipient_id,
             'subject' => $request->subject,
             'message' => $request->message,
         ]);
+
+        AuditLog::log('message_sent', 'Message sent', 'Message', $message->id);
 
         return redirect()->route('messages.index')->with('success', 'Message sent successfully!');
     }
@@ -191,7 +194,7 @@ class MessageController extends Controller
         }
 
         // Mark as read if user is the recipient
-        if ($message->recipient_id === $user->id && !$message->is_read) {
+        if ($message->recipient_id === $user->id && ! $message->is_read) {
             $message->markAsRead();
         }
 
@@ -205,6 +208,7 @@ class MessageController extends Controller
     {
         if ($message->recipient_id === Auth::id()) {
             $message->markAsRead();
+            AuditLog::log('message_read', 'Message read', 'Message', $message->id);
         }
 
         return back();
@@ -245,8 +249,8 @@ class MessageController extends Controller
     private function canSendMessageTo($sender, $recipientId)
     {
         $recipient = User::find($recipientId);
-        
-        if (!$recipient) {
+
+        if (! $recipient) {
             return false;
         }
 
@@ -266,7 +270,7 @@ class MessageController extends Controller
             // Coordinators can message supervisors who oversee their students
             if ($recipient->isSupervisor()) {
                 return User::where('role', 'intern')
-                    ->whereHas('studentProfile', function($query) use ($sender, $recipient) {
+                    ->whereHas('studentProfile', function ($query) use ($sender, $recipient) {
                         $query->where('department', $sender->coordinatorProfile?->department)
                               ->where('supervisor_id', $recipient->id);
                     })
@@ -281,11 +285,12 @@ class MessageController extends Controller
             if ($recipient->isCoordinator()) {
                 // Check if supervisor has any student in this coordinator's department
                 $hasStudentInDepartment = User::where('role', 'intern')
-                    ->whereHas('studentProfile', function($query) use ($sender, $recipient) {
+                    ->whereHas('studentProfile', function ($query) use ($sender, $recipient) {
                         $query->where('supervisor_id', $sender->id)
                               ->where('department', $recipient->coordinatorProfile?->department);
                     })
                     ->exists();
+
                 return $hasStudentInDepartment;
             }
         }

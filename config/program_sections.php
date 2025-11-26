@@ -10,4 +10,3 @@ return [
         'default' => ['A', 'B', 'C', 'D'],
     ],
 ];
-

@@ -22,7 +22,7 @@ return new class extends Migration
             $table->boolean('is_read')->default(false);
             $table->timestamp('read_at')->nullable();
             $table->timestamps();
-            
+
             // Indexes for better performance
             $table->index(['recipient_id', 'is_read']);
             $table->index(['sender_id', 'created_at']);

@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\SupervisorVerificationEmail;
+use App\Models\Company;
+use App\Models\SupervisorProfile;
+use App\Models\SupervisorRegistration;
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
-use App\Models\SupervisorRegistration;
-use App\Models\User;
-use App\Models\SupervisorProfile;
-use App\Models\Company;
-use App\Mail\SupervisorVerificationEmail;
-use Carbon\Carbon;
 
 class SupervisorRegistrationController extends Controller
 {
@@ -38,33 +38,33 @@ class SupervisorRegistrationController extends Controller
         }
 
         $email = $request->email;
-        
+
         // Check if email already has a user account
         $existingUser = User::where('email', $email)->first();
         if ($existingUser) {
             return back()->withErrors([
-                'email' => 'An account with this email already exists. Please login instead.'
+                'email' => 'An account with this email already exists. Please login instead.',
             ])->withInput();
         }
-        
+
         // Delete any existing registration for this email
         SupervisorRegistration::where('email', $email)->delete();
-        
+
         // Create new registration
         $registration = SupervisorRegistration::create([
             'email' => $email,
             'token' => SupervisorRegistration::generateToken(),
             'expires_at' => Carbon::now()->addHours(24), // 24 hour expiration
         ]);
-        
+
         // Send verification email
         try {
             Mail::to($email)->send(new SupervisorVerificationEmail($registration));
-            
+
             return view('supervisor.register.email-sent', compact('email'));
         } catch (\Exception $e) {
-            \Log::error('Failed to send supervisor verification email: ' . $e->getMessage());
-            
+            \Log::error('Failed to send supervisor verification email: '.$e->getMessage());
+
             return back()->with('error', 'Failed to send verification email. Please try again.');
         }
     }
@@ -75,43 +75,43 @@ class SupervisorRegistrationController extends Controller
     public function verify($token)
     {
         $registration = SupervisorRegistration::where('token', $token)->first();
-        
-        if (!$registration) {
+
+        if (! $registration) {
             return view('supervisor.register.link-expired', [
                 'reason' => 'invalid',
-                'email' => null
+                'email' => null,
             ]);
         }
-        
+
         // Check if email already has a user account (someone registered while link was pending)
         $existingUser = User::where('email', $registration->email)->first();
         if ($existingUser) {
             // Delete the registration since account already exists
             $registration->delete();
-            
+
             return view('supervisor.register.error', [
                 'error' => 'Account Already Exists',
-                'message' => 'An account with this email already exists. Please login to your account.'
+                'message' => 'An account with this email already exists. Please login to your account.',
             ]);
         }
-        
+
         if ($registration->isExpired()) {
             return view('supervisor.register.link-expired', [
                 'reason' => 'expired',
-                'email' => $registration->email
+                'email' => $registration->email,
             ]);
         }
-        
+
         if ($registration->isVerified()) {
             return view('supervisor.register.error', [
                 'error' => 'Already Verified',
-                'message' => 'This email has already been verified. Please complete your registration or login if you already have an account.'
+                'message' => 'This email has already been verified. Please complete your registration or login if you already have an account.',
             ]);
         }
-        
+
         // Mark as verified
         $registration->markAsVerified();
-        
+
         return view('supervisor.register.complete', compact('registration'));
     }
 
@@ -157,11 +157,11 @@ class SupervisorRegistrationController extends Controller
         // Send verification email
         try {
             Mail::to($email)->send(new SupervisorVerificationEmail($registration));
-            
+
             return back()->with('status', 'A new verification link has been sent to your email.');
         } catch (\Exception $e) {
-            \Log::error('Failed to resend supervisor verification email: ' . $e->getMessage());
-            
+            \Log::error('Failed to resend supervisor verification email: '.$e->getMessage());
+
             return back()->with('error', 'Failed to send verification email. Please try again.');
         }
     }
@@ -188,20 +188,20 @@ class SupervisorRegistrationController extends Controller
         $registration = SupervisorRegistration::where('token', $request->token)
             ->where('verified_at', '!=', null)
             ->first();
-            
-        if (!$registration) {
+
+        if (! $registration) {
             return redirect()->route('supervisor.register')->with('error', 'Invalid or unverified registration token. Please start the registration process again.');
         }
-        
+
         // Check if user already exists (race condition protection)
         $existingUser = User::where('email', $registration->email)->first();
         if ($existingUser) {
             // Delete the registration since account already exists
             $registration->delete();
-            
+
             return redirect()->route('login')->with('error', 'An account with this email already exists. Please login instead.');
         }
-        
+
         try {
             // Create user account
             $user = User::create([
@@ -211,7 +211,7 @@ class SupervisorRegistrationController extends Controller
                 'role' => 'supervisor',
                 'email_verified_at' => now(),
             ]);
-            
+
             // Create or find company
             $company = Company::firstOrCreate(
                 ['name' => $request->company_name],
@@ -222,7 +222,7 @@ class SupervisorRegistrationController extends Controller
                     'contact_phone' => $request->phone ?? '',
                 ]
             );
-            
+
             // Create supervisor profile
             SupervisorProfile::create([
                 'user_id' => $user->id,
@@ -232,18 +232,17 @@ class SupervisorRegistrationController extends Controller
                 'is_verified' => true,
                 'verified_at' => now(),
             ]);
-            
+
             // Delete the registration record (no longer needed)
             $registration->delete();
-            
+
             // Log the user in
             Auth::login($user);
-            
+
             return redirect()->route('dashboard')->with('success', 'Account created successfully! You can now search for students to accept.');
-            
         } catch (\Exception $e) {
-            \Log::error('Failed to create supervisor account: ' . $e->getMessage());
-            
+            \Log::error('Failed to create supervisor account: '.$e->getMessage());
+
             return back()->with('error', 'Failed to create account. Please try again.');
         }
     }

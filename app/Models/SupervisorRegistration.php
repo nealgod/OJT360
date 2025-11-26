@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Carbon\Carbon;
 
 class SupervisorRegistration extends Model
 {
@@ -35,7 +34,7 @@ class SupervisorRegistration extends Model
      */
     public function isVerified()
     {
-        return !is_null($this->verified_at);
+        return ! is_null($this->verified_at);
     }
 
     /**
@@ -54,7 +53,7 @@ class SupervisorRegistration extends Model
         do {
             $token = bin2hex(random_bytes(32));
         } while (self::where('token', $token)->exists());
-        
+
         return $token;
     }
 }

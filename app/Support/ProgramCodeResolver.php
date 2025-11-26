@@ -96,7 +96,7 @@ class ProgramCodeResolver
 
     public static function buildCourseSectionCode(?string $course, ?string $yearLevel, ?string $section): ?string
     {
-        if (!$course || !$yearLevel) {
+        if (! $course || ! $yearLevel) {
             return null;
         }
 
@@ -110,6 +110,3 @@ class ProgramCodeResolver
         return sprintf('%s-%s', $code, $yearLevel);
     }
 }
-
-
-

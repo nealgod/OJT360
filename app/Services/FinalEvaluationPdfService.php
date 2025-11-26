@@ -8,8 +8,9 @@ use setasign\Fpdi\Fpdi;
 class FinalEvaluationPdfService extends BasePdfService
 {
     private const LEFT_MARGIN = 0.94;
+
     private const TOP_MARGIN = 0.47;
-    
+
     private string $templatePath;
 
     public function __construct()
@@ -19,20 +20,20 @@ class FinalEvaluationPdfService extends BasePdfService
 
     public function generate(FinalEvaluation $evaluation): string
     {
-        if (!file_exists($this->templatePath)) {
+        if (! file_exists($this->templatePath)) {
             throw new \RuntimeException('Final evaluation template not found.');
         }
 
         $pdf = new Fpdi();
         $pdf->SetMargins(0, 0, 0);
         $pdf->SetAutoPageBreak(false);
-        
+
         // Add Legal size page (8.5" x 14" = 215.9mm x 355.6mm)
-        $pdf->AddPage('P', array(215.9, 355.6));
-        
+        $pdf->AddPage('P', [215.9, 355.6]);
+
         $pdf->setSourceFile($this->templatePath);
         $template = $pdf->importPage(1);
-        
+
         // Use template at full Legal size with no margins
         $pdf->useTemplate($template, 0, 0, 215.9, 355.6);
 
@@ -72,14 +73,14 @@ class FinalEvaluationPdfService extends BasePdfService
 
         // Signature of Manager/Supervisor - X: 0.06", Y: 11.51"
         $this->writeText($pdf, 0.06, 11.51, $evaluation->supervisor_name, 11, 'B', self::LEFT_MARGIN, self::TOP_MARGIN);
-        
+
         // Signature of Student Trainee - X: 4.50", Y: 11.51"
         $this->writeText($pdf, 4.50, 11.51, $evaluation->student_name, 11, 'B', self::LEFT_MARGIN, self::TOP_MARGIN);
-        
+
         // Date 1 (Supervisor) - X: 0.06", Y: 12.20"
         $supervisorDate = $evaluation->supervisor_signature_date ? $evaluation->supervisor_signature_date->format('m/d/Y') : $dateText;
         $this->writeText($pdf, 0.06, 12.20, $supervisorDate, 11, '', self::LEFT_MARGIN, self::TOP_MARGIN);
-        
+
         // Date 2 (Student) - X: 4.50", Y: 12.20"
         $studentDate = $evaluation->student_signature_date ? $evaluation->student_signature_date->format('m/d/Y') : $dateText;
         $this->writeText($pdf, 4.50, 12.20, $studentDate, 11, '', self::LEFT_MARGIN, self::TOP_MARGIN);

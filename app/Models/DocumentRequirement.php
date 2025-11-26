@@ -63,6 +63,6 @@ class DocumentRequirement extends Model
 
     public function getMaxFileSizeStringAttribute()
     {
-        return $this->max_file_size_mb . ' MB';
+        return $this->max_file_size_mb.' MB';
     }
 }

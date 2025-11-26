@@ -23,7 +23,7 @@ class MonthlyEvaluationSubmitted extends Notification
     {
         return [
             'title' => 'Monthly Evaluation Submitted',
-            'message' => 'Your supervisor has submitted your monthly progress evaluation for ' . $this->evaluation->getMonthYearLabel() . '.',
+            'message' => 'Your supervisor has submitted your monthly progress evaluation for '.$this->evaluation->getMonthYearLabel().'.',
             'type' => 'evaluation_submitted',
             'evaluation_id' => $this->evaluation->id,
             'url' => route('evaluations.index'),

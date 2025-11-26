@@ -5,7 +5,7 @@
 
             <!-- Filters -->
             <div class="bg-white rounded-lg border p-4 mb-6">
-                <form method="GET" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <form method="GET" class="grid grid-cols-1 md:grid-cols-6 gap-4">
                     <div>
                         <label class="block text-sm font-medium mb-1">User</label>
                         <select name="user_id" class="w-full border rounded px-3 py-2">
@@ -13,6 +13,17 @@
                             @foreach($users as $user)
                                 <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>
                                     {{ $user->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Role</label>
+                        <select name="role" class="w-full border rounded px-3 py-2">
+                            <option value="">All Roles</option>
+                            @foreach($roles as $role)
+                                <option value="{{ $role }}" {{ request('role') == $role ? 'selected' : '' }}>
+                                    {{ ucfirst($role) }}
                                 </option>
                             @endforeach
                         </select>

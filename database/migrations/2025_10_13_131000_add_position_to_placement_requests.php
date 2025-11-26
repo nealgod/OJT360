@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('placement_requests', function (Blueprint $table) {
-            if (!Schema::hasColumn('placement_requests', 'position_title')) {
+            if (! Schema::hasColumn('placement_requests', 'position_title')) {
                 $table->string('position_title')->nullable()->after('external_company_address');
             }
         });
@@ -24,5 +24,3 @@ return new class extends Migration
         });
     }
 };
-
-

@@ -18,10 +18,10 @@ class ProfileController extends Controller
     public function edit(Request $request): View
     {
         $user = $request->user();
-        
+
         // Load the appropriate profile based on user role
         $profile = $user->getProfile();
-        
+
         $yearLevels = ProgramCodeResolver::yearLevels();
         $sectionOptions = $user->isStudent()
             ? ProgramCodeResolver::sectionsForCourse($user->studentProfile?->course)
@@ -41,7 +41,7 @@ class ProfileController extends Controller
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
         $user = $request->user();
-        
+
         // Update basic user information
         if ($user->isStudent()) {
             // Lock name for students; allow email edits only via admin/coordinator rules
@@ -95,7 +95,7 @@ class ProfileController extends Controller
             $profileData['year_level'] ?? $user->studentProfile?->year_level,
             $profileData['section'] ?? $user->studentProfile?->section
         );
-        
+
         // Handle profile image upload
         if ($request->hasFile('profile_image')) {
             $profileData['profile_image'] = $request->file('profile_image')->store('profile-images', 'public');
@@ -122,7 +122,7 @@ class ProfileController extends Controller
     private function updateCoordinatorProfile(ProfileUpdateRequest $request, $user)
     {
         $profileData = $request->only(['employee_id', 'phone']);
-        
+
         // Handle profile image upload
         if ($request->hasFile('profile_image')) {
             $profileData['profile_image'] = $request->file('profile_image')->store('profile-images', 'public');
@@ -141,7 +141,7 @@ class ProfileController extends Controller
     private function updateSupervisorProfile(ProfileUpdateRequest $request, $user)
     {
         $profileData = $request->only(['position', 'phone']);
-        
+
         // Handle profile image upload
         if ($request->hasFile('profile_image')) {
             $profileData['profile_image'] = $request->file('profile_image')->store('profile-images', 'public');

@@ -11,7 +11,7 @@ class AdminDepartmentController extends Controller
     public function index()
     {
         $departments = Department::withCount(['programs', 'coordinators'])->get();
-        
+
         return view('admin.departments.index', compact('departments'));
     }
 
@@ -36,8 +36,8 @@ class AdminDepartmentController extends Controller
     public function update(Request $request, Department $department)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:departments,name,' . $department->id,
-            'slug' => 'nullable|string|max:50|unique:departments,slug,' . $department->id,
+            'name' => 'required|string|max:255|unique:departments,name,'.$department->id,
+            'slug' => 'nullable|string|max:50|unique:departments,slug,'.$department->id,
         ]);
 
         // Auto-generate slug if not provided

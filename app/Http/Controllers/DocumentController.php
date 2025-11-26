@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditLog;
 use App\Models\DocumentRequirement;
 use App\Models\StudentDocumentSubmission;
 use App\Services\PrePlacementService;
@@ -14,20 +15,20 @@ class DocumentController extends Controller
     public function index()
     {
         $user = Auth::user();
-        
+
         if ($user->isStudent()) {
             return $this->studentIndex();
         } elseif ($user->isCoordinator()) {
             return $this->coordinatorIndex();
         }
-        
+
         abort(403);
     }
 
     private function studentIndex()
     {
         $user = Auth::user();
-        
+
         // Get all active document requirements ordered by display_order
         $requirements = DocumentRequirement::active()
             ->orderBy('display_order')
@@ -52,17 +53,17 @@ class DocumentController extends Controller
     {
         $user = Auth::user();
         $department = $user->coordinatorProfile?->department;
-        
-        if (!$department) {
+
+        if (! $department) {
             return redirect()->route('coord.students.index')->with('error', 'No department assigned to your coordinator profile.');
         }
-        
+
         // Get students in coordinator's department
         $students = \App\Models\User::where('role', 'intern')
-            ->whereHas('studentProfile', function($query) use ($department) {
+            ->whereHas('studentProfile', function ($query) use ($department) {
                 $query->where('department', $department);
             })
-            ->with(['studentProfile', 'documentSubmissions' => function($query) {
+            ->with(['studentProfile', 'documentSubmissions' => function ($query) {
                 $query->with('requirement')->orderBy('created_at', 'desc');
             }])
             ->get();
@@ -76,7 +77,7 @@ class DocumentController extends Controller
     public function show(DocumentRequirement $requirement)
     {
         $user = Auth::user();
-        
+
         if ($user->isStudent()) {
             $submission = StudentDocumentSubmission::where('student_user_id', $user->id)
                 ->where('document_requirement_id', $requirement->id)
@@ -93,28 +94,28 @@ class DocumentController extends Controller
             // Check if student has submitted required documents (for Letter of Acceptance validation)
             // BOTH Application Letter and PDS/Resume are required
             // Resume Builder and Application Letter Builder are optional (not checked)
-            
+
             // Check for Application Letter (REQUIRED)
             $hasApplicationLetter = StudentDocumentSubmission::where('student_user_id', $user->id)
-                ->whereHas('requirement', function($q) {
+                ->whereHas('requirement', function ($q) {
                     $q->where('name', 'Application Letter')
                       ->where('type', 'pre_placement');
                 })
                 ->whereIn('status', ['submitted', 'approved', 'rejected'])
                 ->exists();
-            
+
             // Check for PDS/Resume (REQUIRED)
             $hasPDS = StudentDocumentSubmission::where('student_user_id', $user->id)
-                ->whereHas('requirement', function($q) {
+                ->whereHas('requirement', function ($q) {
                     $q->where('name', 'LIKE', '%Personal Data Sheet%')
                       ->where('type', 'pre_placement');
                 })
                 ->whereIn('status', ['submitted', 'approved', 'rejected'])
                 ->exists();
-            
+
             // Both Application Letter and PDS/Resume must be submitted
             $hasApplication = $hasApplicationLetter && $hasPDS;
-            
+
             // Get requirement IDs for direct links
             $appLetterReq = \App\Models\DocumentRequirement::where('name', 'Application Letter')
                 ->where('type', 'pre_placement')
@@ -125,7 +126,7 @@ class DocumentController extends Controller
 
             return view('documents.show', compact('requirement', 'submission', 'submissionsAll', 'hasApplication', 'hasApplicationLetter', 'hasPDS', 'appLetterReq', 'pdsReq'));
         }
-        
+
         abort(403);
     }
 
@@ -136,21 +137,21 @@ class DocumentController extends Controller
 
         // Get the dynamic max files limit for this requirement
         $maxFiles = $requirement->max_files_per_submission ?? 1;
-        
+
         $request->validate([
             'files' => [
                 'required',
                 'array',
                 'min:1',
-                'max:' . $maxFiles,
+                'max:'.$maxFiles,
             ],
             'files.*' => [
                 'required',
                 'file',
-                'max:' . $requirement->max_file_size_mb * 1024, // Convert MB to KB
+                'max:'.$requirement->max_file_size_mb * 1024, // Convert MB to KB
                 function ($attribute, $value, $fail) use ($requirement) {
-                    if ($requirement->file_types && !in_array($value->getClientOriginalExtension(), $requirement->file_types)) {
-                        $fail('File type must be one of: ' . implode(', ', $requirement->file_types));
+                    if ($requirement->file_types && ! in_array($value->getClientOriginalExtension(), $requirement->file_types)) {
+                        $fail('File type must be one of: '.implode(', ', $requirement->file_types));
                     }
                 },
             ],
@@ -162,9 +163,10 @@ class DocumentController extends Controller
             ->where('status', '!=', 'rejected')
             ->count();
         $newFilesCount = count($request->file('files'));
-        
+
         if ($existingCount + $newFilesCount > $maxFiles) {
             $remaining = $maxFiles - $existingCount;
+
             return back()->withErrors(['files' => "You can only have a maximum of {$maxFiles} files for this requirement. You currently have {$existingCount} files. You can add {$remaining} more."]);
         }
 
@@ -173,7 +175,7 @@ class DocumentController extends Controller
         foreach ($files as $file) {
             $path = $file->store('document-submissions', 'public');
 
-            StudentDocumentSubmission::create([
+            $submission = StudentDocumentSubmission::create([
                 'student_user_id' => $user->id,
                 'document_requirement_id' => $requirement->id,
                 'file_path' => $path,
@@ -181,14 +183,16 @@ class DocumentController extends Controller
                 'file_size' => $file->getSize(),
                 'mime_type' => $file->getMimeType(),
             ]);
+
+            AuditLog::log('document_submitted', 'Document submitted', 'StudentDocumentSubmission', $submission->id);
         }
 
         $fileCount = count($files);
-        $message = $fileCount === 1 ? 'Document submitted successfully!' : $fileCount . ' documents submitted successfully!';
-        
+        $message = $fileCount === 1 ? 'Document submitted successfully!' : $fileCount.' documents submitted successfully!';
+
         // Notify coordinator about new document submission
         $coordinator = \App\Models\User::where('role', 'coordinator')
-            ->whereHas('coordinatorProfile', function($q) use ($user) {
+            ->whereHas('coordinatorProfile', function ($q) use ($user) {
                 $q->where('department', $user->studentProfile?->department);
             })
             ->first();
@@ -198,7 +202,7 @@ class DocumentController extends Controller
                 'user_id' => $coordinator->id,
                 'type' => 'document_submitted',
                 'title' => 'New Document Submission',
-                'message' => $user->name . ' submitted ' . ($fileCount === 1 ? 'a document' : $fileCount . ' documents') . ' for ' . $requirement->name . '.',
+                'message' => $user->name.' submitted '.($fileCount === 1 ? 'a document' : $fileCount.' documents').' for '.$requirement->name.'.',
                 'data' => [
                     'submission_count' => $fileCount,
                     'requirement_id' => $requirement->id,
@@ -209,7 +213,7 @@ class DocumentController extends Controller
         }
 
         PrePlacementService::recalculateForStudent($user->id);
-        
+
         return redirect()->route('documents.index')->with('success', $message);
     }
 
@@ -236,7 +240,7 @@ class DocumentController extends Controller
                         'submitted_at' => null,
                     ]);
             }
-            
+
             // Reset submitted flags for Application Letter
             if (stripos($requirement->name, 'Application Letter') !== false) {
                 \App\Models\ApplicationLetter::where('user_id', $user->id)
@@ -264,10 +268,10 @@ class DocumentController extends Controller
     public function download(StudentDocumentSubmission $submission)
     {
         $user = Auth::user();
-        
+
         // Check permissions
         $canDownload = false;
-        
+
         if ($user->isStudent() && $submission->student_user_id === $user->id) {
             $canDownload = true;
         } elseif ($user->isSupervisor()) {
@@ -283,12 +287,12 @@ class DocumentController extends Controller
                 $canDownload = true;
             }
         }
-        
-        if (!$canDownload) {
+
+        if (! $canDownload) {
             abort(403);
         }
 
-        if (!Storage::disk('public')->exists($submission->file_path)) {
+        if (! Storage::disk('public')->exists($submission->file_path)) {
             abort(404, 'File not found');
         }
 
@@ -311,17 +315,17 @@ class DocumentController extends Controller
             }
         }
 
-        if (!Storage::disk('public')->exists($submission->file_path)) {
+        if (! Storage::disk('public')->exists($submission->file_path)) {
             abort(404, 'File not found');
         }
 
         $relative = str_starts_with($submission->file_path, 'public/') ? substr($submission->file_path, 7) : $submission->file_path;
-        $absolute = storage_path('app/public/' . $relative);
+        $absolute = storage_path('app/public/'.$relative);
         $mime = $submission->mime_type ?: mime_content_type($absolute);
 
         return response()->file($absolute, [
             'Content-Type' => $mime,
-            'Content-Disposition' => 'inline; filename="' . $submission->original_filename . '"'
+            'Content-Disposition' => 'inline; filename="'.$submission->original_filename.'"',
         ]);
     }
 
@@ -347,7 +351,7 @@ class DocumentController extends Controller
             $requirement = $submission->requirement;
             if ($requirement) {
                 $studentId = $submission->student_user_id;
-                
+
                 // Reset submitted flags for Resume/PDS
                 if (stripos($requirement->name, 'Resume') !== false || stripos($requirement->name, 'PDS') !== false) {
                     \App\Models\Resume::where('user_id', $studentId)
@@ -357,7 +361,7 @@ class DocumentController extends Controller
                             'submitted_at' => null,
                         ]);
                 }
-                
+
                 // Reset submitted flags for Application Letter
                 if (stripos($requirement->name, 'Application Letter') !== false) {
                     \App\Models\ApplicationLetter::where('user_id', $studentId)
@@ -375,7 +379,7 @@ class DocumentController extends Controller
             'user_id' => $submission->student_user_id,
             'type' => 'document_reviewed',
             'title' => 'Document Review Update',
-            'message' => 'Your ' . ($submission->requirement?->name ?? 'document') . ' has been ' . $request->status . '.',
+            'message' => 'Your '.($submission->requirement?->name ?? 'document').' has been '.$request->status.'.',
             'data' => [
                 'submission_id' => $submission->id,
                 'status' => $request->status,
@@ -412,7 +416,7 @@ class DocumentController extends Controller
             ->get();
 
         $department = $user->coordinatorProfile?->department;
-        $validSubmissions = $submissions->filter(function($submission) use ($department) {
+        $validSubmissions = $submissions->filter(function ($submission) use ($department) {
             return $submission->student->studentProfile?->department === $department;
         });
 
@@ -435,7 +439,7 @@ class DocumentController extends Controller
                 'user_id' => $submission->student_user_id,
                 'type' => 'document_reviewed',
                 'title' => 'Document Review Update',
-                'message' => 'Your ' . ($submission->requirement?->name ?? 'document') . ' has been ' . $status . '.',
+                'message' => 'Your '.($submission->requirement?->name ?? 'document').' has been '.$status.'.',
                 'data' => [
                     'submission_id' => $submission->id,
                     'status' => $status,
@@ -451,7 +455,7 @@ class DocumentController extends Controller
         }
 
         $action = $status === 'approved' ? 'approved' : 'rejected';
+
         return back()->with('success', "Successfully {$action} {$updatedCount} document(s)!");
     }
-
 }

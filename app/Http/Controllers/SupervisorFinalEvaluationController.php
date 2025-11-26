@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AcceptanceLetter;
 use App\Models\FinalEvaluation;
 use App\Models\User;
-use App\Models\AcceptanceLetter;
 use App\Models\WeeklyReport;
 use App\Services\FinalEvaluationPdfService;
 use Illuminate\Http\Request;
@@ -28,7 +28,7 @@ class SupervisorFinalEvaluationController extends Controller
 
         // Get student profile
         $profile = $student->studentProfile;
-        if (!$profile) {
+        if (! $profile) {
             return redirect()->back()->with('error', 'Student profile not found.');
         }
 
@@ -38,7 +38,7 @@ class SupervisorFinalEvaluationController extends Controller
             ->latest('start_date')
             ->first();
 
-        if (!$acceptance) {
+        if (! $acceptance) {
             return redirect()->back()->with('error', 'Student must have an acceptance letter.');
         }
 
@@ -122,7 +122,7 @@ class SupervisorFinalEvaluationController extends Controller
         $coordinatorId = null;
         if ($profile && $profile->program_id) {
             $coordinator = User::where('role', 'coordinator')
-                ->whereHas('coordinatorProfile', function($q) use ($profile) {
+                ->whereHas('coordinatorProfile', function ($q) use ($profile) {
                     $q->where('program_id', $profile->program_id);
                 })
                 ->first();
@@ -172,13 +172,13 @@ class SupervisorFinalEvaluationController extends Controller
             ],
             'read' => false,
         ]);
-        
+
         if ($coordinatorId) {
             \App\Models\Notification::create([
                 'user_id' => $coordinatorId,
                 'type' => 'final_evaluation_review',
                 'title' => 'Final Evaluation Needs Review',
-                'message' => 'A final evaluation for ' . $student->name . ' has been submitted and needs your review.',
+                'message' => 'A final evaluation for '.$student->name.' has been submitted and needs your review.',
                 'data' => [
                     'evaluation_id' => $evaluation->id,
                     'url' => route('coordinator.final-evaluations.show', $evaluation),

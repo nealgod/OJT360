@@ -12,8 +12,8 @@ class MonthlyEvaluationPdfService
     public function generate(MonthlyEvaluation $evaluation): string
     {
         $templatePath = resource_path('templates/monthlyprogressevaulationformtemplate(final).pdf');
-        
-        if (!file_exists($templatePath)) {
+
+        if (! file_exists($templatePath)) {
             throw new \Exception('Monthly evaluation template not found');
         }
 
@@ -30,7 +30,7 @@ class MonthlyEvaluationPdfService
         // Header fields based on exact coordinates
         $dateSource = $evaluation->submitted_at ?? $evaluation->created_at ?? Carbon::now();
         $dateText = Carbon::parse($dateSource)->format('F d, Y');
-        $monthYearText = strtoupper($evaluation->getMonthName()) . ' ' . $evaluation->evaluation_year;
+        $monthYearText = strtoupper($evaluation->getMonthName()).' '.$evaluation->evaluation_year;
 
         // Date (10pt, BOLD) - X: 6.15", Y: 2.34"
         $this->writeText($pdf, 6.15, 2.34, $dateText, 10, 'B');
@@ -63,7 +63,7 @@ class MonthlyEvaluationPdfService
             4.90, 5.05, 5.20, 5.35, 5.50,  // 1-5
             5.80, 5.95, 6.10, 6.25, 6.40,  // 6-10
             6.70, 6.85, 7.00, 7.15, 7.30,  // 11-15
-            7.60, 7.75, 7.90, 8.05, 8.20   // 16-20 (Row 16: 7.60, Row 17: 7.75, Row 18: 7.90, Row 19: 8.05, Row 20: 8.20)
+            7.60, 7.75, 7.90, 8.05, 8.20,   // 16-20 (Row 16: 7.60, Row 17: 7.75, Row 18: 7.90, Row 19: 8.05, Row 20: 8.20)
         ];
 
         // X coordinates for ratings
@@ -72,7 +72,7 @@ class MonthlyEvaluationPdfService
             4 => 5.11,  // Very Satisfactory
             3 => 5.86,  // Satisfactory
             2 => 6.50,  // Fair
-            1 => 7.12   // Needs Improvement
+            1 => 7.12,   // Needs Improvement
         ];
 
         // Place check marks (8pt) - using Wingdings font for checkmark symbol
@@ -87,7 +87,7 @@ class MonthlyEvaluationPdfService
         if ($evaluation->comments_recommendations) {
             $lines = $this->splitIntoLines($evaluation->comments_recommendations, 4, 100);
             $yPositions = [8.68, 8.80, 8.92, 9.04];
-            
+
             foreach ($lines as $index => $line) {
                 if ($index < 4 && $line) {
                     // Comments remain regular (not bold)
@@ -131,7 +131,7 @@ class MonthlyEvaluationPdfService
         // Character code 52 (decimal) in ZapfDingbats is a checkmark (✓)
         $pdf->SetFont('ZapfDingbats', '', $fontSize);
         $checkmark = chr(52); // In ZapfDingbats, character 52 is a checkmark symbol
-        
+
         // Convert inches to millimeters (multiply by 25.4)
         // Add 3mm offset for baseline alignment
         $x = $xInches * 25.4;
@@ -143,7 +143,7 @@ class MonthlyEvaluationPdfService
     {
         // Try to get the acceptance letter to access raw schedule data
         $student = $evaluation->student;
-        if (!$student) {
+        if (! $student) {
             return $evaluation->work_schedule ?? 'N/A';
         }
 
@@ -151,15 +151,15 @@ class MonthlyEvaluationPdfService
             ->latest('start_date')
             ->first();
 
-        if (!$acceptance || !$acceptance->work_schedule) {
+        if (! $acceptance || ! $acceptance->work_schedule) {
             return $evaluation->work_schedule ?? 'N/A';
         }
 
-        $schedule = is_string($acceptance->work_schedule) 
-            ? json_decode($acceptance->work_schedule, true) 
+        $schedule = is_string($acceptance->work_schedule)
+            ? json_decode($acceptance->work_schedule, true)
             : $acceptance->work_schedule;
 
-        if (!is_array($schedule)) {
+        if (! is_array($schedule)) {
             return $evaluation->work_schedule ?? 'N/A';
         }
 
@@ -171,7 +171,7 @@ class MonthlyEvaluationPdfService
             'thursday' => 'Thu',
             'friday' => 'Fri',
             'saturday' => 'Sat',
-            'sunday' => 'Sun'
+            'sunday' => 'Sun',
         ];
 
         // Extract working days
@@ -191,7 +191,7 @@ class MonthlyEvaluationPdfService
         $shiftEnd = $schedule['shift_end'] ?? '17:00';
 
         // Format time - convert to 12-hour format (e.g., 8:00 AM to 5:00 PM)
-        $formatTime = function($time) {
+        $formatTime = function ($time) {
             try {
                 // Try H:i:s format first
                 $parsed = Carbon::createFromFormat('H:i:s', $time);
@@ -213,7 +213,8 @@ class MonthlyEvaluationPdfService
 
         // Format as: "Mon, Tue, Wed (8:00 AM to 5:00 PM)"
         $daysStr = implode(', ', $workingDays);
-        return $daysStr . ' (' . $startTime . ' to ' . $endTime . ')';
+
+        return $daysStr.' ('.$startTime.' to '.$endTime.')';
     }
 
     private function splitIntoLines(string $text, int $maxLines, int $maxCharsPerLine): array
@@ -233,7 +234,7 @@ class MonthlyEvaluationPdfService
                         break;
                     }
                 }
-                
+
                 // Break long word into chunks
                 $chunks = str_split($word, $maxCharsPerLine);
                 foreach ($chunks as $chunk) {
@@ -242,11 +243,12 @@ class MonthlyEvaluationPdfService
                     }
                     $lines[] = $chunk;
                 }
+
                 continue;
             }
-            
-            $testLine = $currentLine ? $currentLine . ' ' . $word : $word;
-            
+
+            $testLine = $currentLine ? $currentLine.' '.$word : $word;
+
             if (strlen($testLine) > $maxCharsPerLine) {
                 if ($currentLine) {
                     $lines[] = $currentLine;
@@ -255,7 +257,7 @@ class MonthlyEvaluationPdfService
                     $lines[] = $word;
                     $currentLine = '';
                 }
-                
+
                 if (count($lines) >= $maxLines) {
                     break;
                 }

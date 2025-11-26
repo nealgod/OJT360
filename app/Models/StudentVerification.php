@@ -7,17 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class StudentVerification extends Model
 {
-	use HasFactory;
+    use HasFactory;
 
-	protected $fillable = [
-		'student_id',
-		'token',
-		'expires_at',
-	];
+    protected $fillable = [
+        'student_id',
+        'token',
+        'expires_at',
+    ];
 
-	protected $casts = [
-		'expires_at' => 'datetime',
-	];
+    protected $casts = [
+        'expires_at' => 'datetime',
+    ];
 }
-
-

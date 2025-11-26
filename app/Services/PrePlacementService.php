@@ -34,7 +34,7 @@ class PrePlacementService
 
         $profile = StudentProfile::where('user_id', $studentId)->first();
 
-        if (!$profile) {
+        if (! $profile) {
             return;
         }
 
@@ -48,7 +48,7 @@ class PrePlacementService
             'ojt_status' => $allSubmitted ? 'active' : ($profile->ojt_status ?? 'pending'),
         ]);
 
-        if ($allSubmitted && !$wasComplete) {
+        if ($allSubmitted && ! $wasComplete) {
             \App\Models\Notification::create([
                 'user_id' => $studentId,
                 'type' => 'pre_placement_complete',
@@ -62,4 +62,3 @@ class PrePlacementService
         }
     }
 }
-

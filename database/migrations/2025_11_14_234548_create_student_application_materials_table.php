@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('resume_path')->nullable();
             $table->foreignId('resume_id')->nullable()->constrained('resumes')->onDelete('set null');
             $table->timestamps();
-            
+
             $table->unique('student_user_id');
         });
     }

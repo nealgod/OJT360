@@ -456,8 +456,11 @@
                     $activeCompanies = \App\Models\Company::where('status', 'active')->count();
                     $totalCompanies = \App\Models\Company::count();
                     $departments = \App\Models\Department::count();
-                    $verifiedUsers = \App\Models\User::whereNotNull('email_verified_at')->count();
-                    $systemHealth = $totalUsers > 0 ? round(($verifiedUsers / $totalUsers) * 100) : 0;
+                    $students = \App\Models\User::where('role', 'intern')->count();
+                    $activeInterns = \App\Models\User::where('role', 'intern')
+                        ->whereHas('studentProfile', function($q) { $q->where('ojt_status', 'active'); })
+                        ->count();
+                    $activeOjtRate = $students > 0 ? round(($activeInterns / $students) * 100) : 0;
                 @endphp
                 <!-- Admin Dashboard Stats -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -507,16 +510,17 @@
                         </div>
                     </div>
 
-                    <!-- System Health -->
+                    <!-- Active OJT Rate -->
                     <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-gray-600 text-sm font-medium">System Health</p>
-                                <p class="text-2xl font-bold text-ojt-dark">{{ $systemHealth }}%</p>
+                                <p class="text-gray-600 text-sm font-medium">Active OJT Rate</p>
+                                <p class="text-2xl font-bold text-ojt-dark">{{ $activeOjtRate }}%</p>
+                                <p class="text-xs text-gray-500 mt-1">{{ $activeInterns }} of {{ $students }} interns active</p>
                             </div>
                             <div class="w-12 h-12 bg-ojt-accent/10 rounded-lg flex items-center justify-center">
                                 <svg class="w-6 h-6 text-ojt-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m4 4v-1a4 4 0 10-8 0v1m8 0h2m-10 0H5" />
                                 </svg>
                             </div>
                         </div>

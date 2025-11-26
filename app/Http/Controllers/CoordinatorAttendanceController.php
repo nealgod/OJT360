@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\AttendanceLog;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class CoordinatorAttendanceController extends Controller
@@ -14,10 +13,10 @@ class CoordinatorAttendanceController extends Controller
     public function approveRecovery(AttendanceLog $log)
     {
         // Verify the log is recovered and pending
-        if (!$log->is_recovered || $log->recovery_approved !== null) {
+        if (! $log->is_recovered || $log->recovery_approved !== null) {
             return response()->json([
                 'success' => false,
-                'message' => 'This attendance log cannot be approved.'
+                'message' => 'This attendance log cannot be approved.',
             ], 400);
         }
 
@@ -26,7 +25,7 @@ class CoordinatorAttendanceController extends Controller
             'recovery_approved' => true,
             'recovery_approved_at' => now(),
             'recovery_approved_by' => Auth::id(),
-            'status' => 'approved'
+            'status' => 'approved',
         ]);
 
         // Check if student completed required hours after approval
@@ -39,12 +38,12 @@ class CoordinatorAttendanceController extends Controller
             'log_id' => $log->id,
             'student_id' => $log->student_user_id,
             'approved_by' => Auth::id(),
-            'minutes_worked' => $log->minutes_worked
+            'minutes_worked' => $log->minutes_worked,
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Recovery approved! Hours have been added to student total.'
+            'message' => 'Recovery approved! Hours have been added to student total.',
         ]);
     }
 
@@ -54,10 +53,10 @@ class CoordinatorAttendanceController extends Controller
     public function rejectRecovery(AttendanceLog $log)
     {
         // Verify the log is recovered and pending
-        if (!$log->is_recovered || $log->recovery_approved !== null) {
+        if (! $log->is_recovered || $log->recovery_approved !== null) {
             return response()->json([
                 'success' => false,
-                'message' => 'This attendance log cannot be rejected.'
+                'message' => 'This attendance log cannot be rejected.',
             ], 400);
         }
 
@@ -66,18 +65,18 @@ class CoordinatorAttendanceController extends Controller
             'recovery_approved' => false,
             'recovery_approved_at' => now(),
             'recovery_approved_by' => Auth::id(),
-            'status' => 'flagged'
+            'status' => 'flagged',
         ]);
 
         \Log::info('Recovery attendance rejected', [
             'log_id' => $log->id,
             'student_id' => $log->student_user_id,
-            'rejected_by' => Auth::id()
+            'rejected_by' => Auth::id(),
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Recovery rejected. Hours will not be counted.'
+            'message' => 'Recovery rejected. Hours will not be counted.',
         ]);
     }
 
@@ -88,16 +87,16 @@ class CoordinatorAttendanceController extends Controller
     {
         try {
             $studentProfile = $user->studentProfile;
-            
-            if (!$studentProfile || $studentProfile->ojt_status !== 'active') {
+
+            if (! $studentProfile || $studentProfile->ojt_status !== 'active') {
                 return;
             }
 
             // Calculate total hours completed (exclude pending/rejected recovered logs)
             $totalMinutes = AttendanceLog::where('student_user_id', $user->id)
-                ->where(function($query) {
+                ->where(function ($query) {
                     $query->where('is_recovered', false)
-                          ->orWhere(function($q) {
+                          ->orWhere(function ($q) {
                               $q->where('is_recovered', true)
                                 ->where('recovery_approved', true);
                           });
@@ -109,10 +108,10 @@ class CoordinatorAttendanceController extends Controller
             $acceptance = \App\Models\AcceptanceLetter::where('student_user_id', $user->id)
                 ->latest()
                 ->first();
-            
-            $requiredHours = $acceptance?->total_hours 
-                ?? $studentProfile->required_hours 
-                ?? $user->getRequiredHours() 
+
+            $requiredHours = $acceptance?->total_hours
+                ?? $studentProfile->required_hours
+                ?? $user->getRequiredHours()
                 ?? 500;
 
             $studentProfileUpdates = [
@@ -127,7 +126,7 @@ class CoordinatorAttendanceController extends Controller
                 $studentProfileUpdates['ojt_status'] = 'completed';
             }
 
-            if (!empty($studentProfileUpdates)) {
+            if (! empty($studentProfileUpdates)) {
                 $studentProfile->update($studentProfileUpdates);
             }
 
@@ -135,11 +134,11 @@ class CoordinatorAttendanceController extends Controller
                 \Log::info('Student OJT status auto-updated to completed', [
                     'user_id' => $user->id,
                     'completed_hours' => $completedHours,
-                    'required_hours' => $requiredHours
+                    'required_hours' => $requiredHours,
                 ]);
             }
         } catch (\Exception $e) {
-            \Log::error('Error checking completion status: ' . $e->getMessage());
+            \Log::error('Error checking completion status: '.$e->getMessage());
         }
     }
 }

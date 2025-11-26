@@ -2,16 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Resume;
 use App\Models\ApplicationLetter;
-use App\Http\Controllers\ResumeController;
+use App\Models\Resume;
 use App\Support\ProgramCodeResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use TCPDF;
 
 class StudentDocumentController extends Controller
 {
@@ -21,20 +18,20 @@ class StudentDocumentController extends Controller
     public function index()
     {
         $user = Auth::user();
-        
-        if (!$user->isStudent()) {
+
+        if (! $user->isStudent()) {
             abort(403, 'Only students can access student documents.');
         }
 
         $resumes = Resume::where('user_id', $user->id)->orderBy('created_at', 'desc')->get();
         $applicationLetters = ApplicationLetter::where('user_id', $user->id)->orderBy('created_at', 'desc')->get();
-        
+
         // Check if there's an active submission for Resume/PDS
         $resumeRequirement = \App\Models\DocumentRequirement::where('name', 'LIKE', '%Resume%')
             ->orWhere('name', 'LIKE', '%PDS%')
             ->where('type', 'pre_placement')
             ->first();
-        
+
         $hasActiveResumeSubmission = false;
         if ($resumeRequirement) {
             $hasActiveResumeSubmission = \App\Models\StudentDocumentSubmission::where('student_user_id', $user->id)
@@ -47,7 +44,7 @@ class StudentDocumentController extends Controller
         $letterRequirement = \App\Models\DocumentRequirement::where('name', 'LIKE', '%Application Letter%')
             ->where('type', 'pre_placement')
             ->first();
-        
+
         $hasActiveLetterSubmission = false;
         if ($letterRequirement) {
             $hasActiveLetterSubmission = \App\Models\StudentDocumentSubmission::where('student_user_id', $user->id)
@@ -55,20 +52,20 @@ class StudentDocumentController extends Controller
                 ->whereIn('status', ['submitted', 'pending'])
                 ->exists();
         }
-        
+
         return view('student-documents.index', compact('resumes', 'applicationLetters', 'hasActiveResumeSubmission', 'hasActiveLetterSubmission'));
     }
 
     // ==================== RESUME METHODS ====================
-    
+
     /**
      * Show the form for creating a new resume
      */
     public function createResume()
     {
         $user = Auth::user();
-        
-        if (!$user->isStudent()) {
+
+        if (! $user->isStudent()) {
             abort(403, 'Only students can create resumes.');
         }
 
@@ -93,7 +90,7 @@ class StudentDocumentController extends Controller
                     'degree' => $studentProfile->course ?? '',
                     'department' => $studentProfile->department ?? '',
                     'year_level' => $yearLabel,
-                ]
+                ],
             ],
         ];
 
@@ -109,8 +106,8 @@ class StudentDocumentController extends Controller
     public function storeResume(Request $request)
     {
         $user = Auth::user();
-        
-        if (!$user->isStudent()) {
+
+        if (! $user->isStudent()) {
             abort(403);
         }
 
@@ -143,7 +140,7 @@ class StudentDocumentController extends Controller
                 'type' => $type,
                 'institution' => trim($edu['institution'] ?? ''),
             ];
-            
+
             if ($type === 'college') {
                 $data['degree'] = trim($edu['degree'] ?? '');
                 $data['department'] = trim($edu['department'] ?? '');
@@ -154,10 +151,10 @@ class StudentDocumentController extends Controller
             } else {
                 $data['year_period'] = trim($edu['year_period'] ?? '');
             }
-            
+
             return $data;
         })->filter(function ($edu) {
-            return !empty($edu['institution']);
+            return ! empty($edu['institution']);
         })->values()->all();
 
         $workExperience = collect($validated['work_experience'] ?? [])->map(function ($exp) {
@@ -176,6 +173,7 @@ class StudentDocumentController extends Controller
 
         $certifications = collect($validated['certifications'] ?? [])->map(function ($cert) {
             $name = trim($cert['name'] ?? '');
+
             return $name ? ['name' => $name] : null;
         })->filter()->values()->all();
 
@@ -204,7 +202,7 @@ class StudentDocumentController extends Controller
     public function editResume(Resume $resume)
     {
         $user = Auth::user();
-        
+
         if ($resume->user_id !== $user->id) {
             abort(403);
         }
@@ -221,7 +219,7 @@ class StudentDocumentController extends Controller
     public function updateResume(Request $request, Resume $resume)
     {
         $user = Auth::user();
-        
+
         if ($resume->user_id !== $user->id) {
             abort(403);
         }
@@ -253,7 +251,7 @@ class StudentDocumentController extends Controller
                 'type' => $type,
                 'institution' => trim($edu['institution'] ?? ''),
             ];
-            
+
             if ($type === 'college') {
                 $data['degree'] = trim($edu['degree'] ?? '');
                 $data['department'] = trim($edu['department'] ?? '');
@@ -264,10 +262,10 @@ class StudentDocumentController extends Controller
             } else {
                 $data['year_period'] = trim($edu['year_period'] ?? '');
             }
-            
+
             return $data;
         })->filter(function ($edu) {
-            return !empty($edu['institution']);
+            return ! empty($edu['institution']);
         })->values()->all();
 
         $workExperience = collect($validated['work_experience'] ?? [])->map(function ($exp) {
@@ -286,6 +284,7 @@ class StudentDocumentController extends Controller
 
         $certifications = collect($validated['certifications'] ?? [])->map(function ($cert) {
             $name = trim($cert['name'] ?? '');
+
             return $name ? ['name' => $name] : null;
         })->filter()->values()->all();
 
@@ -317,7 +316,7 @@ class StudentDocumentController extends Controller
     public function destroyResume(Resume $resume)
     {
         $user = Auth::user();
-        
+
         if ($resume->user_id !== $user->id) {
             abort(403);
         }
@@ -337,9 +336,9 @@ class StudentDocumentController extends Controller
     public function downloadResume(Resume $resume)
     {
         $user = Auth::user();
-        
+
         $canDownload = false;
-        
+
         if ($resume->user_id === $user->id) {
             $canDownload = true;
         } elseif ($user->isSupervisor()) {
@@ -350,8 +349,8 @@ class StudentDocumentController extends Controller
         } elseif ($user->isCoordinator()) {
             $canDownload = true;
         }
-        
-        if (!$canDownload) {
+
+        if (! $canDownload) {
             abort(403);
         }
 
@@ -360,20 +359,20 @@ class StudentDocumentController extends Controller
     }
 
     // ==================== APPLICATION LETTER METHODS ====================
-    
+
     /**
      * Show the form for creating an application letter
      */
     public function createApplicationLetter()
     {
         $user = Auth::user();
-        
-        if (!$user->isStudent()) {
+
+        if (! $user->isStudent()) {
             abort(403, 'Only students can create application letters.');
         }
 
         $studentProfile = $user->studentProfile;
-        
+
         return view('student-documents.application-letter.create', [
             'user' => $user,
             'studentProfile' => $studentProfile,
@@ -386,8 +385,8 @@ class StudentDocumentController extends Controller
     public function storeApplicationLetter(Request $request)
     {
         $user = Auth::user();
-        
-        if (!$user->isStudent()) {
+
+        if (! $user->isStudent()) {
             abort(403);
         }
 
@@ -409,7 +408,7 @@ class StudentDocumentController extends Controller
     public function editApplicationLetter(ApplicationLetter $letter)
     {
         $user = Auth::user();
-        
+
         if ($letter->user_id !== $user->id) {
             abort(403);
         }
@@ -429,7 +428,7 @@ class StudentDocumentController extends Controller
     public function updateApplicationLetter(Request $request, ApplicationLetter $letter)
     {
         $user = Auth::user();
-        
+
         if ($letter->user_id !== $user->id) {
             abort(403);
         }
@@ -451,7 +450,7 @@ class StudentDocumentController extends Controller
     public function destroyApplicationLetter(ApplicationLetter $letter)
     {
         $user = Auth::user();
-        
+
         if ($letter->user_id !== $user->id) {
             abort(403);
         }
@@ -467,22 +466,22 @@ class StudentDocumentController extends Controller
     public function submitResume(Resume $resume)
     {
         $user = Auth::user();
-        
+
         if ($resume->user_id !== $user->id) {
             return back()->with('error', 'You can only submit your own documents.');
         }
 
-        $requirements = \App\Models\DocumentRequirement::where(function($query) {
-                $query->where('name', 'LIKE', '%Resume%')
-                    ->orWhere('name', 'LIKE', '%PDS%');
-            })
+        $requirements = \App\Models\DocumentRequirement::where(function ($query) {
+            $query->where('name', 'LIKE', '%Resume%')
+                ->orWhere('name', 'LIKE', '%PDS%');
+        })
             ->whereIn('type', ['pre_placement', 'post_placement'])
             ->get()
             ->keyBy('type');
 
         $primaryRequirement = $requirements->get('pre_placement');
 
-        if (!$primaryRequirement) {
+        if (! $primaryRequirement) {
             return back()->with('error', 'Resume document requirement not found. Please contact your coordinator.');
         }
 
@@ -490,11 +489,11 @@ class StudentDocumentController extends Controller
             $activeSubmissions = [];
 
             foreach ($requirements as $type => $requirement) {
-            $activeSubmissions[$type] = \App\Models\StudentDocumentSubmission::where('student_user_id', $user->id)
-                ->where('document_requirement_id', $requirement->id)
-                ->whereIn('status', ['submitted', 'pending'])
-                ->lockForUpdate()
-                ->first();
+                $activeSubmissions[$type] = \App\Models\StudentDocumentSubmission::where('student_user_id', $user->id)
+                    ->where('document_requirement_id', $requirement->id)
+                    ->whereIn('status', ['submitted', 'pending'])
+                    ->lockForUpdate()
+                    ->first();
 
                 if ($type === 'pre_placement' && $activeSubmissions[$type]) {
                     return back()->with('error', 'You already have a resume submitted for review. Only ONE resume can be submitted at a time. Please wait for coordinator approval or cancellation before submitting another one.');
@@ -518,10 +517,10 @@ class StudentDocumentController extends Controller
                         'resume_%s_%d_%s.pdf',
                         $type,
                         $user->id,
-                        now()->format('YmdHis') . '_' . Str::random(4)
+                        now()->format('YmdHis').'_'.Str::random(4)
                     );
 
-                    $path = 'document-submissions/' . $filename;
+                    $path = 'document-submissions/'.$filename;
                     Storage::disk('public')->put($path, $pdfContent);
 
                     \App\Models\StudentDocumentSubmission::create([
@@ -545,7 +544,7 @@ class StudentDocumentController extends Controller
                     ]);
 
                     $coordinator = \App\Models\User::where('role', 'coordinator')
-                        ->whereHas('coordinatorProfile', function($q) use ($user) {
+                        ->whereHas('coordinatorProfile', function ($q) use ($user) {
                             $q->where('department', $user->studentProfile?->department);
                         })
                         ->first();
@@ -555,7 +554,7 @@ class StudentDocumentController extends Controller
                             'user_id' => $coordinator->id,
                             'type' => 'document_submitted',
                             'title' => 'New Resume Submission',
-                            'message' => $user->name . ' has submitted a resume for review.',
+                            'message' => $user->name.' has submitted a resume for review.',
                             'data' => json_encode([
                                 'student_id' => $user->id,
                                 'requirement_id' => $primaryRequirement->id,
@@ -566,7 +565,8 @@ class StudentDocumentController extends Controller
 
                 return back()->with('success', 'Resume submitted successfully! Your coordinator will review it.');
             } catch (\Exception $e) {
-                \Log::error('Resume submission error: ' . $e->getMessage());
+                \Log::error('Resume submission error: '.$e->getMessage());
+
                 return back()->with('error', 'Failed to submit resume. Please try again or contact support.');
             }
         });
@@ -578,7 +578,7 @@ class StudentDocumentController extends Controller
     public function submitApplicationLetter(ApplicationLetter $letter)
     {
         $user = Auth::user();
-        
+
         if ($letter->user_id !== $user->id) {
             return back()->with('error', 'You can only submit your own documents.');
         }
@@ -590,7 +590,7 @@ class StudentDocumentController extends Controller
 
         $primaryRequirement = $requirements->get('pre_placement');
 
-        if (!$primaryRequirement) {
+        if (! $primaryRequirement) {
             return back()->with('error', 'Application Letter document requirement not found. Please contact your coordinator.');
         }
 
@@ -598,11 +598,11 @@ class StudentDocumentController extends Controller
             $activeSubmissions = [];
 
             foreach ($requirements as $type => $requirement) {
-            $activeSubmissions[$type] = \App\Models\StudentDocumentSubmission::where('student_user_id', $user->id)
-                ->where('document_requirement_id', $requirement->id)
-                ->whereIn('status', ['submitted', 'pending'])
-                ->lockForUpdate()
-                ->first();
+                $activeSubmissions[$type] = \App\Models\StudentDocumentSubmission::where('student_user_id', $user->id)
+                    ->where('document_requirement_id', $requirement->id)
+                    ->whereIn('status', ['submitted', 'pending'])
+                    ->lockForUpdate()
+                    ->first();
 
                 if ($type === 'pre_placement' && $activeSubmissions[$type]) {
                     return back()->with('error', 'You already have an application letter submitted for review. Only ONE application letter can be submitted at a time. Please wait for coordinator approval or cancellation before submitting another one.');
@@ -626,10 +626,10 @@ class StudentDocumentController extends Controller
                         'application_letter_%s_%d_%s.pdf',
                         $type,
                         $user->id,
-                        now()->format('YmdHis') . '_' . Str::random(4)
+                        now()->format('YmdHis').'_'.Str::random(4)
                     );
 
-                    $path = 'document-submissions/' . $filename;
+                    $path = 'document-submissions/'.$filename;
                     Storage::disk('public')->put($path, $pdfContent);
 
                     \App\Models\StudentDocumentSubmission::create([
@@ -653,7 +653,7 @@ class StudentDocumentController extends Controller
                     ]);
 
                     $coordinator = \App\Models\User::where('role', 'coordinator')
-                        ->whereHas('coordinatorProfile', function($q) use ($user) {
+                        ->whereHas('coordinatorProfile', function ($q) use ($user) {
                             $q->where('department', $user->studentProfile?->department);
                         })
                         ->first();
@@ -663,7 +663,7 @@ class StudentDocumentController extends Controller
                             'user_id' => $coordinator->id,
                             'type' => 'document_submitted',
                             'title' => 'New Application Letter Submission',
-                            'message' => $user->name . ' has submitted an application letter for review.',
+                            'message' => $user->name.' has submitted an application letter for review.',
                             'data' => json_encode([
                                 'student_id' => $user->id,
                                 'requirement_id' => $primaryRequirement->id,
@@ -674,7 +674,8 @@ class StudentDocumentController extends Controller
 
                 return back()->with('success', 'Application letter submitted successfully! Your coordinator will review it.');
             } catch (\Exception $e) {
-                \Log::error('Application letter submission error: ' . $e->getMessage());
+                \Log::error('Application letter submission error: '.$e->getMessage());
+
                 return back()->with('error', 'Failed to submit application letter. Please try again or contact support.');
             }
         });
@@ -686,9 +687,9 @@ class StudentDocumentController extends Controller
     public function downloadApplicationLetter(ApplicationLetter $letter)
     {
         $user = Auth::user();
-        
+
         $canDownload = false;
-        
+
         if ($letter->user_id === $user->id) {
             $canDownload = true;
         } elseif ($user->isSupervisor()) {
@@ -699,8 +700,8 @@ class StudentDocumentController extends Controller
         } elseif ($user->isCoordinator()) {
             $canDownload = true;
         }
-        
-        if (!$canDownload) {
+
+        if (! $canDownload) {
             abort(403);
         }
 
@@ -709,31 +710,31 @@ class StudentDocumentController extends Controller
 
         try {
             $pdf = new \TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
-            
+
             // Set document information
             $pdf->SetCreator('OJT360');
             $pdf->SetAuthor($student->name);
             $pdf->SetTitle('Application Letter');
-            
+
             // Remove default header/footer
             $pdf->setPrintHeader(false);
             $pdf->setPrintFooter(false);
-            
+
             // Set margins (1 inch = 25.4mm)
             $pdf->SetMargins(25.4, 25.4, 25.4);
             $pdf->SetAutoPageBreak(true, 25.4);
-            
+
             // Add a page
             $pdf->AddPage();
-            
+
             // Set font
             $pdf->SetFont('times', '', 12);
-            
+
             // Date (right-aligned)
             $pdf->SetFont('times', '', 12);
             $pdf->Cell(0, 10, date('F d, Y'), 0, 1, 'R');
             $pdf->Ln(5);
-            
+
             // Student info (left-aligned)
             $pdf->SetFont('times', '', 12);
             $pdf->Cell(0, 6, $student->name, 0, 1, 'L');
@@ -750,28 +751,28 @@ class StudentDocumentController extends Controller
                 $pdf->Cell(0, 6, $studentProfile->course, 0, 1, 'L');
             }
             $pdf->Ln(10);
-            
+
             // Title (centered, bold)
             $pdf->SetFont('times', 'B', 14);
             $pdf->Cell(0, 10, 'APPLICATION LETTER', 0, 1, 'C');
             $pdf->Ln(5);
-            
+
             // Letter content
             $pdf->SetFont('times', '', 12);
             $pdf->MultiCell(0, 5, $letter->content, 0, 'J');
             $pdf->Ln(8);
-            
+
             // Closing
             $pdf->SetFont('times', '', 12);
             $pdf->Cell(0, 6, 'Sincerely yours,', 0, 1, 'L');
             $pdf->Ln(15);
-            
+
             // Signature line
             $pdf->SetFont('times', 'B', 12);
             $pdf->Cell(0, 6, $student->name, 0, 1, 'L');
-            
+
             // Output PDF
-            $filename = 'application_letter_' . str_replace(' ', '_', $student->name) . '.pdf';
+            $filename = 'application_letter_'.str_replace(' ', '_', $student->name).'.pdf';
             $pdfContent = $pdf->Output('', 'S');
 
             return response($pdfContent, 200)
@@ -779,11 +780,10 @@ class StudentDocumentController extends Controller
                 ->header('Content-Length', strlen($pdfContent))
                 ->header('Cache-Control', 'private, max-age=0, must-revalidate')
                 ->header('Pragma', 'public')
-                ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
-                
+                ->header('Content-Disposition', 'attachment; filename="'.$filename.'"');
         } catch (\Exception $e) {
-            \Log::error('PDF Generation Error: ' . $e->getMessage());
-            abort(500, 'Error generating PDF: ' . $e->getMessage());
+            \Log::error('PDF Generation Error: '.$e->getMessage());
+            abort(500, 'Error generating PDF: '.$e->getMessage());
         }
     }
 }

@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use App\Models\User;
 
 class AdminUserSeeder extends Seeder
 {
@@ -29,7 +29,7 @@ class AdminUserSeeder extends Seeder
         } else {
             $this->command->info('Admin user already exists!');
         }
-        
+
         $this->command->info('Email: ojt3604dmin@gmail.com');
         $this->command->info('Password: 12345678');
     }

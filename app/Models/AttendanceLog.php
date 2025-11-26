@@ -64,10 +64,13 @@ class AttendanceLog extends Model
     // Helper methods for time formatting
     public function getTimeInFormattedAttribute()
     {
-        if (!$this->time_in) return '—';
+        if (! $this->time_in) {
+            return '—';
+        }
         try {
             // Create a Carbon instance from the time string and format it properly
             $time = \Carbon\Carbon::createFromFormat('H:i:s', $this->time_in);
+
             return $time->format('g:i A');
         } catch (\Exception $e) {
             // Fallback if time format is different
@@ -77,10 +80,13 @@ class AttendanceLog extends Model
 
     public function getTimeOutFormattedAttribute()
     {
-        if (!$this->time_out) return '—';
+        if (! $this->time_out) {
+            return '—';
+        }
         try {
             // Create a Carbon instance from the time string and format it properly
             $time = \Carbon\Carbon::createFromFormat('H:i:s', $this->time_out);
+
             return $time->format('g:i A');
         } catch (\Exception $e) {
             // Fallback if time format is different
@@ -91,11 +97,10 @@ class AttendanceLog extends Model
     // Helper method to get formatted hours worked
     public function getHoursWorkedFormattedAttribute()
     {
-        if (!$this->minutes_worked) return '0.00';
+        if (! $this->minutes_worked) {
+            return '0.00';
+        }
+
         return number_format($this->minutes_worked / 60, 2);
     }
-
-
 }
-
-

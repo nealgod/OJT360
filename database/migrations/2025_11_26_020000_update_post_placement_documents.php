@@ -94,4 +94,3 @@ return new class extends Migration
             ->update(['max_files_per_submission' => 1]);
     }
 };
-

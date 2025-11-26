@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditLog;
 use App\Models\Company;
 use Illuminate\Http\Request;
 
@@ -13,7 +14,7 @@ class CompanyController extends Controller
     public function index()
     {
         $user = auth()->user();
-        
+
         if ($user->isStudent()) {
             // Students see only companies assigned to their department
             $studentDepartment = $user->studentProfile->department ?? null;
@@ -24,10 +25,10 @@ class CompanyController extends Controller
         } elseif ($user->isCoordinator()) {
             // Coordinators see ALL companies in their department (active and inactive)
             $coordDept = $user->coordinatorProfile?->department;
-            $companies = Company::where(function($q) use ($user, $coordDept) {
-                    $q->where('coordinator_id', $user->id)
-                      ->orWhere('department', $coordDept);
-                })
+            $companies = Company::where(function ($q) use ($user, $coordDept) {
+                $q->where('coordinator_id', $user->id)
+                  ->orWhere('department', $coordDept);
+            })
                 ->orderBy('status', 'desc') // Active first, then inactive
                 ->orderBy('name')
                 ->get();
@@ -41,7 +42,6 @@ class CompanyController extends Controller
         return view('companies.index', compact('companies'));
     }
 
-
     /**
      * Show create form for coordinators.
      */
@@ -51,6 +51,7 @@ class CompanyController extends Controller
         abort_unless($user && $user->isCoordinator(), 403);
 
         $department = $user->coordinatorProfile?->department;
+
         return view('companies.create', compact('department'));
     }
 
@@ -71,7 +72,7 @@ class CompanyController extends Controller
             'status' => ['required', 'in:active,inactive'],
         ]);
 
-        Company::create([
+        $company = Company::create([
             'name' => $request->string('name'),
             'department' => $user->coordinatorProfile?->department,
             'coordinator_id' => $user->id,
@@ -81,6 +82,8 @@ class CompanyController extends Controller
             'contact_phone' => $request->string('contact_phone'),
             'status' => $request->string('status', 'active'),
         ]);
+
+        AuditLog::log('created', 'Company created', 'Company', $company->id, null, $company->toArray());
 
         return redirect()->route('companies.index')->with('success', 'Company added successfully.');
     }
@@ -92,14 +95,15 @@ class CompanyController extends Controller
     {
         $user = auth()->user();
         $coordDept = $user->coordinatorProfile?->department;
-        
+
         abort_unless($user && (
-            $user->isAdmin() || 
+            $user->isAdmin() ||
             ($user->isCoordinator() && $company->coordinator_id === $user->id) ||
             ($user->isCoordinator() && $company->department === $coordDept)
         ), 403);
 
         $department = $company->department;
+
         return view('companies.edit', compact('company', 'department'));
     }
 
@@ -110,15 +114,15 @@ class CompanyController extends Controller
     {
         $user = auth()->user();
         $coordDept = $user->coordinatorProfile?->department;
-        
+
         abort_unless($user && (
-            $user->isAdmin() || 
+            $user->isAdmin() ||
             ($user->isCoordinator() && $company->coordinator_id === $user->id) ||
             ($user->isCoordinator() && $company->department === $coordDept)
         ), 403);
 
         $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:companies,name,' . $company->id],
+            'name' => ['required', 'string', 'max:255', 'unique:companies,name,'.$company->id],
             'address' => ['nullable', 'string', 'max:255'],
             'contact_person' => ['nullable', 'string', 'max:255'],
             'contact_email' => ['nullable', 'email', 'max:255'],
@@ -126,6 +130,7 @@ class CompanyController extends Controller
             'status' => ['required', 'in:active,inactive'],
         ]);
 
+        $old = $company->getOriginal();
         $company->update([
             'name' => $request->string('name'),
             // keep department fixed to creator's department
@@ -135,6 +140,8 @@ class CompanyController extends Controller
             'contact_phone' => $request->string('contact_phone'),
             'status' => $request->string('status', $company->status),
         ]);
+
+        AuditLog::log('updated', 'Company updated', 'Company', $company->id, $old, $company->toArray());
 
         return redirect()->route('companies.index')->with('success', 'Company updated successfully.');
     }
@@ -146,18 +153,21 @@ class CompanyController extends Controller
     {
         $user = auth()->user();
         $coordDept = $user->coordinatorProfile?->department;
-        
+
         abort_unless($user && (
-            $user->isAdmin() || 
+            $user->isAdmin() ||
             ($user->isCoordinator() && $company->coordinator_id === $user->id) ||
             ($user->isCoordinator() && $company->department === $coordDept)
         ), 403);
 
+        $old = $company->getOriginal();
         $company->update([
-            'status' => $company->status === 'active' ? 'inactive' : 'active'
+            'status' => $company->status === 'active' ? 'inactive' : 'active',
         ]);
 
         $status = $company->status === 'active' ? 'activated' : 'deactivated';
+        AuditLog::log('updated', 'Company status toggled', 'Company', $company->id, $old, $company->toArray());
+
         return redirect()->route('companies.index')->with('success', "Company {$status} successfully.");
     }
 
@@ -168,14 +178,18 @@ class CompanyController extends Controller
     {
         $user = auth()->user();
         $coordDept = $user->coordinatorProfile?->department;
-        
+
         abort_unless($user && (
-            $user->isAdmin() || 
+            $user->isAdmin() ||
             ($user->isCoordinator() && $company->coordinator_id === $user->id) ||
             ($user->isCoordinator() && $company->department === $coordDept)
         ), 403);
 
+        $companyId = $company->id;
+        $old = $company->toArray();
         $company->delete();
+
+        AuditLog::log('deleted', 'Company deleted', 'Company', $companyId, $old, null);
 
         return redirect()->route('companies.index')->with('success', 'Company deleted successfully.');
     }

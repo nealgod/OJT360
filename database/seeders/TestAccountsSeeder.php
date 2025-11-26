@@ -2,10 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use App\Models\StudentProfile;
-use App\Models\CoordinatorProfile;
 use App\Models\Company;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class TestAccountsSeeder extends Seeder
@@ -51,14 +49,14 @@ class TestAccountsSeeder extends Seeder
                     'email_verified_at' => now(),
                 ]
             );
-            
+
             // Ensure the account is always verified
-            if (!$user->email_verified_at) {
+            if (! $user->email_verified_at) {
                 $user->update(['email_verified_at' => now()]);
             }
 
             // Create student profile if it doesn't exist
-            if (!$user->studentProfile) {
+            if (! $user->studentProfile) {
                 $user->studentProfile()->create([
                     'student_id' => $studentData['student_id'],
                     'course' => $studentData['course'],
@@ -80,18 +78,18 @@ class TestAccountsSeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
-        
+
         // Ensure the coordinator account is always verified
-        if (!$coordinator->email_verified_at) {
+        if (! $coordinator->email_verified_at) {
             $coordinator->update(['email_verified_at' => now()]);
         }
 
         // Create coordinator profile if it doesn't exist
-        if (!$coordinator->coordinatorProfile) {
+        if (! $coordinator->coordinatorProfile) {
             // Get the Department of Computer Studies
             $department = \App\Models\Department::where('name', 'Department of Computer Studies')->first();
             $program = \App\Models\Program::where('name', 'Bachelor of Science in Information Technology (BSIT)')->first();
-            
+
             $coordinator->coordinatorProfile()->create([
                 'department_id' => $department ? $department->id : null,
                 'program_id' => $program ? $program->id : null,

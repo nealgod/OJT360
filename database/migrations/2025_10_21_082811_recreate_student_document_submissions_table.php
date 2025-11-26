@@ -13,7 +13,7 @@ return new class extends Migration
     {
         // Drop the existing table
         Schema::dropIfExists('student_document_submissions');
-        
+
         // Recreate the table without the unique constraint
         Schema::create('student_document_submissions', function (Blueprint $table) {
             $table->id();
@@ -28,7 +28,7 @@ return new class extends Migration
             $table->foreignId('reviewed_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('reviewed_at')->nullable();
             $table->timestamps();
-            
+
             // No unique constraint - allows multiple files per requirement
         });
     }
@@ -40,7 +40,7 @@ return new class extends Migration
     {
         // Drop the table
         Schema::dropIfExists('student_document_submissions');
-        
+
         // Recreate with the original unique constraint
         Schema::create('student_document_submissions', function (Blueprint $table) {
             $table->id();
@@ -55,7 +55,7 @@ return new class extends Migration
             $table->foreignId('reviewed_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('reviewed_at')->nullable();
             $table->timestamps();
-            
+
             // Restore the unique constraint
             $table->unique(['student_user_id', 'document_requirement_id'], 'student_doc_submissions_unique');
         });

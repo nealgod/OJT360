@@ -27,6 +27,12 @@ class AdminAuditController extends Controller
             $query->where('model_type', $request->model_type);
         }
 
+        if ($request->filled('role')) {
+            $query->whereHas('user', function ($q) use ($request) {
+                $q->where('role', $request->role);
+            });
+        }
+
         // Filter by date range
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->date_from);
@@ -42,13 +48,15 @@ class AdminAuditController extends Controller
         $users = User::orderBy('name')->get();
         $actions = AuditLog::distinct()->pluck('action');
         $modelTypes = AuditLog::distinct()->whereNotNull('model_type')->pluck('model_type');
+        $roles = ['admin', 'coordinator', 'supervisor', 'intern'];
 
-        return view('admin.audit.index', compact('logs', 'users', 'actions', 'modelTypes'));
+        return view('admin.audit.index', compact('logs', 'users', 'actions', 'modelTypes', 'roles'));
     }
 
     public function show(AuditLog $audit)
     {
         $audit->load('user');
+
         return view('admin.audit.show', compact('audit'));
     }
 }

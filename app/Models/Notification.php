@@ -27,10 +27,10 @@ class Notification extends Model
     {
         static::creating(function ($notification) {
             $data = $notification->data;
-            if (!$notification->title && is_array($data) && isset($data['title'])) {
+            if (! $notification->title && is_array($data) && isset($data['title'])) {
                 $notification->title = $data['title'];
             }
-            if (!$notification->message && is_array($data) && isset($data['message'])) {
+            if (! $notification->message && is_array($data) && isset($data['message'])) {
                 $notification->message = $data['message'];
             }
         });

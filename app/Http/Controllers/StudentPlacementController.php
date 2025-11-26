@@ -15,7 +15,7 @@ class StudentPlacementController extends Controller
         abort_unless($user && $user->isStudent(), 403);
 
         $profile = $user->studentProfile;
-        
+
         $acceptance = \App\Models\AcceptanceLetter::where('student_user_id', $user->id)
             ->latest()
             ->first();

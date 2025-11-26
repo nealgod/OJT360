@@ -22,15 +22,15 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::middleware('auth:sanctum')->get('/attendance/{date}', function (Request $request, $date) {
     try {
         $user = $request->user();
-        
+
         // Validate date format
         $dateObj = \Carbon\Carbon::parse($date);
-        
+
         // Get attendance for the selected date
         $attendance = \App\Models\AttendanceLog::where('student_user_id', $user->id)
             ->whereDate('work_date', $dateObj->format('Y-m-d'))
             ->first();
-        
+
         if ($attendance) {
             return response()->json([
                 'success' => true,
@@ -41,18 +41,18 @@ Route::middleware('auth:sanctum')->get('/attendance/{date}', function (Request $
                     'time_out_formatted' => $attendance->time_out_formatted,
                     'hours_worked_formatted' => $attendance->hours_worked_formatted,
                     'minutes_worked' => $attendance->minutes_worked,
-                ]
+                ],
             ]);
         }
-        
+
         return response()->json([
             'success' => false,
-            'message' => 'No attendance found for this date'
+            'message' => 'No attendance found for this date',
         ]);
     } catch (\Exception $e) {
         return response()->json([
             'success' => false,
-            'message' => 'Invalid date format'
+            'message' => 'Invalid date format',
         ], 400);
     }
 });

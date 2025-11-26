@@ -65,7 +65,7 @@ class WeeklyReport extends Model
     public function canBeSubmitted(): bool
     {
         return $this->status === 'draft'
-            && !empty($this->entries)
+            && ! empty($this->entries)
             && count($this->entries) > 0;
     }
 
@@ -102,4 +102,3 @@ class WeeklyReport extends Model
             ->all();
     }
 }
-

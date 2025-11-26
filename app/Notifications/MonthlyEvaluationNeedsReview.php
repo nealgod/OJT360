@@ -23,7 +23,7 @@ class MonthlyEvaluationNeedsReview extends Notification
     {
         return [
             'title' => 'New Monthly Evaluation for Review',
-            'message' => 'A new monthly evaluation for ' . $this->evaluation->student->name . ' (' . $this->evaluation->getMonthYearLabel() . ') needs your review.',
+            'message' => 'A new monthly evaluation for '.$this->evaluation->student->name.' ('.$this->evaluation->getMonthYearLabel().') needs your review.',
             'type' => 'evaluation_needs_review',
             'evaluation_id' => $this->evaluation->id,
             'url' => route('coordinator.evaluations.show', $this->evaluation->id),

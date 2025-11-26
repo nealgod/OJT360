@@ -43,7 +43,7 @@ class LoginRequest extends FormRequest
 
         // Use the remember parameter correctly
         $remember = $this->boolean('remember');
-        
+
         if (! Auth::attempt($this->only('email', 'password'), $remember)) {
             RateLimiter::hit($this->throttleKey());
 

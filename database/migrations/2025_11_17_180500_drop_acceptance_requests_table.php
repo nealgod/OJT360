@@ -39,7 +39,7 @@ return new class extends Migration
             $table->timestamp('expires_at');
             $table->enum('status', ['pending', 'completed', 'expired', 'cancelled'])->default('pending');
             $table->timestamps();
-            
+
             $table->foreign('student_user_id')->references('id')->on('users')->onDelete('cascade');
         });
     }

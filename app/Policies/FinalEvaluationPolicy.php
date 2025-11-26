@@ -2,13 +2,12 @@
 
 namespace App\Policies;
 
+use App\Models\AcceptanceLetter;
 use App\Models\FinalEvaluation;
 use App\Models\User;
-use App\Models\AcceptanceLetter;
 
 class FinalEvaluationPolicy
 {
-
     public function create(User $user, User $student): bool
     {
         // Only supervisors can create
@@ -28,7 +27,7 @@ class FinalEvaluationPolicy
 
         // Check if student has acceptance letter (internship must be set up)
         $acceptance = AcceptanceLetter::where('student_user_id', $student->id)->first();
-        if (!$acceptance) {
+        if (! $acceptance) {
             return false;
         }
 
@@ -53,12 +52,12 @@ class FinalEvaluationPolicy
 
         // Or check if student belongs to coordinator's program
         $coordinatorProfile = $user->coordinatorProfile;
-        if (!$coordinatorProfile) {
+        if (! $coordinatorProfile) {
             return false;
         }
 
         $studentProfile = $evaluation->student->studentProfile;
-        if (!$studentProfile) {
+        if (! $studentProfile) {
             return false;
         }
 
@@ -73,14 +72,14 @@ class FinalEvaluationPolicy
 
     public function update(User $user, FinalEvaluation $evaluation): bool
     {
-        return $user->role === 'supervisor' && 
+        return $user->role === 'supervisor' &&
                $evaluation->supervisor_user_id === $user->id &&
                $evaluation->status === 'draft';
     }
 
     public function submit(User $user, FinalEvaluation $evaluation): bool
     {
-        return $user->role === 'supervisor' && 
+        return $user->role === 'supervisor' &&
                $evaluation->supervisor_user_id === $user->id &&
                $evaluation->canBeSubmitted();
     }
@@ -98,12 +97,12 @@ class FinalEvaluationPolicy
 
         // Or check if student belongs to coordinator's program
         $coordinatorProfile = $user->coordinatorProfile;
-        if (!$coordinatorProfile) {
+        if (! $coordinatorProfile) {
             return false;
         }
 
         $studentProfile = $evaluation->student->studentProfile;
-        if (!$studentProfile) {
+        if (! $studentProfile) {
             return false;
         }
 

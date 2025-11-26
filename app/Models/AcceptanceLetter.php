@@ -55,36 +55,36 @@ class AcceptanceLetter extends Model
     // Helper methods
     public function getFormattedDateRangeAttribute()
     {
-        return $this->start_date->format('F d, Y') . ' - ' . $this->end_date->format('F d, Y');
+        return $this->start_date->format('F d, Y').' - '.$this->end_date->format('F d, Y');
     }
 
     public function getWorkScheduleTextAttribute()
     {
-        if (!$this->work_schedule) {
+        if (! $this->work_schedule) {
             return '';
         }
 
         $schedule = is_string($this->work_schedule) ? json_decode($this->work_schedule, true) : $this->work_schedule;
-        
-        if (!is_array($schedule)) {
+
+        if (! is_array($schedule)) {
             return '';
         }
 
         $days = [];
         foreach ($schedule as $day => $hours) {
-            if (!$hours || $hours === 'Off') {
+            if (! $hours || $hours === 'Off') {
                 continue;
             }
-            
+
             // Handle if $hours is an array with start_time, end_time
             if (is_array($hours)) {
                 if (isset($hours['start_time']) && isset($hours['end_time'])) {
-                    $timeStr = $hours['start_time'] . '-' . $hours['end_time'];
-                    $days[] = ucfirst($day) . ': ' . $timeStr;
+                    $timeStr = $hours['start_time'].'-'.$hours['end_time'];
+                    $days[] = ucfirst($day).': '.$timeStr;
                 }
             } else {
                 // Handle if $hours is a string like "8:00-17:00"
-                $days[] = ucfirst($day) . ': ' . $hours;
+                $days[] = ucfirst($day).': '.$hours;
             }
         }
 
@@ -96,15 +96,15 @@ class AcceptanceLetter extends Model
      */
     public function getFormattedWorkScheduleAttribute(): string
     {
-        if (!$this->work_schedule) {
+        if (! $this->work_schedule) {
             return 'N/A';
         }
 
-        $schedule = is_string($this->work_schedule) 
-            ? json_decode($this->work_schedule, true) 
+        $schedule = is_string($this->work_schedule)
+            ? json_decode($this->work_schedule, true)
             : $this->work_schedule;
 
-        if (!is_array($schedule)) {
+        if (! is_array($schedule)) {
             return 'N/A';
         }
 
@@ -116,7 +116,7 @@ class AcceptanceLetter extends Model
             'thursday' => 'Thu',
             'friday' => 'Fri',
             'saturday' => 'Sat',
-            'sunday' => 'Sun'
+            'sunday' => 'Sun',
         ];
 
         // Extract working days
@@ -136,7 +136,7 @@ class AcceptanceLetter extends Model
         $shiftEnd = $schedule['shift_end'] ?? '17:00';
 
         // Format time to 12-hour format
-        $formatTime = function($time) {
+        $formatTime = function ($time) {
             try {
                 // Try H:i:s format first
                 $parsed = \Carbon\Carbon::createFromFormat('H:i:s', $time);
@@ -148,6 +148,7 @@ class AcceptanceLetter extends Model
                     return $time;
                 }
             }
+
             return $parsed->format('g:i A');
         };
 
@@ -156,6 +157,7 @@ class AcceptanceLetter extends Model
 
         // Format as: "Mon, Tue, Wed (8:00 AM to 5:00 PM)"
         $daysStr = implode(', ', $workingDays);
-        return $daysStr . ' (' . $startTime . ' to ' . $endTime . ')';
+
+        return $daysStr.' ('.$startTime.' to '.$endTime.')';
     }
 }

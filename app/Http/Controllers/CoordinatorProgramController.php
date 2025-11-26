@@ -12,17 +12,17 @@ class CoordinatorProgramController extends Controller
     {
         $coordinator = Auth::user();
         $program = $coordinator->coordinatorProfile?->program;
-        
-        if (!$program) {
+
+        if (! $program) {
             return redirect()->route('coord.students.index')->with('error', 'No program assigned to you.');
         }
 
         // Get program with department
         $program = Program::with('department')->findOrFail($program->id);
-        
+
         // Count students in this program
         $totalStudents = \App\Models\User::where('role', 'intern')
-            ->whereHas('studentProfile', function($q) use ($program) {
+            ->whereHas('studentProfile', function ($q) use ($program) {
                 $q->where('course', $program->name);
             })
             ->count();
@@ -34,8 +34,8 @@ class CoordinatorProgramController extends Controller
     {
         $coordinator = Auth::user();
         $program = $coordinator->coordinatorProfile?->program;
-        
-        if (!$program) {
+
+        if (! $program) {
             return back()->with('error', 'No program assigned to you.');
         }
 
@@ -48,7 +48,7 @@ class CoordinatorProgramController extends Controller
 
         // Check if hours actually changed
         if ($oldHours == $newHours) {
-            return back()->with('info', 'No changes made. The required hours are already set to ' . $newHours . ' hours.');
+            return back()->with('info', 'No changes made. The required hours are already set to '.$newHours.' hours.');
         }
 
         // Update program hours
@@ -58,7 +58,7 @@ class CoordinatorProgramController extends Controller
 
         // Get students who will be affected (those without custom hours)
         $affectedStudents = \App\Models\User::where('role', 'intern')
-            ->whereHas('studentProfile', function($q) use ($program) {
+            ->whereHas('studentProfile', function ($q) use ($program) {
                 $q->where('course', $program->name)
                   ->whereNull('required_hours');
             })

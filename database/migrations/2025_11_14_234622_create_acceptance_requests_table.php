@@ -24,7 +24,7 @@ return new class extends Migration
             $table->enum('status', ['pending', 'completed', 'expired', 'cancelled'])->default('pending');
             $table->timestamp('expires_at');
             $table->timestamps();
-            
+
             $table->index('token');
             $table->index('status');
             $table->index('supervisor_email');

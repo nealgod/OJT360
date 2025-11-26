@@ -33,5 +33,3 @@ class DepartmentProgramSeeder extends Seeder
         }
     }
 }
-
-

@@ -19,7 +19,7 @@ return new class extends Migration
             $table->foreignId('student_user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('supervisor_user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('company_id')->nullable()->constrained('companies')->onDelete('set null');
-            
+
             // Letter details
             $table->string('job_title');
             $table->string('department')->nullable();
@@ -28,19 +28,19 @@ return new class extends Migration
             $table->date('end_date')->nullable(); // Not used anymore
             $table->integer('total_hours');
             $table->json('work_schedule'); // {monday: "8:00-17:00", ...}
-            
+
             // Signature
             $table->enum('signature_type', ['typed', 'uploaded', 'drawn']);
             $table->text('signature_data')->nullable(); // Base64 for drawn, path for uploaded, text for typed
-            
+
             // Additional
             $table->text('additional_notes')->nullable();
             $table->string('letter_path');
             $table->string('document_id')->unique(); // ACC-2025-001234
-            
+
             $table->timestamp('generated_at')->useCurrent();
             $table->timestamps();
-            
+
             $table->index('student_user_id');
             $table->index('supervisor_user_id');
             $table->index('document_id');

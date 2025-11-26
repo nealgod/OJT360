@@ -31,5 +31,3 @@ class CoordinatorInvitation extends Model
         return $this->belongsTo(Program::class);
     }
 }
-
-

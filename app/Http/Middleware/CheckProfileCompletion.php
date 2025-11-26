@@ -10,7 +10,6 @@ class CheckProfileCompletion
     /**
      * Handle an incoming request.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @param  \Closure(\Illuminate\Http\Request): (\Illuminate\Http\Response|\Illuminate\Http\RedirectResponse)  $next
      * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
      */
@@ -24,7 +23,7 @@ class CheckProfileCompletion
         }
 
         // Check if user has completed their profile
-        if ($user && !$this->hasCompletedProfile($user)) {
+        if ($user && ! $this->hasCompletedProfile($user)) {
             // Allow access to profile edit and logout routes
             if ($request->routeIs('profile.*') || $request->routeIs('logout')) {
                 return $next($request);
@@ -44,9 +43,10 @@ class CheckProfileCompletion
     {
         if ($user->isStudent()) {
             $profile = $user->studentProfile;
-            return $profile && 
-                   $profile->student_id && 
-                   $profile->course && 
+
+            return $profile &&
+                   $profile->student_id &&
+                   $profile->course &&
                    $profile->department;
         }
 
@@ -61,7 +61,8 @@ class CheckProfileCompletion
 
         if ($user->isSupervisor()) {
             $profile = $user->supervisorProfile;
-            return $profile && 
+
+            return $profile &&
                    $profile->company_id;
         }
 

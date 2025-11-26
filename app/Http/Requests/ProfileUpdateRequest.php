@@ -25,7 +25,7 @@ class ProfileUpdateRequest extends FormRequest
         if ($this->user()->isStudent()) {
             $yearLevels = array_keys(ProgramCodeResolver::yearLevels());
             $rules = array_merge($rules, [
-                'student_id' => ['required', 'string', 'max:255', 'unique:student_profiles,student_id,' . ($this->user()->studentProfile->id ?? 'NULL')],
+                'student_id' => ['required', 'string', 'max:255', 'unique:student_profiles,student_id,'.($this->user()->studentProfile->id ?? 'NULL')],
                 'course' => ['required', 'string', 'max:255'],
                 'department' => ['required', 'string', 'max:255'],
                 'phone' => ['nullable', 'string', 'max:20'],
@@ -39,7 +39,7 @@ class ProfileUpdateRequest extends FormRequest
         // Add coordinator-specific validation rules
         if ($this->user()->isCoordinator()) {
             $rules = array_merge($rules, [
-                'employee_id' => ['required', 'string', 'max:255', 'unique:coordinator_profiles,employee_id,' . ($this->user()->coordinatorProfile->id ?? 'NULL')],
+                'employee_id' => ['required', 'string', 'max:255', 'unique:coordinator_profiles,employee_id,'.($this->user()->coordinatorProfile->id ?? 'NULL')],
                 // Department and program are fixed by admin; display-only
                 'phone' => ['nullable', 'string', 'max:20'],
                 'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],

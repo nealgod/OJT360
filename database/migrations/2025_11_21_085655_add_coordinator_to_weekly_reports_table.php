@@ -12,7 +12,7 @@ return new class extends Migration
             $table->foreignId('coordinator_user_id')->nullable()->after('student_user_id')->constrained('users')->nullOnDelete();
             $table->text('coordinator_feedback')->nullable()->after('supervisor_reviewed_at');
             $table->timestamp('coordinator_reviewed_at')->nullable()->after('coordinator_feedback');
-            
+
             $table->index('coordinator_user_id');
         });
     }

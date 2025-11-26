@@ -4,7 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::table('placement_requests', function (Blueprint $table) {
@@ -12,7 +13,7 @@ return new class extends Migration {
         });
 
         Schema::table('student_profiles', function (Blueprint $table) {
-            if (!Schema::hasColumn('student_profiles', 'supervisor_id')) {
+            if (! Schema::hasColumn('student_profiles', 'supervisor_id')) {
                 $table->foreignId('supervisor_id')->nullable()->after('assigned_company_id')->constrained('users')->nullOnDelete();
             }
         });
@@ -31,5 +32,3 @@ return new class extends Migration {
         });
     }
 };
-
-

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\MonthlyEvaluation;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class StudentEvaluationController extends Controller
@@ -15,12 +14,12 @@ class StudentEvaluationController extends Controller
             ->select([
                 'id',
                 'evaluation_month',
-                'evaluation_year', 
+                'evaluation_year',
                 'month_number',
                 'status',
                 'submitted_at',
                 'reviewed_at',
-                'supervisor_name'
+                'supervisor_name',
             ])
             ->orderByDesc('evaluation_year')
             ->orderByDesc('evaluation_month')
