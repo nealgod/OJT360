@@ -11,6 +11,7 @@ use App\Services\PrePlacementService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use App\Models\AuditLog;
 
 class SupervisorAcceptanceController extends Controller
 {
@@ -258,6 +259,18 @@ class SupervisorAcceptanceController extends Controller
             'letter_path' => $letterPath,
             'document_id' => $documentId,
         ]);
+        AuditLog::log(
+            'acceptance_letter_generated',
+            'Supervisor generated acceptance letter',
+            'AcceptanceLetter',
+            $letter->id,
+            null,
+            [
+                'student_user_id' => (int) $student->id,
+                'company_id' => (int) $letter->company_id,
+                'document_id' => (string) $letter->document_id,
+            ]
+        );
 
         $requirements = DocumentRequirement::where('name', 'LIKE', 'Letter of Acceptance%')
             ->whereIn('type', ['pre_placement', 'post_placement'])
@@ -296,10 +309,22 @@ class SupervisorAcceptanceController extends Controller
 
         // Link supervisor to student
         if ($student->studentProfile) {
+            $oldProfile = $student->studentProfile->getOriginal();
             $student->studentProfile->update([
                 'supervisor_id' => $user->id,
                 'company_id' => $user->supervisorProfile->company_id,
             ]);
+            AuditLog::log(
+                'student_assigned',
+                'Supervisor linked to student',
+                'StudentProfile',
+                $student->studentProfile->id,
+                $oldProfile,
+                [
+                    'supervisor_id' => (int) $user->id,
+                    'company_id' => (int) $user->supervisorProfile->company_id,
+                ]
+            );
         }
 
         // Send notification to student
@@ -608,4 +633,3 @@ class SupervisorAcceptanceController extends Controller
         return $legacyPath;
     }
 }
-

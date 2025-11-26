@@ -9,6 +9,7 @@ use App\Services\WeeklyReportPdfService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\AuditLog;
 
 class WeeklyReportController extends Controller
 {
@@ -415,10 +416,22 @@ class WeeklyReportController extends Controller
         }
 
         // Update status to submitted
+        $old = $weekly->getOriginal();
         $weekly->update([
             'status' => 'submitted',
             'submitted_at' => now()
         ]);
+        AuditLog::log(
+            'weekly_submitted',
+            'Student submitted weekly report',
+            'WeeklyReport',
+            $weekly->id,
+            $old,
+            [
+                'week_number' => (int) $weekly->week_number,
+                'status' => (string) $weekly->status,
+            ]
+        );
 
         return redirect()->route('reports.weekly.show', $weekly)
             ->with('success', 'Weekly report submitted successfully! Your coordinator will review it.');
@@ -444,4 +457,3 @@ class WeeklyReportController extends Controller
             ->with('success', "Weekly report (Week {$weekNumber}) has been deleted successfully.");
     }
 }
-

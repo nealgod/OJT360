@@ -8,6 +8,7 @@ use App\Models\AcceptanceLetter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\AuditLog;
 
 class SupervisorEvaluationController extends Controller
 {
@@ -197,6 +198,18 @@ class SupervisorEvaluationController extends Controller
             'status' => 'submitted',
             'submitted_at' => now(),
         ]);
+        AuditLog::log(
+            'monthly_evaluation_submitted',
+            'Supervisor submitted monthly evaluation',
+            'MonthlyEvaluation',
+            $evaluation->id,
+            null,
+            [
+                'student_user_id' => (int) $student->id,
+                'month' => (int) $evaluation->evaluation_month,
+                'year' => (int) $evaluation->evaluation_year,
+            ]
+        );
 
         // Send notification to student
         $student->notify(new \App\Notifications\MonthlyEvaluationSubmitted($evaluation));

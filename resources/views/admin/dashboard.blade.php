@@ -139,13 +139,13 @@
                     </div>
                 </div>
 
-                <!-- System Health -->
+                <!-- Active OJT Rate -->
                 <div class="bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg p-6 text-white hover:shadow-md transition-shadow">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm text-white/80 mb-1">System Health</p>
-                            <p class="text-3xl font-bold">{{ $stats['system_health'] }}%</p>
-                            <p class="text-xs text-white/70 mt-1">Verified users</p>
+                            <p class="text-sm text-white/80 mb-1">Active OJT Rate</p>
+                            <p class="text-3xl font-bold">{{ $stats['active_intern_rate'] }}%</p>
+                            <p class="text-xs text-white/70 mt-1">Interns with active OJT</p>
                         </div>
                         <div class="bg-white/20 rounded-full p-3">
                             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">

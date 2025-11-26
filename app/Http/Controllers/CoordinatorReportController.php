@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\WeeklyReport;
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Models\AuditLog;
 use Illuminate\Support\Facades\Auth;
 
 class CoordinatorReportController extends Controller
@@ -67,11 +68,22 @@ class CoordinatorReportController extends Controller
             'coordinator_feedback' => 'nullable|string|max:1000'
         ]);
         
+        $old = $report->getOriginal();
         $report->update([
             'status' => $request->status,
             'coordinator_feedback' => $request->coordinator_feedback,
             'coordinator_reviewed_at' => now()
         ]);
+        AuditLog::log(
+            'weekly_review_updated',
+            'Coordinator updated weekly report status',
+            'WeeklyReport',
+            $report->id,
+            $old,
+            [
+                'status' => (string) $report->status,
+            ]
+        );
         
         return redirect()->back()->with('success', 'Report status updated successfully.');
     }

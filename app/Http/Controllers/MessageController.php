@@ -6,6 +6,7 @@ use App\Models\Message;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\AuditLog;
 
 class MessageController extends Controller
 {
@@ -168,12 +169,23 @@ class MessageController extends Controller
             return back()->with('error', 'You are not authorized to send messages to this user.');
         }
 
-        Message::create([
+        $message = Message::create([
             'sender_id' => $user->id,
             'recipient_id' => $request->recipient_id,
             'subject' => $request->subject,
             'message' => $request->message,
         ]);
+        AuditLog::log(
+            'message_sent',
+            'User sent a message',
+            'Message',
+            $message->id,
+            null,
+            [
+                'recipient_id' => (int) $message->recipient_id,
+                'subject' => (string) $message->subject,
+            ]
+        );
 
         return redirect()->route('messages.index')->with('success', 'Message sent successfully!');
     }
@@ -193,6 +205,14 @@ class MessageController extends Controller
         // Mark as read if user is the recipient
         if ($message->recipient_id === $user->id && !$message->is_read) {
             $message->markAsRead();
+            AuditLog::log(
+                'message_read',
+                'User read a message',
+                'Message',
+                $message->id,
+                null,
+                null
+            );
         }
 
         return view('messages.show', compact('message'));
@@ -205,6 +225,14 @@ class MessageController extends Controller
     {
         if ($message->recipient_id === Auth::id()) {
             $message->markAsRead();
+            AuditLog::log(
+                'message_read',
+                'User marked message as read',
+                'Message',
+                $message->id,
+                null,
+                null
+            );
         }
 
         return back();
@@ -217,6 +245,14 @@ class MessageController extends Controller
     {
         if ($message->recipient_id === Auth::id()) {
             $message->markAsUnread();
+            AuditLog::log(
+                'message_unread',
+                'User marked message as unread',
+                'Message',
+                $message->id,
+                null,
+                null
+            );
         }
 
         return back();
@@ -234,7 +270,16 @@ class MessageController extends Controller
             abort(403, 'Unauthorized');
         }
 
+        $old = $message->toArray();
         $message->delete();
+        AuditLog::log(
+            'message_deleted',
+            'User deleted a message',
+            'Message',
+            $message->id,
+            $old,
+            null
+        );
 
         return redirect()->route('messages.index')->with('success', 'Message deleted successfully.');
     }

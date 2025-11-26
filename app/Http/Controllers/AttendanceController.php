@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AttendanceLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\AuditLog;
 
 class AttendanceController extends Controller
 {
@@ -87,6 +88,7 @@ class AttendanceController extends Controller
             // Ensure consistent timezone handling
             $timeIn = now()->setTimezone(config('timezone.default', 'Asia/Manila'));
             
+            $old = $log->getOriginal();
             $log->update([
                 'time_in' => $timeIn->format('H:i:s'), // Store in 24-hour format for database
                 'photo_in_path' => $path,
@@ -94,6 +96,17 @@ class AttendanceController extends Controller
                 'lat_in' => $request->input('lat_in'),
                 'lng_in' => $request->input('lng_in'),
             ]);
+            AuditLog::log(
+                'time_in',
+                'Student timed in',
+                'AttendanceLog',
+                $log->id,
+                $old,
+                [
+                    'time_in' => (string) $log->time_in,
+                    'work_date' => (string) $log->work_date,
+                ]
+            );
 
             
             // Check if this is an AJAX request
@@ -214,6 +227,7 @@ class AttendanceController extends Controller
             // Compute productive minutes = total - scheduled break (never below zero)
             $minutes = max(0, $totalMinutes - $scheduledBreakMinutes);
 
+            $old = $log->getOriginal();
             $log->update([
                 'time_out' => $timeOut->format('H:i:s'), // Store in 24-hour format for database
                 'photo_out_path' => $path,
@@ -221,6 +235,18 @@ class AttendanceController extends Controller
                 'lat_out' => $request->input('lat_out'),
                 'lng_out' => $request->input('lng_out'),
             ]);
+            AuditLog::log(
+                'time_out',
+                'Student timed out',
+                'AttendanceLog',
+                $log->id,
+                $old,
+                [
+                    'time_out' => (string) $log->time_out,
+                    'minutes_worked' => (int) $minutes,
+                    'work_date' => (string) $log->work_date,
+                ]
+            );
             
             \Log::info('Time out recorded', [
                 'user_id' => $user->id,
@@ -361,6 +387,7 @@ class AttendanceController extends Controller
             $minutes = max(0, $totalMinutes - $scheduledBreakMinutes);
 
             // Update the attendance log - set as pending until coordinator approves
+            $old = $log->getOriginal();
             $log->update([
                 'time_out' => $request->time_out,
                 'photo_out_path' => $photoPath,
@@ -370,6 +397,18 @@ class AttendanceController extends Controller
                 'recovery_reason' => $request->reason,
                 'recovery_approved' => null // Waiting for approval
             ]);
+            AuditLog::log(
+                'recovery_submitted',
+                'Student submitted attendance recovery',
+                'AttendanceLog',
+                $log->id,
+                $old,
+                [
+                    'time_out' => (string) $log->time_out,
+                    'minutes_worked' => (int) $minutes,
+                    'reason' => (string) $request->reason,
+                ]
+            );
 
             // Log the recovery action for audit purposes
             \Log::info('Attendance recovery completed', [
