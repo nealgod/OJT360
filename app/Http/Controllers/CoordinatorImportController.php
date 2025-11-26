@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\WhitelistRowsImport;
-use App\Models\AuditLog;
 
 class CoordinatorImportController extends Controller
 {
@@ -181,19 +180,6 @@ class CoordinatorImportController extends Controller
 
             $imported = count($results['valid']);
             $invalid = count($results['invalid']);
-            AuditLog::log(
-                'imported',
-                'Coordinator imported class list',
-                'EnrollmentWhitelist',
-                null,
-                null,
-                [
-                    'program_id' => $program->id,
-                    'imported_count' => $imported,
-                    'invalid_count' => $invalid,
-                    'file_extension' => $originalExt,
-                ]
-            );
             return redirect()->route('coord.students.whitelist')->with('success', "Imported {$imported} row(s). {$invalid} row(s) were invalid.");
         }
 
@@ -239,17 +225,7 @@ class CoordinatorImportController extends Controller
                 ]
             );
         }
-        AuditLog::log(
-            'imported',
-            'Coordinator committed whitelist import',
-            'EnrollmentWhitelist',
-            null,
-            null,
-            [
-                'program_id' => $programId,
-                'rows_count' => count($validated['rows']),
-            ]
-        );
+
         return redirect()->route('coord.students.whitelist')->with('success', 'Whitelist imported successfully.');
     }
 
@@ -310,18 +286,6 @@ class CoordinatorImportController extends Controller
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ];
 
-        AuditLog::log(
-            'exported',
-            'Coordinator exported whitelist',
-            'EnrollmentWhitelist',
-            null,
-            null,
-            [
-                'program_id' => $program->id,
-                'rows_count' => $rows->count(),
-                'filename' => $filename,
-            ]
-        );
         $callback = function() use ($rows) {
             $handle = fopen('php://output', 'w');
             fputcsv($handle, ['Student ID','Student Name','E-Mail','Phone','Status']);
@@ -360,17 +324,6 @@ class CoordinatorImportController extends Controller
         }
 
         $filename = basename($found);
-        AuditLog::log(
-            'downloaded',
-            'Coordinator downloaded uploaded class list',
-            'EnrollmentWhitelist',
-            null,
-            null,
-            [
-                'program_id' => $program->id,
-                'filename' => $filename,
-            ]
-        );
         return response()->streamDownload(function() use ($found) {
             echo Storage::disk('local')->get($found);
         }, $filename);
@@ -387,18 +340,9 @@ class CoordinatorImportController extends Controller
         $count = EnrollmentWhitelist::where('program_id', $program->id)
             ->whereIn('status', ['pending','activated'])
             ->update(['status' => 'archived']);
-        AuditLog::log(
-            'archived',
-            'Coordinator archived whitelist for end of term',
-            'EnrollmentWhitelist',
-            null,
-            null,
-            [
-                'program_id' => $program->id,
-                'archived_count' => $count,
-            ]
-        );
+
         return redirect()->route('coord.students.whitelist')->with('success', "Archived {$count} record(s) for end of term.");
     }
 }
+
 

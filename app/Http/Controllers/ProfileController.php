@@ -9,7 +9,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
-use App\Models\AuditLog;
 
 class ProfileController extends Controller
 {
@@ -58,7 +57,6 @@ class ProfileController extends Controller
             $user->email_verified_at = null;
         }
 
-        $oldUser = $user->getOriginal();
         $user->save();
 
         // Handle profile-specific data
@@ -69,15 +67,6 @@ class ProfileController extends Controller
         } elseif ($user->isSupervisor()) {
             $this->updateSupervisorProfile($request, $user);
         }
-
-        AuditLog::log(
-            'updated',
-            'User updated profile',
-            'User',
-            $user->id,
-            $oldUser,
-            $user->toArray()
-        );
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
@@ -180,16 +169,7 @@ class ProfileController extends Controller
 
         Auth::logout();
 
-        $old = $user->toArray();
         $user->delete();
-        AuditLog::log(
-            'deleted',
-            'User account deleted',
-            'User',
-            $user->id,
-            $old,
-            null
-        );
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

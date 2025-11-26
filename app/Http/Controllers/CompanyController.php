@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Company;
 use Illuminate\Http\Request;
-use App\Models\AuditLog;
 
 class CompanyController extends Controller
 {
@@ -72,7 +71,7 @@ class CompanyController extends Controller
             'status' => ['required', 'in:active,inactive'],
         ]);
 
-        $company = Company::create([
+        Company::create([
             'name' => $request->string('name'),
             'department' => $user->coordinatorProfile?->department,
             'coordinator_id' => $user->id,
@@ -82,18 +81,6 @@ class CompanyController extends Controller
             'contact_phone' => $request->string('contact_phone'),
             'status' => $request->string('status', 'active'),
         ]);
-        AuditLog::log(
-            'created',
-            'Coordinator created company',
-            'Company',
-            $company->id,
-            null,
-            [
-                'name' => (string) $company->name,
-                'department' => (string) $company->department,
-                'status' => (string) $company->status,
-            ]
-        );
 
         return redirect()->route('companies.index')->with('success', 'Company added successfully.');
     }
@@ -139,7 +126,6 @@ class CompanyController extends Controller
             'status' => ['required', 'in:active,inactive'],
         ]);
 
-        $old = $company->getOriginal();
         $company->update([
             'name' => $request->string('name'),
             // keep department fixed to creator's department
@@ -149,21 +135,6 @@ class CompanyController extends Controller
             'contact_phone' => $request->string('contact_phone'),
             'status' => $request->string('status', $company->status),
         ]);
-        AuditLog::log(
-            'updated',
-            'Coordinator updated company',
-            'Company',
-            $company->id,
-            $old,
-            [
-                'name' => (string) $company->name,
-                'address' => (string) $company->address,
-                'contact_person' => (string) $company->contact_person,
-                'contact_email' => (string) $company->contact_email,
-                'contact_phone' => (string) $company->contact_phone,
-                'status' => (string) $company->status,
-            ]
-        );
 
         return redirect()->route('companies.index')->with('success', 'Company updated successfully.');
     }
@@ -182,20 +153,9 @@ class CompanyController extends Controller
             ($user->isCoordinator() && $company->department === $coordDept)
         ), 403);
 
-        $old = $company->getOriginal();
         $company->update([
             'status' => $company->status === 'active' ? 'inactive' : 'active'
         ]);
-        AuditLog::log(
-            'updated',
-            'Coordinator toggled company status',
-            'Company',
-            $company->id,
-            $old,
-            [
-                'status' => (string) $company->status,
-            ]
-        );
 
         $status = $company->status === 'active' ? 'activated' : 'deactivated';
         return redirect()->route('companies.index')->with('success', "Company {$status} successfully.");
@@ -215,16 +175,7 @@ class CompanyController extends Controller
             ($user->isCoordinator() && $company->department === $coordDept)
         ), 403);
 
-        $old = $company->toArray();
         $company->delete();
-        AuditLog::log(
-            'deleted',
-            'Coordinator deleted company',
-            'Company',
-            $company->id,
-            $old,
-            null
-        );
 
         return redirect()->route('companies.index')->with('success', 'Company deleted successfully.');
     }

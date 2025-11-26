@@ -27,14 +27,6 @@ class AdminAuditController extends Controller
             $query->where('model_type', $request->model_type);
         }
 
-        // Filter by user role (admin enhancement)
-        if ($request->filled('role')) {
-            $role = $request->role;
-            $query->whereHas('user', function($q) use ($role) {
-                $q->where('role', $role);
-            });
-        }
-
         // Filter by date range
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->date_from);

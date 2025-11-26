@@ -8,7 +8,6 @@ use App\Services\PrePlacementService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use App\Models\AuditLog;
 
 class DocumentController extends Controller
 {
@@ -174,7 +173,7 @@ class DocumentController extends Controller
         foreach ($files as $file) {
             $path = $file->store('document-submissions', 'public');
 
-            $submission = StudentDocumentSubmission::create([
+            StudentDocumentSubmission::create([
                 'student_user_id' => $user->id,
                 'document_requirement_id' => $requirement->id,
                 'file_path' => $path,
@@ -182,18 +181,6 @@ class DocumentController extends Controller
                 'file_size' => $file->getSize(),
                 'mime_type' => $file->getMimeType(),
             ]);
-            AuditLog::log(
-                'document_submitted',
-                'Student submitted document',
-                'StudentDocumentSubmission',
-                $submission->id,
-                null,
-                [
-                    'requirement_id' => (int) $requirement->id,
-                    'requirement_name' => (string) $requirement->name,
-                    'file' => (string) $submission->original_filename,
-                ]
-            );
         }
 
         $fileCount = count($files);
@@ -267,16 +254,7 @@ class DocumentController extends Controller
         }
 
         // Delete the submission record
-        $old = $submission->toArray();
         $submission->delete();
-        AuditLog::log(
-            'document_cancelled',
-            'Student cancelled document submission',
-            'StudentDocumentSubmission',
-            $submission->id,
-            $old,
-            null
-        );
 
         PrePlacementService::recalculateForStudent($user->id);
 
@@ -357,23 +335,12 @@ class DocumentController extends Controller
             'feedback' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $old = $submission->getOriginal();
         $submission->update([
             'status' => $request->status,
             'feedback' => $request->feedback,
             'reviewed_by' => $user->id,
             'reviewed_at' => now(),
         ]);
-        AuditLog::log(
-            'document_reviewed',
-            'Coordinator reviewed document',
-            'StudentDocumentSubmission',
-            $submission->id,
-            $old,
-            [
-                'status' => (string) $submission->status,
-            ]
-        );
 
         // If rejected, reset submitted flags so student can resubmit
         if ($request->status === 'rejected') {
@@ -456,23 +423,12 @@ class DocumentController extends Controller
         // Update all valid submissions
         $updatedCount = 0;
         foreach ($validSubmissions as $submission) {
-            $old = $submission->getOriginal();
             $submission->update([
                 'status' => $status,
                 'feedback' => $feedback,
                 'reviewed_by' => $user->id,
                 'reviewed_at' => now(),
             ]);
-            AuditLog::log(
-                'document_reviewed',
-                'Coordinator bulk reviewed document',
-                'StudentDocumentSubmission',
-                $submission->id,
-                $old,
-                [
-                    'status' => (string) $submission->status,
-                ]
-            );
 
             // Notify student
             \App\Models\Notification::create([

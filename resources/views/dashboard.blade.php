@@ -456,11 +456,8 @@
                     $activeCompanies = \App\Models\Company::where('status', 'active')->count();
                     $totalCompanies = \App\Models\Company::count();
                     $departments = \App\Models\Department::count();
-                    $totalInterns = \App\Models\User::where('role', 'intern')->count();
-                    $activeInterns = \App\Models\User::where('role', 'intern')
-                        ->whereHas('studentProfile', fn($q) => $q->where('ojt_status', 'active'))
-                        ->count();
-                    $activeInternRate = $totalInterns > 0 ? round(($activeInterns / $totalInterns) * 100) : 0;
+                    $verifiedUsers = \App\Models\User::whereNotNull('email_verified_at')->count();
+                    $systemHealth = $totalUsers > 0 ? round(($verifiedUsers / $totalUsers) * 100) : 0;
                 @endphp
                 <!-- Admin Dashboard Stats -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -510,12 +507,12 @@
                         </div>
                     </div>
 
-                    <!-- Active OJT Rate -->
+                    <!-- System Health -->
                     <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-gray-600 text-sm font-medium">Active OJT Rate</p>
-                                <p class="text-2xl font-bold text-ojt-dark">{{ $activeInternRate }}%</p>
+                                <p class="text-gray-600 text-sm font-medium">System Health</p>
+                                <p class="text-2xl font-bold text-ojt-dark">{{ $systemHealth }}%</p>
                             </div>
                             <div class="w-12 h-12 bg-ojt-accent/10 rounded-lg flex items-center justify-center">
                                 <svg class="w-6 h-6 text-ojt-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">

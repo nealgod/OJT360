@@ -10,7 +10,6 @@ use App\Notifications\VerifyWithTemporaryPassword;
 use App\Models\Department;
 use App\Models\CoordinatorProfile;
 use Illuminate\Support\Facades\Log;
-use App\Models\AuditLog;
 
 class AdminController extends Controller
 {
@@ -54,9 +53,9 @@ class AdminController extends Controller
             ->whereNull('recovery_approved')
             ->count();
 
-        // Active OJT rate (percentage of interns with active OJT)
-        $totalInterns = $stats['students'];
-        $stats['active_intern_rate'] = $totalInterns > 0 ? round(($stats['active_interns'] / $totalInterns) * 100) : 0;
+        // System health (percentage of verified users)
+        $verifiedUsers = User::whereNotNull('email_verified_at')->count();
+        $stats['system_health'] = $stats['total'] > 0 ? round(($verifiedUsers / $stats['total']) * 100) : 0;
 
         return view('admin.dashboard', compact('stats'));
     }
@@ -137,18 +136,6 @@ class AdminController extends Controller
                 \Log::error('Coordinator invite email failed: ' . $e->getMessage());
             }
 
-            AuditLog::log(
-                'invite_sent',
-                'Admin sent coordinator invitation',
-                'CoordinatorInvitation',
-                $invite->id,
-                null,
-                [
-                    'email' => (string) $invite->email,
-                    'department_id' => (int) $invite->department_id,
-                    'program_id' => (int) $invite->program_id,
-                ]
-            );
             return redirect()->route('admin.users')->with('success', 'Coordinator invite sent successfully.');
         }
 
@@ -162,21 +149,12 @@ class AdminController extends Controller
         
         if ($existingRegistration) {
             // Update existing registration with new token and expiration
-            $old = $existingRegistration->getOriginal();
             $existingRegistration->update([
                 'token' => \App\Models\SupervisorRegistration::generateToken(),
                 'expires_at' => \Carbon\Carbon::now()->addHours(24),
                 'verified_at' => null,
             ]);
             $registration = $existingRegistration;
-            AuditLog::log(
-                'invite_updated',
-                'Admin updated supervisor invitation',
-                'SupervisorRegistration',
-                $registration->id,
-                $old,
-                $registration->toArray()
-            );
         } else {
             // Create new registration
             $registration = \App\Models\SupervisorRegistration::create([
@@ -184,16 +162,6 @@ class AdminController extends Controller
                 'token' => \App\Models\SupervisorRegistration::generateToken(),
                 'expires_at' => \Carbon\Carbon::now()->addHours(24),
             ]);
-            AuditLog::log(
-                'invite_sent',
-                'Admin sent supervisor registration invitation',
-                'SupervisorRegistration',
-                $registration->id,
-                null,
-                [
-                    'email' => (string) $registration->email,
-                ]
-            );
         }
 
         // Send verification email

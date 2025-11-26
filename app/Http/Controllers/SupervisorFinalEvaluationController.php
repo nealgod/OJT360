@@ -9,7 +9,6 @@ use App\Models\WeeklyReport;
 use App\Services\FinalEvaluationPdfService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\AuditLog;
 
 class SupervisorFinalEvaluationController extends Controller
 {
@@ -160,17 +159,6 @@ class SupervisorFinalEvaluationController extends Controller
             'status' => 'submitted',
             'submitted_at' => now(),
         ]);
-        AuditLog::log(
-            'final_evaluation_submitted',
-            'Supervisor submitted final evaluation',
-            'FinalEvaluation',
-            $evaluation->id,
-            null,
-            [
-                'student_user_id' => (int) $student->id,
-                'total_rating' => (int) $totalRating,
-            ]
-        );
 
         // Send notifications using custom Notification model
         \App\Models\Notification::create([

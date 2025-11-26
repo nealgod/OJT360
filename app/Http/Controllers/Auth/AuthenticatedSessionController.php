@@ -9,7 +9,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
-use App\Models\AuditLog;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -36,14 +35,6 @@ class AuthenticatedSessionController extends Controller
             $user->markEmailAsVerified();
         }
 
-        AuditLog::log(
-            'login',
-            'User logged in',
-            'User',
-            Auth::id(),
-            null,
-            null
-        );
         return redirect()->intended(RouteServiceProvider::HOME);
     }
 
@@ -52,16 +43,6 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
-        // Log before logout so authenticated user_id is captured
-        AuditLog::log(
-            'logout',
-            'User logged out',
-            'User',
-            Auth::id(),
-            null,
-            null
-        );
-
         // Logout current session
         Auth::logout();
         
