@@ -15,14 +15,7 @@ class CompanySeeder extends Seeder
         $deptEdu = Department::where('name', 'Department of Teacher Education')->first();
         $deptEng = Department::where('name', 'Department of Engineering')->first();
 
-        Company::firstOrCreate(['name' => 'TechForge Solutions'], [
-            'department' => $deptIt?->name ?? 'Department of Computer Studies',
-            'address' => '123 Innovation Ave, City',
-            'contact_person' => 'Jane Doe',
-            'contact_email' => 'hr@techforge.test',
-            'contact_phone' => '0917-000-1111',
-            'status' => 'active',
-        ]);
+        
 
         Company::firstOrCreate(['name' => 'EduCare Center'], [
             'department' => $deptEdu?->name ?? 'Department of Teacher Education',
