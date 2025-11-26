@@ -16,7 +16,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Student Header -->
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-8">
-                <div class="flex items-start space-x-6">
+                <div class="flex flex-col md:flex-row md:items-start md:space-x-6 gap-4">
                     <!-- Student Avatar -->
                     <div class="flex-shrink-0">
                         @if($student->getProfile() && $student->getProfile()->profile_image)
@@ -51,8 +51,8 @@
                     </div>
 
                     <!-- Quick Actions -->
-                    <div class="flex-shrink-0">
-                        <div class="flex space-x-3">
+                    <div class="flex-shrink-0 md:text-right">
+                        <div class="flex space-x-3 justify-start md:justify-end">
                             <form method="POST" action="{{ route('coord.students.update-status', $student) }}" class="inline">
                                 @csrf
                                 <select name="ojt_status" onchange="this.form.submit()" class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-ojt-primary focus:border-ojt-primary">
@@ -90,7 +90,7 @@
                     $progressPercentage = $requiredHours > 0 ? min(($completedHours / $requiredHours) * 100, 100) : 0;
                 @endphp
                 
-                <div class="flex items-center justify-between mb-2">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                     <h3 class="text-sm font-semibold text-gray-700">OJT Hours Progress</h3>
                     <span class="text-sm font-bold text-ojt-primary">{{ number_format($completedHours, 1) }} / {{ number_format($requiredHours) }} hours</span>
                 </div>
@@ -109,7 +109,7 @@
                     </div>
                 </div>
                 
-                <div class="flex items-center justify-between mt-2 text-xs text-gray-500">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mt-2 text-xs text-gray-500">
                     <span>{{ number_format($requiredHours - $completedHours, 1) }} hours remaining</span>
                     @if($progressPercentage >= 100)
                         <span class="text-green-600 font-semibold">✓ Completed!</span>
@@ -160,7 +160,7 @@
                                 <h3 class="text-lg font-semibold text-gray-900">Attendance Overview</h3>
                                 <p class="text-sm text-gray-500">Latest logs with photos and punctuality checks.</p>
                                 </div>
-                            <div class="flex items-center gap-4 text-xs text-gray-600">
+                        <div class="flex flex-wrap items-center gap-4 text-xs text-gray-600">
                                 <div><span class="font-semibold text-ojt-dark">{{ $attendanceStats['total_days'] }}</span> days logged</div>
                                 <div><span class="font-semibold text-green-600">{{ $attendanceStats['completed_days'] }}</span> completed</div>
                                 <div><span class="font-semibold text-yellow-600">{{ $attendanceStats['missing_checkout'] }}</span> pending out</div>
@@ -198,7 +198,7 @@
                                                 @endif
                                             </td>
                                             <td class="px-3 py-2">
-                                                <div class="flex items-center gap-2">
+                                                <div class="flex flex-wrap items-center gap-2 justify-end">
                                                     @if($log->photo_in_path)
                                                         <a href="{{ Storage::url($log->photo_in_path) }}" target="_blank" class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors">
                                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -305,7 +305,7 @@
                                                     </span>
                                                 </td>
                                                 <td class="px-3 py-2">
-                                                    <a href="{{ route('coord.reports.show', $report) }}" target="_blank" class="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-xs font-medium">
+                                                    <a href="{{ route('coord.reports.show', $report) }}" target="_blank" class="inline-flex items-center justify-center w-full sm:w-auto px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-xs font-medium">
                                                         View
                                                     </a>
                                                 </td>
@@ -344,7 +344,7 @@
                                                     <x-evaluation-status-badge :evaluation="$evaluation" />
                                                 </td>
                                                 <td class="px-3 py-2">
-                                                    <a href="{{ route('coordinator.evaluations.show', $evaluation) }}" target="_blank" class="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-xs font-medium">
+                                                    <a href="{{ route('coordinator.evaluations.show', $evaluation) }}" target="_blank" class="inline-flex items-center justify-center w-full sm:w-auto px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-xs font-medium">
                                                         View
                                                     </a>
                                                 </td>
@@ -398,7 +398,7 @@
                                 </div>
                             </div>
 
-                            <div class="flex items-center gap-2">
+                            <div class="flex flex-wrap items-center gap-2">
                                 <a href="{{ route('coordinator.final-evaluations.show', $finalEvaluation) }}" 
                                    class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 text-sm font-medium rounded hover:bg-gray-200">
                                     View Details
@@ -756,3 +756,761 @@
         });
     </script>
 </x-app-layout>
+
+                                        Pending Review
+
+                                    </span>
+
+                                @endif
+
+                            </div>
+
+
+
+                            <div class="grid grid-cols-3 gap-4 mb-4">
+
+                                <div>
+
+                                    <p class="text-xs text-gray-500">Total Rating</p>
+
+                                    <p class="text-xl font-bold text-green-600">{{ number_format($finalEvaluation->total_rating, 2) }}</p>
+
+                                </div>
+
+                                <div>
+
+                                    <p class="text-xs text-gray-500">Supervisor</p>
+
+                                    <p class="text-sm font-medium text-gray-900">{{ $finalEvaluation->supervisor_name }}</p>
+
+                                </div>
+
+                                <div>
+
+                                    <p class="text-xs text-gray-500">Date</p>
+
+                                    <p class="text-sm font-medium text-gray-900">{{ $finalEvaluation->submitted_at?->format('M d, Y') }}</p>
+
+                                </div>
+
+                            </div>
+
+
+
+                            <div class="flex items-center gap-2">
+
+                                <a href="{{ route('coordinator.final-evaluations.show', $finalEvaluation) }}" 
+
+                                   class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 text-sm font-medium rounded hover:bg-gray-200">
+
+                                    View Details
+
+                                </a>
+
+                                <a href="{{ route('coordinator.final-evaluations.download-pdf', $finalEvaluation) }}" 
+
+                                   class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 text-sm font-medium rounded hover:bg-gray-200">
+
+                                    Download PDF
+
+                                </a>
+
+                                @if(!$finalEvaluation->reviewed_at)
+
+                                    <form method="POST" action="{{ route('coordinator.final-evaluations.mark-reviewed', $finalEvaluation) }}" class="inline">
+
+                                        @csrf
+
+                                        @method('PATCH')
+
+                                        <button type="submit" 
+
+                                                class="inline-flex items-center px-3 py-1.5 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700"
+
+                                                onclick="return confirm('Mark as reviewed?')">
+
+                                            Mark Reviewed
+
+                                        </button>
+
+                                    </form>
+
+                                @endif
+
+                            </div>
+
+                        </div>
+
+                    @endif
+
+                </div>
+
+
+
+                <!-- Sidebar -->
+
+                <div class="space-y-6">
+
+                    <!-- Company & Supervisor Summary -->
+
+                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-6">
+
+                        <div class="flex items-center justify-between">
+
+                            <h3 class="text-lg font-semibold text-gray-900">Placement Summary</h3>
+
+                            @if($companySource)
+
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+
+                                    {{ ucfirst($companySource) }}
+
+                                </span>
+
+                            @endif
+
+                        </div>
+
+                        <div class="space-y-4 text-sm text-gray-700">
+
+                            <div class="flex items-start gap-3">
+
+                                <svg class="w-5 h-5 text-ojt-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+
+                                </svg>
+
+                                <div class="flex-1">
+
+                                    <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Company</p>
+
+                                    <p class="font-medium text-ojt-dark">
+
+                                        {{ $derivedCompanyName ?? 'Not assigned' }}
+
+                                    </p>
+
+                                    @if($derivedCompanyAddress)
+
+                                        <div class="flex items-start gap-1.5 mt-1">
+
+                                            <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+
+                                            </svg>
+
+                                            <p class="text-xs text-gray-500">{{ $derivedCompanyAddress }}</p>
+
+                                        </div>
+
+                                    @endif
+
+                                </div>
+
+                            </div>
+
+                            <div class="grid grid-cols-1 gap-3 text-xs text-gray-500 border-t border-gray-100 pt-4">
+
+                                <div class="flex items-center justify-between">
+
+                                    <span class="uppercase tracking-wide">Hours Completed</span>
+
+                                    <span class="text-sm text-ojt-dark font-semibold">
+
+                                        @php
+
+                                            // Calculate total hours from attendance logs (exclude pending recovered logs)
+
+                                            $totalMinutes = $student->attendanceLogs->filter(function($log) {
+
+                                                return !$log->is_recovered || $log->recovery_approved === true;
+
+                                            })->sum('minutes_worked');
+
+                                            $completedHours = $totalMinutes > 0 ? round($totalMinutes / 60, 1) : 0;
+
+                                        @endphp
+
+                                        {{ number_format($completedHours, 1) }}
+
+                                    </span>
+
+                                </div>
+
+                                @php
+
+                                    $requiredHours = $acceptance?->total_hours
+
+                                        ?? $student->studentProfile?->required_hours
+
+                                        ?? $student->getRequiredHours();
+
+                                @endphp
+
+                                <div class="flex items-center justify-between">
+
+                                    <span class="uppercase tracking-wide">Required Hours</span>
+
+                                    <span class="text-sm text-ojt-dark font-semibold">
+
+                                        @if($requiredHours)
+
+                                            {{ number_format($requiredHours) }}
+
+                                        @else
+
+                                            —
+
+                                        @endif
+
+                                    </span>
+
+                                </div>
+
+                                <div class="flex items-center justify-between">
+
+                                    <span class="uppercase tracking-wide">Activation</span>
+
+                                    <span class="text-sm text-ojt-dark font-semibold">
+
+                                        {{ ucfirst($student->studentProfile?->ojt_status ?? 'pending') }}
+
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+                            @if($student->studentProfile?->supervisor)
+
+                                <div class="border-t border-gray-100 pt-4">
+
+                                    <p class="text-xs uppercase tracking-wide text-gray-500">Supervisor</p>
+
+                                    <p class="mt-1 font-medium text-ojt-dark">{{ $student->studentProfile->supervisor->name }}</p>
+
+                                    <p class="text-xs text-gray-500">{{ $student->studentProfile->supervisor->email }}</p>
+
+                                @else
+
+                                    <div class="border-t border-gray-100 pt-4">
+
+                                        <p class="text-xs uppercase tracking-wide text-gray-500">Supervisor</p>
+
+                                        <p class="mt-1 text-gray-400">Not assigned</p>
+
+                                    </div>
+
+                            @endif
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+
+
+
+                    <!-- Supervisor Assignment Section -->
+
+                    <div id="supervisor-assignment" class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+
+                        <div class="flex items-center justify-between mb-4">
+
+                            <h3 class="text-lg font-semibold text-gray-900">Supervisor Assignment</h3>
+
+                            @if($student->studentProfile?->supervisor)
+
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">✓ Assigned</span>
+
+                            @else
+
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">⚠ Pending</span>
+
+                            @endif
+
+                        </div>
+
+
+
+                        <!-- Current assignment -->
+
+                        <div class="mb-4">
+
+                            @if($student->studentProfile?->supervisor)
+
+                                <div class="bg-gradient-to-r from-ojt-accent/10 to-ojt-primary/5 border border-ojt-accent/30 rounded-lg p-4">
+
+                                    <div class="flex items-start gap-4">
+
+                                        <!-- Supervisor Avatar -->
+
+                                        <div class="flex-shrink-0">
+
+                                            @if($student->studentProfile->supervisor->supervisorProfile?->profile_image)
+
+                                                <img src="{{ Storage::url($student->studentProfile->supervisor->supervisorProfile->profile_image) }}" 
+
+                                                     alt="{{ $student->studentProfile->supervisor->name }}" 
+
+                                                     class="w-16 h-16 rounded-full object-cover border-2 border-ojt-accent shadow-sm">
+
+                                            @else
+
+                                                <div class="w-16 h-16 {{ $student->studentProfile->supervisor->getAvatarColor() }} rounded-full flex items-center justify-center text-white text-xl font-bold shadow-sm">
+
+                                                    {{ substr($student->studentProfile->supervisor->name, 0, 1) }}
+
+                                                </div>
+
+                                            @endif
+
+                                        </div>
+
+                                        
+
+                                        <!-- Supervisor Info -->
+
+                                        <div class="flex-1">
+
+                                            <div class="flex items-center gap-2 mb-2">
+
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+
+                                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+
+                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+
+                                    </svg>
+
+                                                    Assigned
+
+                                                </span>
+
+                                            </div>
+
+                                            <h4 class="text-base font-semibold text-ojt-dark mb-1">{{ $student->studentProfile->supervisor->name }}</h4>
+
+                                            
+
+                                            @if($student->studentProfile->supervisor->supervisorProfile?->position)
+
+                                                <p class="text-sm text-gray-600 mb-2">{{ $student->studentProfile->supervisor->supervisorProfile->position }}</p>
+
+                                            @endif
+
+                                            
+
+                                            <div class="space-y-1.5">
+
+                                                <!-- Email -->
+
+                                                <div class="flex items-center text-sm text-gray-700">
+
+                                                    <svg class="w-4 h-4 mr-2 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+
+                                                    </svg>
+
+                                                    <a href="mailto:{{ $student->studentProfile->supervisor->email }}" class="hover:text-ojt-primary">
+
+                                                        {{ $student->studentProfile->supervisor->email }}
+
+                                                    </a>
+
+                                                </div>
+
+                                                
+
+                                                <!-- Phone -->
+
+                                                @if($student->studentProfile->supervisor->supervisorProfile?->phone)
+
+                                                    <div class="flex items-center text-sm text-gray-700">
+
+                                                        <svg class="w-4 h-4 mr-2 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+
+                                                        </svg>
+
+                                                        <a href="tel:{{ $student->studentProfile->supervisor->supervisorProfile->phone }}" class="hover:text-ojt-primary">
+
+                                                            {{ $student->studentProfile->supervisor->supervisorProfile->phone }}
+
+                                                        </a>
+
+                                                    </div>
+
+                                                @endif
+
+                                                
+
+                                                <!-- Company -->
+
+                                                @if($student->studentProfile->supervisor->supervisorProfile?->company)
+
+                                                    <div class="flex items-start text-sm text-gray-700 mt-2 pt-2 border-t border-ojt-accent/20">
+
+                                                        <svg class="w-4 h-4 mr-2 mt-0.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+
+                                                        </svg>
+
+                                                        <div>
+
+                                                            <p class="font-medium">{{ $student->studentProfile->supervisor->supervisorProfile->company->name }}</p>
+
+                                                            @if($student->studentProfile->supervisor->supervisorProfile->company->address)
+
+                                                                <p class="text-xs text-gray-500 mt-0.5">{{ $student->studentProfile->supervisor->supervisorProfile->company->address }}</p>
+
+                                                            @endif
+
+                                                        </div>
+
+                                                    </div>
+
+                                                @endif
+
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            @else
+
+                                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+
+                                    <div class="flex items-start gap-3">
+
+                                        <svg class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+
+                                        </svg>
+
+                                        <div>
+
+                                            <p class="text-sm font-medium text-yellow-800">No supervisor assigned yet</p>
+
+                                            <p class="text-xs text-yellow-700 mt-1">Student can submit supervisor details, or you can assign an existing supervisor below.</p>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            @endif
+
+
+
+                        <!-- Assignment Options -->
+
+
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- Recovery Reason Modal -->
+
+    <div id="recoveryReasonModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+
+            <div class="mt-3">
+
+                <div class="flex items-center justify-between mb-4">
+
+                    <h3 class="text-lg font-semibold text-gray-900">Recovery Details</h3>
+
+                    <button onclick="closeRecoveryModal()" class="text-gray-400 hover:text-gray-600">
+
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+
+                        </svg>
+
+                    </button>
+
+                </div>
+
+                <div class="mb-4">
+
+                    <p class="text-sm text-gray-500 mb-2">Date: <span id="recoveryDate" class="font-medium text-gray-900"></span></p>
+
+                    <p class="text-sm text-gray-500 mb-3">Hours: <span id="recoveryHours" class="font-medium text-ojt-primary"></span></p>
+
+                    <div class="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4">
+
+                        <p class="text-xs uppercase tracking-wide text-orange-600 font-semibold mb-1">Reason for Recovery:</p>
+
+                        <p id="recoveryReasonText" class="text-sm text-gray-700"></p>
+
+                    </div>
+
+                    <div id="recoveryStatus" class="hidden mb-4"></div>
+
+                </div>
+
+                <div id="recoveryActions" class="flex gap-2">
+
+                    <button onclick="approveRecovery()" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm font-medium">
+
+                        ✓ Approve
+
+                    </button>
+
+                    <button onclick="rejectRecovery()" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm font-medium">
+
+                        ✗ Reject
+
+                    </button>
+
+                </div>
+
+                <div id="recoveryClose" class="hidden flex justify-end">
+
+                    <button onclick="closeRecoveryModal()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm font-medium">
+
+                        Close
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <script>
+
+        let currentLogId = null;
+
+
+
+        function showRecoveryModal(logId, reason, date, hours) {
+
+            currentLogId = logId;
+
+            document.getElementById('recoveryReasonText').textContent = reason || 'No reason provided';
+
+            document.getElementById('recoveryDate').textContent = date;
+
+            document.getElementById('recoveryHours').textContent = hours + ' hours';
+
+            
+
+            // Check if already approved/rejected
+
+            const logRow = event.target.closest('tr');
+
+            const statusBadge = logRow.querySelector('button');
+
+            const statusText = statusBadge.textContent.trim();
+
+            
+
+            if (statusText === 'Pending Approval') {
+
+                document.getElementById('recoveryActions').classList.remove('hidden');
+
+                document.getElementById('recoveryClose').classList.add('hidden');
+
+                document.getElementById('recoveryStatus').classList.add('hidden');
+
+            } else {
+
+                document.getElementById('recoveryActions').classList.add('hidden');
+
+                document.getElementById('recoveryClose').classList.remove('hidden');
+
+                const statusDiv = document.getElementById('recoveryStatus');
+
+                statusDiv.classList.remove('hidden');
+
+                if (statusText === 'Approved') {
+
+                    statusDiv.innerHTML = '<div class="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-700"><strong>Status:</strong> Approved - Hours counted in total</div>';
+
+                } else if (statusText === 'Rejected') {
+
+                    statusDiv.innerHTML = '<div class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700"><strong>Status:</strong> Rejected - Hours not counted</div>';
+
+                }
+
+            }
+
+            
+
+            document.getElementById('recoveryReasonModal').classList.remove('hidden');
+
+        }
+
+
+
+        function closeRecoveryModal() {
+
+            document.getElementById('recoveryReasonModal').classList.add('hidden');
+
+            currentLogId = null;
+
+        }
+
+
+
+        async function approveRecovery() {
+
+            if (!currentLogId) return;
+
+            
+
+            try {
+
+                const response = await fetch(`/coord/attendance/${currentLogId}/approve-recovery`, {
+
+                    method: 'POST',
+
+                    headers: {
+
+                        'Content-Type': 'application/json',
+
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+
+                    }
+
+                });
+
+                
+
+                const data = await response.json();
+
+                
+
+                if (data.success) {
+
+                    closeRecoveryModal();
+
+                    location.reload(); // Reload to show updated status
+
+                } else {
+
+                    alert(data.message || 'Failed to approve recovery');
+
+                }
+
+            } catch (error) {
+
+                console.error('Error:', error);
+
+                alert('An error occurred while approving the recovery');
+
+            }
+
+        }
+
+
+
+        async function rejectRecovery() {
+
+            if (!currentLogId) return;
+
+            
+
+            if (!confirm('Are you sure you want to reject this recovery? The hours will not be counted.')) {
+
+                return;
+
+            }
+
+            
+
+            try {
+
+                const response = await fetch(`/coord/attendance/${currentLogId}/reject-recovery`, {
+
+                    method: 'POST',
+
+                    headers: {
+
+                        'Content-Type': 'application/json',
+
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+
+                    }
+
+                });
+
+                
+
+                const data = await response.json();
+
+                
+
+                if (data.success) {
+
+                    closeRecoveryModal();
+
+                    location.reload(); // Reload to show updated status
+
+                } else {
+
+                    alert(data.message || 'Failed to reject recovery');
+
+                }
+
+            } catch (error) {
+
+                console.error('Error:', error);
+
+                alert('An error occurred while rejecting the recovery');
+
+            }
+
+        }
+
+
+
+        // Close modal when clicking outside
+
+        document.getElementById('recoveryReasonModal')?.addEventListener('click', function(e) {
+
+            if (e.target === this) {
+
+                closeRecoveryModal();
+
+            }
+
+        });
+
+    </script>
+
+</x-app-layout>
+
+

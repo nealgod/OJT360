@@ -22,9 +22,10 @@ class PrePlacementService
             return;
         }
 
+        // Treat any existing submission for a required pre-placement document as "submitted"
+        // Status is no longer used for approval/rejection decisions.
         $submittedRequirementIds = StudentDocumentSubmission::where('student_user_id', $studentId)
             ->whereIn('document_requirement_id', $requirements->pluck('id'))
-            ->whereIn('status', ['submitted', 'approved'])
             ->pluck('document_requirement_id')
             ->unique();
 

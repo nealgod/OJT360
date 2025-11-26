@@ -44,6 +44,8 @@ Route::middleware(['auth', 'profile.complete'])->group(function () {
     // Notification routes
     Route::get('/notifications', [App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
     Route::patch('/notifications/{notification}/read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::patch('/notifications/{notification}/unread', [App\Http\Controllers\NotificationController::class, 'markAsUnread'])->name('notifications.unread');
+    Route::delete('/notifications/{notification}', [App\Http\Controllers\NotificationController::class, 'destroy'])->name('notifications.destroy');
 
     // Messaging routes
     Route::get('/messages', [App\Http\Controllers\MessageController::class, 'index'])->name('messages.index');
@@ -282,8 +284,6 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
 
     // Coordinator document review
     Route::get('/coord/documents', [App\Http\Controllers\DocumentController::class, 'index'])->name('coord.documents.index');
-    Route::post('/coord/documents/submissions/{submission}/review', [App\Http\Controllers\DocumentController::class, 'review'])->name('coord.documents.review');
-    Route::post('/coord/documents/bulk-review', [App\Http\Controllers\DocumentController::class, 'bulkReview'])->name('coord.documents.bulk-review');
 
     // API route for fetching attendance data by date
     Route::get('/api/attendance/{date}', function (Request $request, $date) {

@@ -30,4 +30,28 @@ class NotificationController extends Controller
 
         return back();
     }
+
+    /**
+     * Mark notification as unread.
+     */
+    public function markAsUnread(Notification $notification)
+    {
+        if ($notification->user_id === auth()->id()) {
+            $notification->update(['read' => false]);
+        }
+
+        return back();
+    }
+
+    /**
+     * Delete a notification for the authenticated user.
+     */
+    public function destroy(Notification $notification)
+    {
+        if ($notification->user_id === auth()->id()) {
+            $notification->delete();
+        }
+
+        return back();
+    }
 }

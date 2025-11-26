@@ -78,17 +78,43 @@
                                 </div>
                             </div>
                             
-                            <div class="flex items-center space-x-2 ml-4">
+                            <div class="flex flex-col items-end space-y-2 ml-4">
+                                <div class="flex flex-wrap gap-2 justify-end">
+                                    @if(!$notification->read)
+                                        <form method="POST" action="{{ route('notifications.read', $notification) }}">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button type="submit" class="inline-flex items-center px=3 py-1.5 text-xs font-medium text-white bg-ojt-primary rounded-full hover:bg-maroon-700 transition-colors">
+                                                Mark as read
+                                            </button>
+                                        </form>
+                                    @else
+                                        <form method="POST" action="{{ route('notifications.unread', $notification) }}">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button type="submit" class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors">
+                                                Mark as unread
+                                            </button>
+                                        </form>
+                                    @endif
+                                    <form method="POST" action="{{ route('notifications.destroy', $notification) }}" onsubmit="return confirm('Delete this notification?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-600 border border-red-200 rounded-full hover:bg-red-50 transition-colors">
+                                            Delete
+                                        </button>
+                                    </form>
+                                </div>
                                 @if($notification->type === 'acceptance_letter_request')
-                                    <a href="{{ route('supervisor.acceptance.index') }}" class="text-sm text-ojt-primary hover:text-maroon-700 font-medium">
-                                        View
+                                    <a href="{{ route('supervisor.acceptance.index') }}" class="text-xs text-ojt-primary hover:text-maroon-700 font-medium">
+                                        View request
                                     </a>
                                 @endif
                                 
                                 @if(Auth::user()->isCoordinator() && $notification->type === 'ojt_acceptance')
-                                    <button class="text-sm text-ojt-primary hover:text-maroon-700 font-medium">
-                                        Approve OJT
-                                    </button>
+                                    <a href="{{ route('coord.students.index') }}" class="text-xs text-ojt-primary hover:text-maroon-700 font-medium">
+                                        Review student
+                                    </a>
                                 @endif
                             </div>
                         </div>
