@@ -90,7 +90,9 @@ class AttendanceController extends Controller
             $log->update([
                 'time_in' => $timeIn->format('H:i:s'), // Store in 24-hour format for database
                 'photo_in_path' => $path,
-                'status' => 'in_progress',
+                // Keep status as 'approved' to match existing database enum/constraints;
+                // the UI already shows "In Progress" based on missing time_out/minutes.
+                'status' => 'approved',
                 'lat_in' => $request->input('lat_in'),
                 'lng_in' => $request->input('lng_in'),
             ]);
