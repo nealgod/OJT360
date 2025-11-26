@@ -22,7 +22,8 @@
                     <p class="text-sm text-gray-500 mt-1">Fill in the details below to add a new company</p>
                 </div>
 
-                <form method="POST" action="{{ route('coord.companies.store') }}" class="p-6 space-y-6">
+                @php $isAdmin = Auth::user()->isAdmin(); @endphp
+                <form method="POST" action="{{ $isAdmin ? route('admin.companies.store') : route('coord.companies.store') }}" class="p-6 space-y-6">
                     @csrf
 
                     <!-- Company Name -->
@@ -41,6 +42,25 @@
                             <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
+
+                    @if($isAdmin)
+                    <!-- Department (Admin only) -->
+                    <div>
+                        <label for="department" class="block text-sm font-medium text-gray-700 mb-2">
+                            Department <span class="text-red-500">*</span>
+                        </label>
+                        <select id="department" name="department" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ojt-primary focus:border-ojt-primary transition-colors @error('department') border-red-500 @enderror">
+                            <option value="">Select department</option>
+                            @foreach($departments as $dept)
+                                <option value="{{ $dept }}" {{ old('department') === $dept ? 'selected' : '' }}>{{ $dept }}</option>
+                            @endforeach
+                        </select>
+                        @error('department')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                        <p class="mt-2 text-sm text-gray-500">Choose which department will see this company.</p>
+                    </div>
+                    @endif
 
                     <!-- Address -->
                     <div>
@@ -128,7 +148,7 @@
                         @error('status')
                             <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                         @enderror
-                        <p class="mt-2 text-sm text-gray-500">Active companies will be visible to students in your department</p>
+                        <p class="mt-2 text-sm text-gray-500">Active companies will be visible to students in the selected department</p>
                     </div>
 
                     <!-- Action Buttons -->
@@ -157,7 +177,11 @@
                     <div class="text-sm text-blue-800">
                         <p class="font-medium mb-1">Note:</p>
                         <ul class="list-disc list-inside space-y-1">
-                            <li>Companies are automatically assigned to your department ({{ $department ?? 'N/A' }})</li>
+                            @if($isAdmin)
+                                <li>Companies will be assigned to the department you select</li>
+                            @else
+                                <li>Companies are automatically assigned to your department ({{ $department ?? 'N/A' }})</li>
+                            @endif
                             <li>Only active companies will be visible to students</li>
                             <li>You can edit or deactivate companies later</li>
                         </ul>

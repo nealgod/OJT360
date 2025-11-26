@@ -9,6 +9,9 @@
                     <a href="/admin/users" class="inline-block bg-ojt-primary text-white px-6 py-2 rounded-lg hover:bg-maroon-700">
                         Go to Manage Users (Direct Link)
                     </a>
+                    <a href="/admin/companies" class="inline-block ml-3 bg-white text-ojt-dark border border-gray-300 px-6 py-2 rounded-lg hover:bg-gray-50">
+                        Go to Manage Companies
+                    </a>
                 </div>
             </div>
 

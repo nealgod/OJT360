@@ -27,9 +27,10 @@
                         Browse through all partner companies in the system.
                     @endif
                 </p>
-                @if(Auth::user()->isCoordinator())
+                @php $isAdmin = Auth::user()->isAdmin(); $isCoordinator = Auth::user()->isCoordinator(); @endphp
+                @if($isCoordinator || $isAdmin)
                     <div class="mt-4">
-                        <a href="{{ route('coord.companies.create') }}" class="inline-flex items-center px-4 py-2 bg-ojt-primary text-white text-sm font-medium rounded-lg hover:bg-maroon-700 transition-colors duration-200">
+                        <a href="{{ $isAdmin ? route('admin.companies.create') : route('coord.companies.create') }}" class="inline-flex items-center px-4 py-2 bg-ojt-primary text-white text-sm font-medium rounded-lg hover:bg-maroon-700 transition-colors duration-200">
                             Add Company
                         </a>
                     </div>
@@ -52,7 +53,7 @@
                             <!-- Company Info -->
                             <div class="flex items-center justify-between mb-2">
                                 <h3 class="text-lg font-semibold text-ojt-dark">{{ $company->name }}</h3>
-                                @if(Auth::user()->isCoordinator())
+                                @if($isCoordinator || $isAdmin)
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $company->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
                                         {{ ucfirst($company->status) }}
                                     </span>
@@ -90,10 +91,11 @@
                                 </div>
                             </div>
 
-                            @if(Auth::user()->isCoordinator() && ($company->coordinator_id === Auth::id() || $company->department === Auth::user()->coordinatorProfile?->department))
+                            @php $routePrefix = $isAdmin ? 'admin' : 'coord'; @endphp
+                            @if($isAdmin || ($isCoordinator && ($company->coordinator_id === Auth::id() || $company->department === Auth::user()->coordinatorProfile?->department)))
                                 <div class="flex flex-wrap gap-2">
                                     <!-- Status Toggle -->
-                                    <form method="POST" action="{{ route('coord.companies.toggle-status', $company) }}" class="inline-block">
+                                    <form method="POST" action="{{ route($routePrefix.'.companies.toggle-status', $company) }}" class="inline-block">
                                         @csrf
                                         @method('PATCH')
                                         <button type="submit" 
@@ -104,13 +106,13 @@
                                     </form>
                                     
                                     <!-- Edit Button -->
-                                    <a href="{{ route('coord.companies.edit', $company) }}" 
+                                    <a href="{{ route($routePrefix.'.companies.edit', $company) }}" 
                                        class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors duration-200">
                                         Edit
                                     </a>
                                     
                                     <!-- Delete Button -->
-                                    <form method="POST" action="{{ route('coord.companies.destroy', $company) }}" class="inline-block" onsubmit="return confirm('Delete this company?');">
+                                    <form method="POST" action="{{ route($routePrefix.'.companies.destroy', $company) }}" class="inline-block" onsubmit="return confirm('Delete this company?');">
                                         @csrf
                                         @method('DELETE')
                                         <button class="inline-flex items-center px-3 py-2 bg-white border border-red-300 text-red-700 text-sm font-medium rounded-lg hover:bg-red-50 transition-colors duration-200">Delete</button>

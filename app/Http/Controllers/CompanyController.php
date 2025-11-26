@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AuditLog;
 use App\Models\Company;
+use App\Models\Department;
 use Illuminate\Http\Request;
 
 class CompanyController extends Controller
@@ -48,11 +49,12 @@ class CompanyController extends Controller
     public function create()
     {
         $user = auth()->user();
-        abort_unless($user && $user->isCoordinator(), 403);
+        abort_unless($user && ($user->isCoordinator() || $user->isAdmin()), 403);
 
-        $department = $user->coordinatorProfile?->department;
+        $department = $user->isCoordinator() ? $user->coordinatorProfile?->department : null;
+        $departments = $user->isAdmin() ? Department::orderBy('name')->pluck('name')->toArray() : [];
 
-        return view('companies.create', compact('department'));
+        return view('companies.create', compact('department', 'departments'));
     }
 
     /**
@@ -61,21 +63,25 @@ class CompanyController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        abort_unless($user && $user->isCoordinator(), 403);
+        abort_unless($user && ($user->isCoordinator() || $user->isAdmin()), 403);
 
-        $request->validate([
+        $rules = [
             'name' => ['required', 'string', 'max:255', 'unique:companies,name'],
             'address' => ['nullable', 'string', 'max:255'],
             'contact_person' => ['nullable', 'string', 'max:255'],
             'contact_email' => ['nullable', 'email', 'max:255'],
             'contact_phone' => ['nullable', 'string', 'max:50'],
             'status' => ['required', 'in:active,inactive'],
-        ]);
+        ];
+        if ($user->isAdmin()) {
+            $rules['department'] = ['required', 'string'];
+        }
+        $request->validate($rules);
 
         $company = Company::create([
             'name' => $request->string('name'),
-            'department' => $user->coordinatorProfile?->department,
-            'coordinator_id' => $user->id,
+            'department' => $user->isAdmin() ? $request->string('department') : $user->coordinatorProfile?->department,
+            'coordinator_id' => $user->isAdmin() ? null : $user->id,
             'address' => $request->string('address'),
             'contact_person' => $request->string('contact_person'),
             'contact_email' => $request->string('contact_email'),
@@ -103,8 +109,9 @@ class CompanyController extends Controller
         ), 403);
 
         $department = $company->department;
+        $departments = $user->isAdmin() ? Department::orderBy('name')->pluck('name')->toArray() : [];
 
-        return view('companies.edit', compact('company', 'department'));
+        return view('companies.edit', compact('company', 'department', 'departments'));
     }
 
     /**
@@ -121,19 +128,23 @@ class CompanyController extends Controller
             ($user->isCoordinator() && $company->department === $coordDept)
         ), 403);
 
-        $request->validate([
+        $rules = [
             'name' => ['required', 'string', 'max:255', 'unique:companies,name,'.$company->id],
             'address' => ['nullable', 'string', 'max:255'],
             'contact_person' => ['nullable', 'string', 'max:255'],
             'contact_email' => ['nullable', 'email', 'max:255'],
             'contact_phone' => ['nullable', 'string', 'max:50'],
             'status' => ['required', 'in:active,inactive'],
-        ]);
+        ];
+        if ($user->isAdmin()) {
+            $rules['department'] = ['required', 'string'];
+        }
+        $request->validate($rules);
 
         $old = $company->getOriginal();
         $company->update([
             'name' => $request->string('name'),
-            // keep department fixed to creator's department
+            'department' => $user->isAdmin() ? $request->string('department') : $company->department,
             'address' => $request->string('address'),
             'contact_person' => $request->string('contact_person'),
             'contact_email' => $request->string('contact_email'),

@@ -118,10 +118,10 @@ Route::middleware(['auth', 'profile.complete'])->group(function () {
 
     // Legacy resume routes (redirect to new routes for backward compatibility)
     Route::get('/resume', function () {
-    return redirect()->route('student-documents.index');
+        return redirect()->route('student-documents.index');
     });
     Route::get('/resume/create', function () {
-    return redirect()->route('student-documents.resume.create');
+        return redirect()->route('student-documents.resume.create');
     });
 });
 
@@ -151,6 +151,15 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
         // Audit Logs
         Route::get('/audit', [App\Http\Controllers\AdminAuditController::class, 'index'])->name('audit.index');
         Route::get('/audit/{audit}', [App\Http\Controllers\AdminAuditController::class, 'show'])->name('audit.show');
+
+        // Companies management (Admin)
+        Route::get('/companies', [App\Http\Controllers\CompanyController::class, 'index'])->name('companies.index');
+        Route::get('/companies/create', [App\Http\Controllers\CompanyController::class, 'create'])->name('companies.create');
+        Route::post('/companies', [App\Http\Controllers\CompanyController::class, 'store'])->name('companies.store');
+        Route::get('/companies/{company}/edit', [App\Http\Controllers\CompanyController::class, 'edit'])->name('companies.edit');
+        Route::post('/companies/{company}', [App\Http\Controllers\CompanyController::class, 'update'])->name('companies.update');
+        Route::patch('/companies/{company}/toggle-status', [App\Http\Controllers\CompanyController::class, 'toggleStatus'])->name('companies.toggle-status');
+        Route::delete('/companies/{company}', [App\Http\Controllers\CompanyController::class, 'destroy'])->name('companies.destroy');
     });
 });
 
