@@ -41,5 +41,24 @@ class CompanySeeder extends Seeder
             'contact_phone' => '0917-000-3333',
             'status' => 'active',
         ]);
+
+        // BSIT Companies - Real Data
+        Company::firstOrCreate(['name' => 'Mac Builders'], [
+            'department' => $deptIt?->name ?? 'Department of Computer Studies',
+            'address' => 'Purok 8, Brgy Linao, Ormoc City, Leyte 6541 Philippines',
+            'contact_person' => null,
+            'contact_email' => null,
+            'contact_phone' => null,
+            'status' => 'active',
+        ]);
+
+        Company::firstOrCreate(['name' => 'Planet Ocean'], [
+            'department' => $deptIt?->name ?? 'Department of Computer Studies',
+            'address' => 'Real St, Ormoc City, Leyte 6541 Philippines',
+            'contact_person' => null,
+            'contact_email' => null,
+            'contact_phone' => null,
+            'status' => 'active',
+        ]);
     }
 }
