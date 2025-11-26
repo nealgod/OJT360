@@ -138,7 +138,7 @@
                             @endif
                         </div>
                         @if($applicationLetter)
-                            <p class="text-xs text-gray-500 mb-3">{{ $applicationLetter->original_filename }}</p>
+                            <p class="text-xs text-gray-500 mb-3 break-all">{{ $applicationLetter->original_filename }}</p>
                             <a href="{{ route('documents.stream', $applicationLetter) }}" target="_blank"
                                class="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-ojt-primary rounded-md hover:bg-maroon-700 transition-colors">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -172,7 +172,7 @@
                             @endif
                         </div>
                         @if($resume)
-                            <p class="text-xs text-gray-500 mb-3">{{ $resume->original_filename }}</p>
+                            <p class="text-xs text-gray-500 mb-3 break-all">{{ $resume->original_filename }}</p>
                             <a href="{{ route('documents.stream', $resume) }}" target="_blank"
                                class="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-ojt-primary rounded-md hover:bg-maroon-700 transition-colors">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -206,7 +206,7 @@
                             @endif
                         </div>
                         @if($recommendation)
-                            <p class="text-xs text-gray-500 mb-3">{{ $recommendation->original_filename }}</p>
+                            <p class="text-xs text-gray-500 mb-3 break-all">{{ $recommendation->original_filename }}</p>
                             <a href="{{ route('documents.stream', $recommendation) }}" target="_blank"
                                class="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-ojt-primary rounded-md hover:bg-maroon-700 transition-colors">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -269,7 +269,7 @@
                         
                         @if($finalEvaluation)
                             <div class="border rounded-lg p-4 bg-gray-50">
-                                <div class="flex items-center justify-between">
+                                <div class="flex flex-col gap-3 md:gap-4 md:flex-row md:items-center md:justify-between">
                                     <div>
                                         <div class="flex items-center gap-2 mb-2">
                                             <span class="font-medium text-gray-900">Control No: {{ $finalEvaluation->control_number }}</span>
@@ -281,13 +281,13 @@
                                             <span>Submitted: {{ $finalEvaluation->submitted_at->format('M d, Y') }}</span>
                                         </div>
                                     </div>
-                                    <div class="flex gap-2">
+                                    <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
                                         <a href="{{ route('supervisor.final-evaluations.show', $finalEvaluation) }}"
-                                           class="inline-flex items-center px-3 py-2 bg-ojt-primary text-white text-sm rounded-lg hover:bg-maroon-700 transition-colors">
+                                           class="inline-flex justify-center items-center px-3 py-2 bg-ojt-primary text-white text-sm rounded-lg hover:bg-maroon-700 transition-colors">
                                             View
                                         </a>
                                         <a href="{{ route('supervisor.final-evaluations.pdf', $finalEvaluation) }}"
-                                           class="inline-flex items-center px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50 transition-colors">
+                                           class="inline-flex justify-center items-center px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50 transition-colors">
                                             PDF
                                         </a>
                                     </div>
@@ -348,7 +348,7 @@
                         <div class="max-h-96 overflow-y-auto space-y-3 pr-2">
                             @foreach($evaluations as $evaluation)
                                 <div class="border border-gray-200 rounded-lg p-4 hover:border-ojt-primary transition-colors">
-                                    <div class="flex items-center justify-between">
+                                    <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                                         <div class="flex-1">
                                             <div class="flex items-center gap-3 mb-2">
                                                 <h4 class="font-medium text-gray-900">{{ $evaluation->getMonthYearLabel() }}</h4>
@@ -366,9 +366,9 @@
                                                 <p class="text-xs text-gray-600">Draft - Not yet submitted</p>
                                             @endif
                                         </div>
-                                        <div class="flex items-center gap-2">
+                                        <div class="flex flex-col sm:flex-row w-full md:w-auto gap-2">
                                             <a href="{{ route('supervisor.evaluations.show', $evaluation) }}" 
-                                               class="inline-flex items-center px-3 py-2 text-sm font-medium text-ojt-primary border border-ojt-primary rounded-lg hover:bg-ojt-primary hover:text-white transition-colors">
+                                               class="inline-flex justify-center items-center px-3 py-2 text-sm font-medium text-ojt-primary border border-ojt-primary rounded-lg hover:bg-ojt-primary hover:text-white transition-colors">
                                                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -376,7 +376,7 @@
                                                 View
                                             </a>
                                             <a href="{{ route('supervisor.evaluations.pdf', $evaluation) }}" 
-                                               class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                                               class="inline-flex justify-center items-center px-3 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                                                download="{{ $student->studentProfile->student_id ?? 'student' }}-{{ $evaluation->getMonthYearLabel() }}.pdf">
                                                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />

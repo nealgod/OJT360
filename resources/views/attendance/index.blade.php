@@ -631,6 +631,8 @@
                                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Approved</span>
                                         @elseif($log->is_recovered && $log->recovery_approved === false)
                                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">Rejected</span>
+                                        @elseif(! $log->time_out || ! $log->minutes_worked)
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">In Progress</span>
                                         @elseif($log->status === 'approved')
                                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Complete</span>
                                         @else

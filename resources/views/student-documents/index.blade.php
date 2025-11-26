@@ -90,7 +90,7 @@
                         <div class="divide-y divide-gray-200">
                             @foreach($resumes as $index => $resume)
                                 <div class="px-6 py-4 hover:bg-gray-50 transition-colors">
-                                    <div class="flex items-center justify-between">
+                                    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                                         <div class="flex items-center space-x-4">
                                             <div class="w-12 h-12 bg-ojt-primary/10 rounded-lg flex items-center justify-center">
                                                 <svg class="w-6 h-6 text-ojt-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -118,7 +118,7 @@
                                                 @endif
                                             </div>
                                         </div>
-                                        <div class="flex items-center space-x-2">
+                                        <div class="flex flex-wrap items-center gap-2 justify-end">
                                             @if($hasActiveResumeSubmission)
                                                 <span class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-500 text-sm font-medium rounded-lg cursor-not-allowed" title="A resume is already submitted in Documents">
                                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -134,9 +134,9 @@
                                                     Already Submitted
                                                 </span>
                                             @else
-                                                <form action="{{ route('student-documents.resume.submit', $resume) }}" method="POST" class="inline">
+                                                <form action="{{ route('student-documents.resume.submit', $resume) }}" method="POST" class="w-full sm:w-auto">
                                                     @csrf
-                                                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors" onclick="return confirm('Submit this resume to your coordinator for review?')">
+                                                    <button type="submit" class="inline-flex w-full sm:w-auto justify-center items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors" onclick="return confirm('Submit this resume to your coordinator for review?')">
                                                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                                                         </svg>
@@ -144,22 +144,22 @@
                                                     </button>
                                                 </form>
                                             @endif
-                                            <a href="{{ route('student-documents.resume.download', $resume) }}" class="inline-flex items-center px-4 py-2 bg-ojt-primary text-white text-sm font-medium rounded-lg hover:bg-maroon-700 transition-colors">
+                                            <a href="{{ route('student-documents.resume.download', $resume) }}" class="inline-flex w-full sm:w-auto justify-center items-center px-4 py-2 bg-ojt-primary text-white text-sm font-medium rounded-lg hover:bg-maroon-700 transition-colors">
                                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                                 </svg>
                                                 Download
                                             </a>
-                                            <a href="{{ route('student-documents.resume.edit', $resume) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
+                                            <a href="{{ route('student-documents.resume.edit', $resume) }}" class="inline-flex w-full sm:w-auto justify-center items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
                                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                                 </svg>
                                                 Edit
                                             </a>
-                                            <form action="{{ route('student-documents.resume.destroy', $resume) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this resume?');">
+                                            <form action="{{ route('student-documents.resume.destroy', $resume) }}" method="POST" class="w-full sm:w-auto" onsubmit="return confirm('Are you sure you want to delete this resume?');">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="inline-flex items-center px-4 py-2 bg-white border border-red-300 text-red-700 text-sm font-medium rounded-lg hover:bg-red-50 transition-colors">
+                                                <button type="submit" class="inline-flex w-full sm:w-auto justify-center items-center px-4 py-2 bg-white border border-red-300 text-red-700 text-sm font-medium rounded-lg hover:bg-red-50 transition-colors">
                                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                     </svg>
@@ -183,7 +183,7 @@
                         <div class="divide-y divide-gray-200">
                             @foreach($applicationLetters as $index => $letter)
                                 <div class="px-6 py-4 hover:bg-gray-50 transition-colors">
-                                    <div class="flex items-center justify-between">
+                                    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                                         <div class="flex items-center space-x-4">
                                             <div class="w-12 h-12 bg-ojt-accent/10 rounded-lg flex items-center justify-center">
                                                 <svg class="w-6 h-6 text-ojt-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -209,7 +209,7 @@
                                                 <p class="text-xs text-gray-400 mt-1">{{ Str::limit($letter->content, 60) }}</p>
                                             </div>
                                         </div>
-                                        <div class="flex items-center space-x-2">
+                                        <div class="flex flex-wrap items-center gap-2 justify-end">
                                             @if($hasActiveLetterSubmission)
                                                 <span class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-500 text-sm font-medium rounded-lg cursor-not-allowed" title="An application letter is already submitted in Documents">
                                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -225,9 +225,9 @@
                                                     Already Submitted
                                                 </span>
                                             @else
-                                                <form action="{{ route('student-documents.application-letter.submit', $letter) }}" method="POST" class="inline">
+                                                <form action="{{ route('student-documents.application-letter.submit', $letter) }}" method="POST" class="w-full sm:w-auto">
                                                     @csrf
-                                                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors" onclick="return confirm('Submit this application letter to your coordinator for review?')">
+                                                    <button type="submit" class="inline-flex w-full sm:w-auto justify-center items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors" onclick="return confirm('Submit this application letter to your coordinator for review?')">
                                                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                                                         </svg>
@@ -235,22 +235,22 @@
                                                     </button>
                                                 </form>
                                             @endif
-                                            <a href="{{ route('student-documents.application-letter.download', $letter) }}" class="inline-flex items-center px-4 py-2 bg-ojt-primary text-white text-sm font-medium rounded-lg hover:bg-maroon-700 transition-colors">
+                                            <a href="{{ route('student-documents.application-letter.download', $letter) }}" class="inline-flex w-full sm:w-auto justify-center items-center px-4 py-2 bg-ojt-primary text-white text-sm font-medium rounded-lg hover:bg-maroon-700 transition-colors">
                                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                                 </svg>
                                                 Download
                                             </a>
-                                            <a href="{{ route('student-documents.application-letter.edit', $letter) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
+                                            <a href="{{ route('student-documents.application-letter.edit', $letter) }}" class="inline-flex w-full sm:w-auto justify-center items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
                                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                                 </svg>
                                                 Edit
                                             </a>
-                                            <form action="{{ route('student-documents.application-letter.destroy', $letter) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this application letter?');">
+                                            <form action="{{ route('student-documents.application-letter.destroy', $letter) }}" method="POST" class="w-full sm:w-auto" onsubmit="return confirm('Are you sure you want to delete this application letter?');">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="inline-flex items-center px-4 py-2 bg-white border border-red-300 text-red-700 text-sm font-medium rounded-lg hover:bg-red-50 transition-colors">
+                                                <button type="submit" class="inline-flex w-full sm:w-auto justify-center items-center px-4 py-2 bg-white border border-red-300 text-red-700 text-sm font-medium rounded-lg hover:bg-red-50 transition-colors">
                                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                     </svg>

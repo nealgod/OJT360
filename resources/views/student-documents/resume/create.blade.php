@@ -67,10 +67,11 @@
 
                 <!-- Objective/Summary -->
                 <div class="bg-white shadow sm:rounded-lg p-6">
-                    <h3 class="text-lg font-semibold text-ojt-dark mb-4">Objective / Professional Summary</h3>
-                    <textarea id="objective" name="objective" rows="4"
+                    <h3 class="text-lg font-semibold text-ojt-dark mb-2">Objective / Professional Summary</h3>
+                    <textarea id="objective" name="objective" rows="3" maxlength="250"
                               class="w-full rounded-lg border-gray-300 focus:border-ojt-primary focus:ring-ojt-primary"
-                              placeholder="Write a brief summary of your career objectives or professional summary...">{{ old('objective', '') }}</textarea>
+                              placeholder="Short 1–3 sentence summary (max 250 characters)">{{ old('objective', '') }}</textarea>
+                    <p class="text-xs text-gray-500 mt-1">Maximum 250 characters.</p>
                     @error('objective')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
 

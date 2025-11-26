@@ -86,7 +86,7 @@ class ResumeController extends Controller
             'personal_info.email' => 'required|email|max:255',
             'personal_info.phone' => 'nullable|string|max:50',
             'personal_info.address' => 'nullable|string|max:500',
-            'objective' => 'nullable|string|max:1000',
+            'objective' => 'nullable|string|max:250',
             'education' => 'nullable|array',
             'work_experience' => 'nullable|array',
             'skills' => 'nullable|array',
@@ -202,7 +202,7 @@ class ResumeController extends Controller
             'personal_info.email' => 'required|email|max:255',
             'personal_info.phone' => 'nullable|string|max:50',
             'personal_info.address' => 'nullable|string|max:500',
-            'objective' => 'nullable|string|max:1000',
+            'objective' => 'nullable|string|max:250',
             'education' => 'nullable|array',
             'work_experience' => 'nullable|array',
             'skills' => 'nullable|array',
@@ -494,6 +494,9 @@ class ResumeController extends Controller
                 }
                 $experienceText = implode("\n\n", $experienceBlocks);
             }
+            if ($experienceText === '') {
+                $experienceText = 'None';
+            }
 
             // Format skills - one per line or comma separated
             $skillsText = '';
@@ -502,6 +505,9 @@ class ResumeController extends Controller
                 if (! empty($filteredSkills)) {
                     $skillsText = implode("\n", array_map(fn ($skill) => $bulletChar.' '.$skill, $filteredSkills));
                 }
+            }
+            if ($skillsText === '') {
+                $skillsText = 'None';
             }
 
             // Format certifications (only names now)
@@ -513,6 +519,9 @@ class ResumeController extends Controller
                 if (! empty($certNames)) {
                     $certificationsText = implode("\n", array_map(fn ($cert) => $bulletChar.' '.$cert, $certNames));
                 }
+            }
+            if ($certificationsText === '') {
+                $certificationsText = 'None';
             }
 
             // Draw text at specified coordinates (converting inches to points)

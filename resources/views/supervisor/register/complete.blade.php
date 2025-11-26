@@ -45,7 +45,7 @@
 		</div>
 
 		<div>
-			<label for="company_address" class="block text-sm font-medium text-gray-700">Address</label>
+			<label for="company_address" class="block text-sm font-medium text-gray-700">Company Address</label>
 			<input id="company_address" type="text" name="company_address" value="{{ old('company_address') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required placeholder="Street, Barangay, City, Province" />
 		</div>
 

@@ -131,217 +131,117 @@
                 </div>
 
                 <div class="bg-white shadow sm:rounded-lg p-6 mb-6">
-                    <h3 class="text-lg font-semibold text-ojt-dark mb-4">Performance Ratings (1-5)</h3>
-                    
-                    <table class="min-w-full border">
-                        <thead>
-                            <tr class="bg-gray-50">
-                                <th class="px-4 py-3 text-left border">Attribute</th>
-                                <th class="px-4 py-3 text-center border">
-                                    <div class="font-bold">5</div>
-                                    <div class="text-xs font-normal">Excellent</div>
-                                </th>
-                                <th class="px-4 py-3 text-center border">
-                                    <div class="font-bold">4</div>
-                                    <div class="text-xs font-normal">Very Satisfactory</div>
-                                </th>
-                                <th class="px-4 py-3 text-center border">
-                                    <div class="font-bold">3</div>
-                                    <div class="text-xs font-normal">Satisfactory</div>
-                                </th>
-                                <th class="px-4 py-3 text-center border">
-                                    <div class="font-bold">2</div>
-                                    <div class="text-xs font-normal">Fair</div>
-                                </th>
-                                <th class="px-4 py-3 text-center border">
-                                    <div class="font-bold">1</div>
-                                    <div class="text-xs font-normal">Needs Improvement</div>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr class="bg-gray-100">
-                                <td colspan="6" class="px-4 py-2 font-semibold">RELATED SKILLS</td>
-                            </tr>
-                            <tr>
-                                <td class="px-4 py-2">1. Analytical Skills</td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_1" value="5" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_1" value="4" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_1" value="3" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_1" value="2" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_1" value="1" required></td>
-                            </tr>
-                            <tr>
-                                <td class="px-4 py-2">2. Communicative Competence</td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_2" value="5" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_2" value="4" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_2" value="3" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_2" value="2" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_2" value="1" required></td>
-                            </tr>
-                            <tr>
-                                <td class="px-4 py-2">3. Leadership Skills</td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_3" value="5" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_3" value="4" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_3" value="3" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_3" value="2" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_3" value="1" required></td>
-                            </tr>
-                            <tr>
-                                <td class="px-4 py-2">4. Time Management Skills</td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_4" value="5" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_4" value="4" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_4" value="3" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_4" value="2" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_4" value="1" required></td>
-                            </tr>
-                            <tr>
-                                <td class="px-4 py-2">5. Technical Competence</td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_5" value="5" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_5" value="4" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_5" value="3" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_5" value="2" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_5" value="1" required></td>
-                            </tr>
-                            
-                            <tr class="bg-gray-100">
-                                <td colspan="6" class="px-4 py-2 font-semibold">QUALITY OF WORK</td>
-                            </tr>
-                            <tr>
-                                <td class="px-4 py-2">6. Accuracy and Dependability</td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_6" value="5" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_6" value="4" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_6" value="3" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_6" value="2" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_6" value="1" required></td>
-                            </tr>
-                            <tr>
-                                <td class="px-4 py-2">7. Creativity</td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_7" value="5" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_7" value="4" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_7" value="3" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_7" value="2" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_7" value="1" required></td>
-                            </tr>
-                            <tr>
-                                <td class="px-4 py-2">8. Multi-Tasking Ability</td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_8" value="5" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_8" value="4" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_8" value="3" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_8" value="2" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_8" value="1" required></td>
-                            </tr>
-                            <tr>
-                                <td class="px-4 py-2">9. Productivity/Work Speed</td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_9" value="5" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_9" value="4" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_9" value="3" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_9" value="2" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_9" value="1" required></td>
-                            </tr>
-                            <tr>
-                                <td class="px-4 py-2">10. Professionalism</td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_10" value="5" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_10" value="4" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_10" value="3" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_10" value="2" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_10" value="1" required></td>
-                            </tr>
+                    <h3 class="text-lg font-semibold text-ojt-dark mb-2">Performance Ratings</h3>
+                    <p class="text-sm text-gray-500 mb-4">Tap a score for each item. 1 = Needs Improvement, 5 = Excellent.</p>
+                    @php
+                        $scoreLabels = [
+                            1 => 'Needs Improvement',
+                            2 => 'Fair',
+                            3 => 'Satisfactory',
+                            4 => 'Very Good',
+                            5 => 'Excellent',
+                        ];
+                        $ratingSections = [
+                            [
+                                'title' => 'RELATED SKILLS',
+                                'items' => [
+                                    ['name' => 'rating_row_1', 'label' => '1. Analytical Skills'],
+                                    ['name' => 'rating_row_2', 'label' => '2. Communicative Competence'],
+                                    ['name' => 'rating_row_3', 'label' => '3. Leadership Skills'],
+                                    ['name' => 'rating_row_4', 'label' => '4. Time Management Skills'],
+                                    ['name' => 'rating_row_5', 'label' => '5. Technical Competence'],
+                                ],
+                            ],
+                            [
+                                'title' => 'QUALITY OF WORK',
+                                'items' => [
+                                    ['name' => 'rating_row_6', 'label' => '6. Accuracy and Dependability'],
+                                    ['name' => 'rating_row_7', 'label' => '7. Creativity'],
+                                    ['name' => 'rating_row_8', 'label' => '8. Multi-Tasking Ability'],
+                                    ['name' => 'rating_row_9', 'label' => '9. Productivity / Work Speed'],
+                                    ['name' => 'rating_row_10', 'label' => '10. Professionalism'],
+                                ],
+                            ],
+                            [
+                                'title' => 'WORK APPROACH',
+                                'items' => [
+                                    ['name' => 'rating_row_11', 'label' => '11. Adaptability to Change'],
+                                    ['name' => 'rating_row_12', 'label' => '12. Attendance and Punctuality'],
+                                    ['name' => 'rating_row_13', 'label' => '13. Courtesy and Respect'],
+                                    ['name' => 'rating_row_14', 'label' => '14. Professional Grooming'],
+                                    ['name' => 'rating_row_15', 'label' => '15. Teamwork'],
+                                ],
+                            ],
+                            [
+                                'title' => 'JOB INTEREST',
+                                'items' => [
+                                    ['name' => 'rating_row_16', 'label' => '16. Adherence to Policies'],
+                                    ['name' => 'rating_row_17', 'label' => '17. Attitude towards Work'],
+                                    ['name' => 'rating_row_18', 'label' => '18. Work with Colleagues'],
+                                    ['name' => 'rating_row_19', 'label' => '19. Initiative'],
+                                    ['name' => 'rating_row_20', 'label' => '20. Participation in Activities'],
+                                ],
+                            ],
+                        ];
+                    @endphp
 
-                            <tr class="bg-gray-100">
-                                <td colspan="6" class="px-4 py-2 font-semibold">WORK APPROACH</td>
-                            </tr>
-                            <tr>
-                                <td class="px-4 py-2">11. Adaptability to Change</td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_11" value="5" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_11" value="4" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_11" value="3" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_11" value="2" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_11" value="1" required></td>
-                            </tr>
-                            <tr>
-                                <td class="px-4 py-2">12. Attendance and Punctuality</td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_12" value="5" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_12" value="4" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_12" value="3" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_12" value="2" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_12" value="1" required></td>
-                            </tr>
-                            <tr>
-                                <td class="px-4 py-2">13. Courtesy and Respect</td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_13" value="5" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_13" value="4" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_13" value="3" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_13" value="2" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_13" value="1" required></td>
-                            </tr>
-                            <tr>
-                                <td class="px-4 py-2">14. Professional Grooming</td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_14" value="5" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_14" value="4" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_14" value="3" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_14" value="2" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_14" value="1" required></td>
-                            </tr>
-                            <tr>
-                                <td class="px-4 py-2">15. Teamwork</td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_15" value="5" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_15" value="4" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_15" value="3" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_15" value="2" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_15" value="1" required></td>
-                            </tr>
-                            
-                            <tr class="bg-gray-100">
-                                <td colspan="6" class="px-4 py-2 font-semibold">JOB INTEREST</td>
-                            </tr>
-                            <tr>
-                                <td class="px-4 py-2">16. Adherence to Policies</td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_16" value="5" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_16" value="4" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_16" value="3" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_16" value="2" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_16" value="1" required></td>
-                            </tr>
-                            <tr>
-                                <td class="px-4 py-2">17. Attitude towards Work</td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_17" value="5" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_17" value="4" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_17" value="3" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_17" value="2" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_17" value="1" required></td>
-                            </tr>
-                            <tr>
-                                <td class="px-4 py-2">18. Work with Colleagues</td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_18" value="5" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_18" value="4" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_18" value="3" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_18" value="2" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_18" value="1" required></td>
-                            </tr>
-                            <tr>
-                                <td class="px-4 py-2">19. Initiative</td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_19" value="5" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_19" value="4" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_19" value="3" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_19" value="2" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_19" value="1" required></td>
-                            </tr>
-                            <tr>
-                                <td class="px-4 py-2">20. Participation in Activities</td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_20" value="5" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_20" value="4" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_20" value="3" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_20" value="2" required></td>
-                                <td class="px-4 py-2 text-center"><input type="radio" name="rating_row_20" value="1" required></td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="space-y-6">
+                        @foreach($ratingSections as $section)
+                            <div class="border border-gray-100 rounded-xl">
+                                <div class="px-4 py-3 bg-gray-50 rounded-t-xl">
+                                    <p class="text-sm font-semibold text-gray-700">{{ $section['title'] }}</p>
+                                </div>
+                                <div class="divide-y divide-gray-100">
+                                    @foreach($section['items'] as $item)
+                                        <div class="px-4 py-4">
+                                            <div class="flex items-start justify-between gap-3">
+                                                <div>
+                                                    <p class="text-sm font-medium text-gray-900">{{ $item['label'] }}</p>
+                                                </div>
+                                                <span class="text-xs text-gray-500">Select 1-5</span>
+                                            </div>
+                                            <div class="mt-3 grid grid-cols-5 gap-2 sm:gap-3">
+                                                @foreach($scoreLabels as $score => $label)
+                                                    <label class="flex flex-col items-center text-xs font-medium text-gray-600 gap-1">
+                                                        <input
+                                                            type="radio"
+                                                            name="{{ $item['name'] }}"
+                                                            value="{{ $score }}"
+                                                            class="sr-only peer"
+                                                            {{ old($item['name']) == $score ? 'checked' : '' }}
+                                                            {{ $score === 1 ? 'required' : '' }}
+                                                        >
+                                                        <span class="w-full text-center py-2 rounded-lg border border-gray-200 transition peer-checked:bg-ojt-primary peer-checked:text-white peer-checked:border-ojt-primary break-words">
+                                                            {{ $score }}
+                                                        </span>
+                                                        <span class="text-[11px] text-gray-500">{{ $label }}</span>
+                                                    </label>
+                                                @endforeach
+                                            </div>
+                                            @error($item['name'])
+                                                <p class="mt-2 text-xs text-red-600">{{ $message }}</p>
+                                            @enderror
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
                 </div>
 
                 <div class="bg-white shadow sm:rounded-lg p-6 mb-6">
-                    <h3 class="text-lg font-semibold mb-4">Comments</h3>
-                    <textarea name="comments_recommendations" rows="4" maxlength="400" class="w-full rounded-md border-gray-300"></textarea>
+                    <h3 class="text-lg font-semibold text-ojt-dark mb-4">Comments and Recommendations</h3>
+                    <textarea
+                        name="comments_recommendations"
+                        id="monthlyComments"
+                        rows="4"
+                        maxlength="300"
+                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-ojt-primary focus:ring-ojt-primary"
+                        placeholder="Share concise feedback or recommendations (optional, max 300 characters)">{{ old('comments_recommendations') }}</textarea>
+                    <p class="text-xs text-gray-500 mt-1">
+                        Optional – Maximum 300 characters.
+                        <span id="monthlyCommentsCounter">300 characters remaining</span>
+                    </p>
                 </div>
 
                 <div class="bg-white shadow sm:rounded-lg p-6">
@@ -357,4 +257,24 @@
             </form>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const commentsField = document.getElementById('monthlyComments');
+            const commentsCounter = document.getElementById('monthlyCommentsCounter');
+            const maxChars = 300;
+
+            if (commentsField && commentsCounter) {
+                const updateCounter = () => {
+                    const remaining = maxChars - commentsField.value.length;
+                    commentsCounter.textContent = `${remaining} characters remaining`;
+                    commentsCounter.classList.toggle('text-red-600', remaining <= 20);
+                    commentsCounter.classList.toggle('text-gray-500', remaining > 20);
+                };
+
+                commentsField.addEventListener('input', updateCounter);
+                updateCounter();
+            }
+        });
+    </script>
 </x-app-layout>

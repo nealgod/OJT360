@@ -70,7 +70,7 @@ class SupervisorFinalEvaluationController extends Controller
             'rating_cooperation' => 'required|numeric|min:0|max:10',
             'rating_judgement' => 'required|numeric|min:0|max:10',
             'rating_personality' => 'required|numeric|min:0|max:5',
-            'comments_recommendations' => 'nullable|string|max:1000',
+            'comments_recommendations' => 'nullable|string|max:300',
         ], [
             'rating_quality_thoroughness.max' => 'Quality of work (Thoroughness) rating cannot exceed 20%.',
             'rating_dependability.max' => 'Dependability rating cannot exceed 15%.',
@@ -86,6 +86,7 @@ class SupervisorFinalEvaluationController extends Controller
             'rating_cooperation.required' => 'Cooperation rating is required.',
             'rating_judgement.required' => 'Judgement rating is required.',
             'rating_personality.required' => 'Personality rating is required.',
+            'comments_recommendations.max' => 'Comments and recommendations cannot exceed 300 characters.',
         ]);
 
         // Check for duplicate

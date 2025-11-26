@@ -118,7 +118,7 @@ class StudentDocumentController extends Controller
             'personal_info.email' => 'required|email|max:255',
             'personal_info.phone' => 'nullable|string|max:50',
             'personal_info.address' => 'nullable|string|max:500',
-            'objective' => 'nullable|string|max:1000',
+            'objective' => 'nullable|string|max:250',
             'education' => 'nullable|array',
             'work_experience' => 'nullable|array',
             'skills' => 'nullable|array',
@@ -231,7 +231,7 @@ class StudentDocumentController extends Controller
             'personal_info.email' => 'required|email|max:255',
             'personal_info.phone' => 'nullable|string|max:50',
             'personal_info.address' => 'nullable|string|max:500',
-            'objective' => 'nullable|string|max:1000',
+            'objective' => 'nullable|string|max:250',
             'education' => 'nullable|array',
             'work_experience' => 'nullable|array',
             'skills' => 'nullable|array',
@@ -394,9 +394,13 @@ class StudentDocumentController extends Controller
             'content' => 'required|string|min:50',
         ]);
 
-        $applicationLetter = ApplicationLetter::create([
+        $content = trim($validated['content']);
+        $content = preg_replace('/[ \t]+/', ' ', $content);
+        $content = preg_replace("/(\r\n|\r|\n){3,}/", "\n\n", $content);
+
+        ApplicationLetter::create([
             'user_id' => $user->id,
-            'content' => $validated['content'],
+            'content' => $content,
         ]);
 
         return redirect()->route('student-documents.index')->with('success', 'Application letter created successfully!');
@@ -437,8 +441,12 @@ class StudentDocumentController extends Controller
             'content' => 'required|string|min:50',
         ]);
 
+        $content = trim($validated['content']);
+        $content = preg_replace('/[ \t]+/', ' ', $content);
+        $content = preg_replace("/(\r\n|\r|\n){3,}/", "\n\n", $content);
+
         $letter->update([
-            'content' => $validated['content'],
+            'content' => $content,
         ]);
 
         return redirect()->route('student-documents.index')->with('success', 'Application letter updated successfully!');
@@ -759,13 +767,19 @@ class StudentDocumentController extends Controller
 
             // Letter content
             $pdf->SetFont('times', '', 12);
-            $pdf->MultiCell(0, 5, $letter->content, 0, 'J');
+            $paragraphs = preg_split("/(\r\n|\r|\n){2}/", $letter->content);
+            foreach ($paragraphs as $index => $paragraph) {
+                $pdf->MultiCell(0, 5, trim($paragraph), 0, 'L');
+                if ($index < count($paragraphs) - 1) {
+                    $pdf->Ln(3);
+                }
+            }
             $pdf->Ln(8);
 
             // Closing
             $pdf->SetFont('times', '', 12);
             $pdf->Cell(0, 6, 'Sincerely yours,', 0, 1, 'L');
-            $pdf->Ln(15);
+            $pdf->Ln(6);
 
             // Signature line
             $pdf->SetFont('times', 'B', 12);

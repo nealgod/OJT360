@@ -40,31 +40,31 @@
                         <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                             <div>
                                 <dt class="font-medium text-gray-500">Student Name</dt>
-                                <dd class="text-ojt-dark">{{ $evaluation->student_name }}</dd>
+                                <dd class="text-ojt-dark break-all">{{ $evaluation->student_name }}</dd>
                             </div>
                             <div>
                                 <dt class="font-medium text-gray-500">Student ID</dt>
-                                <dd class="text-ojt-dark">{{ $evaluation->student_id }}</dd>
+                                <dd class="text-ojt-dark break-all">{{ $evaluation->student_id }}</dd>
                             </div>
                             <div>
                                 <dt class="font-medium text-gray-500">Course</dt>
-                                <dd class="text-ojt-dark">{{ $evaluation->course }}</dd>
+                                <dd class="text-ojt-dark break-all">{{ $evaluation->course }}</dd>
                             </div>
                             <div>
                                 <dt class="font-medium text-gray-500">Department</dt>
-                                <dd class="text-ojt-dark">{{ $evaluation->department }}</dd>
+                                <dd class="text-ojt-dark break-all">{{ $evaluation->department }}</dd>
                             </div>
                             <div>
                                 <dt class="font-medium text-gray-500">Company</dt>
-                                <dd class="text-ojt-dark">{{ $evaluation->hte_name }}</dd>
+                                <dd class="text-ojt-dark break-all">{{ $evaluation->hte_name }}</dd>
                             </div>
                             <div>
                                 <dt class="font-medium text-gray-500">Total Hours</dt>
-                                <dd class="text-ojt-dark">{{ number_format($evaluation->total_hours_rendered, 2) }} hours</dd>
+                                <dd class="text-ojt-dark break-all">{{ number_format($evaluation->total_hours_rendered, 2) }} hours</dd>
                             </div>
                             <div>
                                 <dt class="font-medium text-gray-500">Supervisor</dt>
-                                <dd class="text-ojt-dark">{{ $evaluation->supervisor_name }}</dd>
+                                <dd class="text-ojt-dark break-all">{{ $evaluation->supervisor_name }}</dd>
                             </div>
                         </dl>
                     </div>
@@ -117,8 +117,8 @@
                     @if($evaluation->comments_recommendations)
                         <div class="bg-white rounded-lg border border-gray-200 p-6">
                             <h3 class="text-lg font-semibold text-ojt-dark mb-4">Comments and Recommendations</h3>
-                            <div class="prose max-w-none">
-                                <p class="text-gray-700 whitespace-pre-wrap">{{ $evaluation->comments_recommendations }}</p>
+                            <div class="prose max-w-none break-all">
+                                <p class="text-gray-700 whitespace-pre-line break-all">{{ $evaluation->comments_recommendations }}</p>
                             </div>
                         </div>
                     @endif

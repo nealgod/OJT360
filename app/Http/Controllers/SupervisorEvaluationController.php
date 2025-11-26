@@ -101,7 +101,9 @@ class SupervisorEvaluationController extends Controller
             'rating_row_18' => 'required|integer|min:1|max:5',
             'rating_row_19' => 'required|integer|min:1|max:5',
             'rating_row_20' => 'required|integer|min:1|max:5',
-            'comments_recommendations' => 'nullable|string|max:400',
+            'comments_recommendations' => 'nullable|string|max:300',
+        ], [
+            'comments_recommendations.max' => 'Comments and recommendations cannot exceed 300 characters.',
         ]);
 
         // Get student info

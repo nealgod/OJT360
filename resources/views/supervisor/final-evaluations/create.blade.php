@@ -143,10 +143,14 @@
                     <h3 class="text-lg font-semibold text-ojt-dark mb-4">Comments and Recommendations</h3>
                     <textarea name="comments_recommendations" 
                               rows="4" 
-                              maxlength="1000"
+                              maxlength="300"
+                              id="commentsField"
                               class="w-full rounded-md border-gray-300 shadow-sm focus:border-ojt-primary focus:ring-ojt-primary"
-                              placeholder="Enter your comments and recommendations on the trainee's overall performance (optional, max 1000 characters)">{{ old('comments_recommendations') }}</textarea>
-                    <p class="text-xs text-gray-500 mt-1">Optional - Maximum 1000 characters</p>
+                              placeholder="Share concise comments or recommendations (optional, max 300 characters)">{{ old('comments_recommendations') }}</textarea>
+                    <p class="text-xs text-gray-500 mt-1">
+                        Optional – Maximum 300 characters.
+                        <span id="commentsCounter">300 characters remaining</span>
+                    </p>
                 </div>
 
                 <!-- Submit Button -->
@@ -170,6 +174,19 @@
             const ratingInputs = document.querySelectorAll('.rating-input');
             const totalRatingDisplay = document.getElementById('totalRating');
             const submitBtn = document.getElementById('submitBtn');
+            const commentsField = document.getElementById('commentsField');
+            const commentsCounter = document.getElementById('commentsCounter');
+            const commentsMax = 300;
+
+            function updateCommentsCounter() {
+                if (!commentsField || !commentsCounter) {
+                    return;
+                }
+                const remaining = commentsMax - commentsField.value.length;
+                commentsCounter.textContent = `${remaining} characters remaining`;
+                commentsCounter.classList.toggle('text-red-600', remaining <= 20);
+                commentsCounter.classList.toggle('text-gray-500', remaining > 20);
+            }
 
             function updateTotal() {
                 let total = 0;
@@ -273,6 +290,11 @@
 
             // Initial update
             updateTotal();
+            updateCommentsCounter();
+
+            if (commentsField) {
+                commentsField.addEventListener('input', updateCommentsCounter);
+            }
         });
     </script>
 </x-app-layout>

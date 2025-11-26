@@ -90,7 +90,7 @@ class AttendanceController extends Controller
             $log->update([
                 'time_in' => $timeIn->format('H:i:s'), // Store in 24-hour format for database
                 'photo_in_path' => $path,
-                'status' => 'approved',
+                'status' => 'in_progress',
                 'lat_in' => $request->input('lat_in'),
                 'lng_in' => $request->input('lng_in'),
             ]);
@@ -220,6 +220,7 @@ class AttendanceController extends Controller
                 'time_out' => $timeOut->format('H:i:s'), // Store in 24-hour format for database
                 'photo_out_path' => $path,
                 'minutes_worked' => $minutes,
+                'status' => 'approved',
                 'lat_out' => $request->input('lat_out'),
                 'lng_out' => $request->input('lng_out'),
             ]);

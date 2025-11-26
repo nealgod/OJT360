@@ -37,6 +37,9 @@
                             <x-nav-link :href="route('reports.weekly.index')" :active="request()->routeIs('reports.weekly.*')">
                                 {{ __('Weekly Reports') }}
                             </x-nav-link>
+                            <x-nav-link :href="route('evaluations.index')" :active="request()->routeIs('evaluations.*')">
+                                {{ __('Evaluations') }}
+                            </x-nav-link>
                         @endif
                         <x-nav-link :href="route('messages.index')" :active="request()->routeIs('messages.*')">
                             {{ __('Messages') }}
