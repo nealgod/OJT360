@@ -67,18 +67,7 @@
             </div>
 
             @php
-                $milestones = [
-                    ['label' => 'Pre-Placement', 'complete' => (bool) $student->studentProfile?->preplacement_complete, 'note' => $student->studentProfile?->preplacement_complete ? 'Checklist done' : 'Waiting submissions'],
-                    ['label' => 'Company', 'complete' => (bool) $derivedCompanyName, 'note' => $derivedCompanyName ?? 'Not assigned'],
-                    ['label' => 'Supervisor', 'complete' => (bool) $student->studentProfile?->supervisor_id, 'note' => $student->studentProfile?->supervisor?->name ?? 'Not assigned'],
-                    ['label' => 'Activation', 'complete' => $student->studentProfile?->ojt_status === 'active', 'note' => ucfirst($student->studentProfile?->ojt_status ?? 'Pending')],
-                ];
-            @endphp
-
-            <!-- OJT Hours Progress Bar -->
-            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
-                @php
-                    // Calculate progress (exclude pending recovered logs)
+                // Calculate hours once for reuse throughout the view
                     $totalMinutes = $student->attendanceLogs->filter(function($log) {
                         return !$log->is_recovered || $log->recovery_approved === true;
                     })->sum('minutes_worked');
@@ -88,7 +77,17 @@
                         ?? $student->getRequiredHours()
                         ?? 500; // Default fallback
                     $progressPercentage = $requiredHours > 0 ? min(($completedHours / $requiredHours) * 100, 100) : 0;
+
+                $milestones = [
+                    ['label' => 'Pre-Placement', 'complete' => (bool) $student->studentProfile?->preplacement_complete, 'note' => $student->studentProfile?->preplacement_complete ? 'Checklist done' : 'Waiting submissions'],
+                    ['label' => 'Company', 'complete' => (bool) $derivedCompanyName, 'note' => $derivedCompanyName ?? 'Not assigned'],
+                    ['label' => 'Supervisor', 'complete' => (bool) $student->studentProfile?->supervisor_id, 'note' => $student->studentProfile?->supervisor?->name ?? 'Not assigned'],
+                    ['label' => 'Activation', 'complete' => $student->studentProfile?->ojt_status === 'active', 'note' => ucfirst($student->studentProfile?->ojt_status ?? 'Pending')],
+                ];
                 @endphp
+
+            <!-- OJT Hours Progress Bar -->
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
                 
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                     <h3 class="text-sm font-semibold text-gray-700">OJT Hours Progress</h3>
@@ -460,21 +459,9 @@
                                 <div class="flex items-center justify-between">
                                     <span class="uppercase tracking-wide">Hours Completed</span>
                                     <span class="text-sm text-ojt-dark font-semibold">
-                                        @php
-                                            // Calculate total hours from attendance logs (exclude pending recovered logs)
-                                            $totalMinutes = $student->attendanceLogs->filter(function($log) {
-                                                return !$log->is_recovered || $log->recovery_approved === true;
-                                            })->sum('minutes_worked');
-                                            $completedHours = $totalMinutes > 0 ? round($totalMinutes / 60, 1) : 0;
-                                        @endphp
                                         {{ number_format($completedHours, 1) }}
                                     </span>
                                 </div>
-                                @php
-                                    $requiredHours = $acceptance?->total_hours
-                                        ?? $student->studentProfile?->required_hours
-                                        ?? $student->getRequiredHours();
-                                @endphp
                                 <div class="flex items-center justify-between">
                                     <span class="uppercase tracking-wide">Required Hours</span>
                                     <span class="text-sm text-ojt-dark font-semibold">

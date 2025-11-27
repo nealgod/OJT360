@@ -152,6 +152,8 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
 
         // Audit Logs
         Route::get('/audit', [App\Http\Controllers\AdminAuditController::class, 'index'])->name('audit.index');
+        Route::get('/audit/export', [App\Http\Controllers\AdminAuditController::class, 'export'])->name('audit.export');
+        Route::get('/audit/user/{user}', [App\Http\Controllers\AdminAuditController::class, 'userActivity'])->name('audit.user');
         Route::get('/audit/{audit}', [App\Http\Controllers\AdminAuditController::class, 'show'])->name('audit.show');
 
         // Companies management (Admin)

@@ -111,7 +111,8 @@ class AdminReportController extends Controller
     public function evaluations(Request $request)
     {
         $monthlyEvals = MonthlyEvaluation::with(['student', 'supervisor', 'coordinator'])
-            ->orderBy('evaluation_month', 'desc')
+            ->orderByDesc('evaluation_year')
+            ->orderByDesc('evaluation_month')
             ->limit(20)
             ->get();
 

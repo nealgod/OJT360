@@ -10,12 +10,45 @@ use Illuminate\Support\Facades\Auth;
 
 class CoordinatorStudentController extends Controller
 {
-    public function index(Request $request)
+    /**
+     * Get coordinator's department and program info
+     */
+    protected function getCoordinatorInfo(): array
     {
         $coordinator = Auth::user();
         $department = $coordinator->coordinatorProfile?->department;
         $program = $coordinator->coordinatorProfile?->program;
-        $programName = $program?->name; // Get the program name string
+        $programName = $program?->name;
+
+        return [
+            'coordinator' => $coordinator,
+            'department' => $department,
+            'program' => $program,
+            'programName' => $programName,
+        ];
+    }
+
+    /**
+     * Ensure student belongs to coordinator's department and program
+     */
+    protected function authorizeStudentAccess(User $student, ?string $programName = null, bool $requireProgram = true): void
+    {
+        $info = $this->getCoordinatorInfo();
+        $department = $info['department'];
+        $programName = $programName ?? $info['programName'];
+
+        if (! $student->studentProfile ||
+            $student->studentProfile->department !== $department ||
+            ($requireProgram && ! empty($programName) && $student->studentProfile->course !== $programName)) {
+            abort(403, 'Unauthorized access to student.');
+        }
+    }
+
+    public function index(Request $request)
+    {
+        $info = $this->getCoordinatorInfo();
+        $department = $info['department'];
+        $programName = $info['programName'];
 
         // Base query for students in coordinator's department AND program
         $query = User::where('role', 'intern')
@@ -78,31 +111,24 @@ class CoordinatorStudentController extends Controller
 
         $students = $query->paginate(15);
 
-        // Get statistics for this specific program
+        // Get statistics for this specific program (optimized - single base query)
+        $baseQuery = User::where('role', 'intern')
+            ->whereHas('studentProfile', function ($q) use ($department, $programName) {
+                $q->where('department', $department)
+                  ->where('course', $programName);
+            });
+
         $stats = [
-            'total' => User::where('role', 'intern')
-                ->whereHas('studentProfile', function ($q) use ($department, $programName) {
-                    $q->where('department', $department)
-                      ->where('course', $programName);
-                })->count(),
-            'active' => User::where('role', 'intern')
-                ->whereHas('studentProfile', function ($q) use ($department, $programName) {
-                    $q->where('department', $department)
-                      ->where('course', $programName)
-                      ->where('ojt_status', 'active');
-                })->count(),
-            'pending' => User::where('role', 'intern')
-                ->whereHas('studentProfile', function ($q) use ($department, $programName) {
-                    $q->where('department', $department)
-                      ->where('course', $programName)
-                      ->where('ojt_status', 'pending');
-                })->count(),
-            'completed' => User::where('role', 'intern')
-                ->whereHas('studentProfile', function ($q) use ($department, $programName) {
-                    $q->where('department', $department)
-                      ->where('course', $programName)
-                      ->where('ojt_status', 'completed');
-                })->count(),
+            'total' => (clone $baseQuery)->count(),
+            'active' => (clone $baseQuery)->whereHas('studentProfile', function ($q) {
+                $q->where('ojt_status', 'active');
+            })->count(),
+            'pending' => (clone $baseQuery)->whereHas('studentProfile', function ($q) {
+                $q->where('ojt_status', 'pending');
+            })->count(),
+            'completed' => (clone $baseQuery)->whereHas('studentProfile', function ($q) {
+                $q->where('ojt_status', 'completed');
+            })->count(),
         ];
 
         // Add current filter/sort values for the view
@@ -113,17 +139,12 @@ class CoordinatorStudentController extends Controller
 
     public function show(User $student)
     {
-        $coordinator = Auth::user();
-        $department = $coordinator->coordinatorProfile?->department;
-        $program = $coordinator->coordinatorProfile?->program;
-        $programName = $program?->name;
+        $info = $this->getCoordinatorInfo();
+        $department = $info['department'];
+        $programName = $info['programName'];
 
         // Ensure student belongs to coordinator's department AND (program if coordinator has one)
-        if (! $student->studentProfile ||
-            $student->studentProfile->department !== $department ||
-            (! empty($programName) && $student->studentProfile->course !== $programName)) {
-            abort(403, 'Unauthorized access to student.');
-        }
+        $this->authorizeStudentAccess($student, $programName, false);
 
         // Load related data
         $student->load([
@@ -173,7 +194,7 @@ class CoordinatorStudentController extends Controller
         }
 
         // Get available companies for assignment
-        $availableCompanies = Company::where('department', $department)
+        $availableCompanies = Company::where('department', $info['department'])
             ->where('status', 'active')
             ->orderBy('name')
             ->get();
@@ -208,17 +229,7 @@ class CoordinatorStudentController extends Controller
 
     public function updateCompany(Request $request, User $student)
     {
-        $coordinator = Auth::user();
-        $department = $coordinator->coordinatorProfile?->department;
-        $program = $coordinator->coordinatorProfile?->program;
-        $programName = $program?->name;
-
-        // Ensure student belongs to coordinator's department AND program
-        if (! $student->studentProfile ||
-            $student->studentProfile->department !== $department ||
-            $student->studentProfile->course !== $programName) {
-            abort(403, 'Unauthorized access to student.');
-        }
+        $this->authorizeStudentAccess($student);
 
         $request->validate([
             'company_id' => ['nullable', 'exists:companies,id'],
@@ -235,17 +246,7 @@ class CoordinatorStudentController extends Controller
 
     public function updateStatus(Request $request, User $student)
     {
-        $coordinator = Auth::user();
-        $department = $coordinator->coordinatorProfile?->department;
-        $program = $coordinator->coordinatorProfile?->program;
-        $programName = $program?->name;
-
-        // Ensure student belongs to coordinator's department AND program
-        if (! $student->studentProfile ||
-            $student->studentProfile->department !== $department ||
-            $student->studentProfile->course !== $programName) {
-            abort(403, 'Unauthorized access to student.');
-        }
+        $this->authorizeStudentAccess($student);
 
         $request->validate([
             'ojt_status' => ['required', 'in:pending,active,completed'],
@@ -260,16 +261,10 @@ class CoordinatorStudentController extends Controller
 
     public function assignSupervisor(Request $request, User $student)
     {
-        $coordinator = Auth::user();
-        $department = $coordinator->coordinatorProfile?->department;
-        $program = $coordinator->coordinatorProfile?->program;
-        $programName = $program?->name;
+        $info = $this->getCoordinatorInfo();
+        $coordinator = $info['coordinator'];
 
-        if (! $student->studentProfile ||
-            $student->studentProfile->department !== $department ||
-            $student->studentProfile->course !== $programName) {
-            abort(403, 'Unauthorized access to student.');
-        }
+        $this->authorizeStudentAccess($student);
 
         $request->validate([
             'action' => ['required', 'in:assign_existing,create_from_proposal'],
@@ -280,49 +275,8 @@ class CoordinatorStudentController extends Controller
         $supervisor = null;
 
         if ($action === 'create_from_proposal') {
-            // Get the latest proposal from student OR from placement request
-            $latestProposal = null;
             // This action is no longer supported - supervisor assignment requests table was removed
             return back()->withErrors(['error' => 'This action is no longer available. Please use the supervisor registration flow instead.']);
-
-            // Create or get supervisor by email
-            $email = strtolower($proposedEmail);
-            $supervisor = User::whereRaw('LOWER(email) = ?', [$email])
-                ->where('role', 'supervisor')
-                ->first();
-
-            if (! $supervisor) {
-                // Generate temporary password
-                $temporaryPassword = \Illuminate\Support\Str::random(12);
-                $hashedPassword = \Illuminate\Support\Facades\Hash::make($temporaryPassword);
-
-                $supervisor = User::create([
-                    'name' => $proposedName,
-                    'email' => $email,
-                    'password' => $hashedPassword,
-                    'role' => 'supervisor',
-                    'must_change_password' => true,
-                    'email_verified_at' => now(),
-                ]);
-
-                // Send email with credentials
-                try {
-                    $supervisor->notify(new \App\Notifications\VerifyWithTemporaryPassword($temporaryPassword));
-                } catch (\Exception $e) {
-                    \Log::error('Supervisor email failed: '.$e->getMessage());
-                }
-            }
-
-            // Ensure SupervisorProfile exists
-            \App\Models\SupervisorProfile::firstOrCreate(
-                ['user_id' => $supervisor->id],
-                [
-                    'company_id' => $student->studentProfile?->assigned_company_id,
-                    'employee_id' => null,
-                    'position' => 'Supervisor',
-                    'status' => 'active',
-                ]
-            );
         } elseif ($action === 'assign_existing') {
             // Validate existing supervisor
             $supervisor = User::where('id', $request->supervisor_id)->where('role', 'supervisor')->firstOrFail();
