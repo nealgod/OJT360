@@ -330,4 +330,52 @@ class CoordinatorStudentController extends Controller
 
         return back()->with('success', 'Supervisor assigned successfully.');
     }
+
+    public function notifyMoaReady(Request $request)
+    {
+        $info = $this->getCoordinatorInfo();
+        $department = $info['department'];
+        $programName = $info['programName'];
+
+        // Get all students in coordinator's program
+        $students = User::where('role', 'intern')
+            ->whereHas('studentProfile', function ($q) use ($department, $programName) {
+                $q->where('department', $department)
+                  ->where('course', $programName);
+            })
+            ->get();
+
+        if ($students->isEmpty()) {
+            return back()->with('info', 'No students found in your program.');
+        }
+
+        $notifiedCount = 0;
+        $alreadyNotifiedCount = 0;
+
+        foreach ($students as $student) {
+            // Check if student already has MOA Ready notification
+            $hasNotification = $student->notifications()
+                ->where('type', 'App\\Notifications\\MoaReadyNotification')
+                ->whereJsonContains('data->type', 'moa_ready')
+                ->exists();
+
+            if (!$hasNotification) {
+                $student->notify(new \App\Notifications\MoaReadyNotification());
+                $notifiedCount++;
+            } else {
+                $alreadyNotifiedCount++;
+            }
+        }
+
+        if ($notifiedCount === 0) {
+            return back()->with('info', "All {$students->count()} student(s) in {$programName} have already been notified.");
+        }
+
+        $message = "Successfully notified {$notifiedCount} student(s) in {$programName}.";
+        if ($alreadyNotifiedCount > 0) {
+            $message .= " ({$alreadyNotifiedCount} already notified)";
+        }
+
+        return back()->with('success', $message);
+    }
 }

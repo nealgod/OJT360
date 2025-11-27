@@ -982,12 +982,18 @@
                                         </svg>
                                         Program Settings
                                     </a>
-                                    <a href="{{ route('coordinator.final-evaluations.index') }}" class="w-full bg-white border border-ojt-primary text-ojt-primary py-3 px-4 rounded-lg font-medium hover:bg-ojt-primary hover:text-white transition-colors duration-200 flex items-center justify-center">
+                                    <a href="{{route('coordinator.final-evaluations.index') }}" class="w-full bg-white border border-ojt-primary text-ojt-primary py-3 px-4 rounded-lg font-medium hover:bg-ojt-primary hover:text-white transition-colors duration-200 flex items-center justify-center">
                                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                         </svg>
                                         Final Evaluations
                                     </a>
+                                    <button onclick="showMoaNotificationModal()" class="w-full bg-white border border-ojt-primary text-ojt-primary py-3 px-4 rounded-lg font-medium hover:bg-ojt-primary hover:text-white transition-colors duration-200 flex items-center justify-center">
+                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                        </svg>
+                                        MOA Notification
+                                    </button>
                                 </div>
                             @elseif(Auth::user()->isSupervisor())
                                 <!-- Supervisor Quick Actions -->
@@ -1246,7 +1252,73 @@
                 closeRecoveryModal();
             }
         });
+
+        // MOA Notification Modal Functions
+        function showMoaNotificationModal() {
+            document.getElementById('moaNotificationModal').classList.remove('hidden');
+        }
+
+        function closeMoaNotificationModal() {
+            document.getElementById('moaNotificationModal').classList.add('hidden');
+        }
+
+        // Close MOA modal when clicking outside
+        document.getElementById('moaNotificationModal')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeMoaNotificationModal();
+            }
+        });
     </script>
+
+    @if(Auth::user()->isCoordinator())
+        <!-- MOA Notification Modal -->
+        <div id="moaNotificationModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+                <div class="mt-3">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">📄 Notify Students - MOA Ready</h3>
+                        <button onclick="closeMoaNotificationModal()" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="mb-4">
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                            <div class="flex items-start gap-3">
+                                <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <div>
+                                    <p class="text-sm font-medium text-blue-800">Program: {{ $programName ?? 'Your Program' }}</p>
+                                    <p class="text-xs text-blue-700 mt-1">
+                                        This will notify <strong>all students</strong> in your program who haven't been notified yet that their MOA is ready.
+                                    </p>
+                                    <p class="text-xs text-blue-700 mt-2">
+                                        Students will receive a notification: "Your MOA is ready. Please contact your coordinator."
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-700 mb-4">
+                            Are you sure you want to proceed?
+                        </p>
+                    </div>
+                    <div class="flex gap-2">
+                        <form id="notify-moa-form" method="POST" action="{{ route('coord.notify-moa') }}" class="flex-1">
+                            @csrf
+                            <button type="submit" class="w-full px-4 py-2 bg-ojt-primary text-white rounded-md hover:bg-maroon-700 text-sm font-medium">
+                                ✓ Notify Students
+                            </button>
+                        </form>
+                        <button onclick="closeMoaNotificationModal()" class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm font-medium">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 </x-app-layout>
 
 

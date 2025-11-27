@@ -279,6 +279,7 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
     Route::post('/coord/students/{student}/update-company', [App\Http\Controllers\CoordinatorStudentController::class, 'updateCompany'])->name('coord.students.update-company');
     Route::post('/coord/students/{student}/update-status', [App\Http\Controllers\CoordinatorStudentController::class, 'updateStatus'])->name('coord.students.update-status');
     Route::post('/coord/students/{student}/assign-supervisor', [App\Http\Controllers\CoordinatorStudentController::class, 'assignSupervisor'])->name('coord.students.assign-supervisor');
+    Route::post('/coord/notify-moa', [App\Http\Controllers\CoordinatorStudentController::class, 'notifyMoaReady'])->name('coord.notify-moa');
 
     // Coordinator attendance recovery approval
     Route::post('/coord/attendance/{log}/approve-recovery', [App\Http\Controllers\CoordinatorAttendanceController::class, 'approveRecovery'])->name('coord.attendance.approve-recovery');
