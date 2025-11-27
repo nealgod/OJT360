@@ -169,4 +169,67 @@ class MonthlyEvaluation extends Model
             'cooperation' => [16, 17, 18, 19, 20],
         ];
     }
+
+    // Calculation Methods
+    public function getCategoryAverage(string $categoryKey): ?float
+    {
+        $attributes = self::getAttributesByCategory()[$categoryKey] ?? [];
+        
+        if (empty($attributes)) {
+            return null;
+        }
+
+        $sum = 0;
+        $count = 0;
+
+        foreach ($attributes as $rowNumber) {
+            $rating = $this->{"rating_row_$rowNumber"};
+            if ($rating !== null) {
+                $sum += $rating;
+                $count++;
+            }
+        }
+
+        if ($count === 0) {
+            return null;
+        }
+
+        return round($sum / $count, 2);
+    }
+
+    public function getTotalAverage(): ?float
+    {
+        $sum = 0;
+        $count = 0;
+
+        for ($i = 1; $i <= 20; $i++) {
+            $rating = $this->{"rating_row_$i"};
+            if ($rating !== null) {
+                $sum += $rating;
+                $count++;
+            }
+        }
+
+        if ($count === 0) {
+            return null;
+        }
+
+        return round($sum / $count, 2);
+    }
+
+    // Accessors for easy access in views
+    public function getCategoryAveragesAttribute(): array
+    {
+        return [
+            'skills' => $this->getCategoryAverage('skills'),
+            'quality' => $this->getCategoryAverage('quality'),
+            'approach' => $this->getCategoryAverage('approach'),
+            'cooperation' => $this->getCategoryAverage('cooperation'),
+        ];
+    }
+
+    public function getTotalAverageAttribute(): ?float
+    {
+        return $this->getTotalAverage();
+    }
 }

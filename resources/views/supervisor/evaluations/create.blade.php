@@ -186,9 +186,9 @@
                     @endphp
 
                     <div class="space-y-6">
-                        @foreach($ratingSections as $section)
-                            <div class="border border-gray-100 rounded-xl">
-                                <div class="px-4 py-3 bg-gray-50 rounded-t-xl">
+                        @foreach($ratingSections as $sectionIndex => $section)
+                            <div class="border border-gray-200 rounded-lg">
+                                <div class="px-4 py-3 bg-gray-50 rounded-t-lg">
                                     <p class="text-sm font-semibold text-gray-700">{{ $section['title'] }}</p>
                                 </div>
                                 <div class="divide-y divide-gray-100">
@@ -223,13 +223,38 @@
                                             @enderror
                                         </div>
                                     @endforeach
+                                    
+                                    <!-- Category Average (inline after each section) -->
+                                    <div class="px-4 py-3 bg-gray-50">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-sm font-semibold text-gray-700">{{ strtoupper($section['title']) }} AVERAGE:</span>
+                                            <div class="text-right">
+                                                <span class="text-lg font-bold text-ojt-primary" 
+                                                      id="avg_{{ $sectionIndex }}">0.0 / 5.0</span>
+                                                <span class="text-xs text-gray-500 ml-2" 
+                                                      id="pct_{{ $sectionIndex }}">(0%)</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         @endforeach
+                        
+                        <!-- Overall Average (at the end) -->
+                        <div class="border-2 border-ojt-primary rounded-lg bg-ojt-primary/5 p-4">
+                            <div class="flex items-center justify-between">
+                                <span class="text-base font-semibold text-gray-900">Overall Average:</span>
+                                <div class="text-right">
+                                    <span class="text-2xl font-bold text-ojt-primary" id="overallAvg">0.0 / 5.0</span>
+                                    <span class="text-sm text-gray-600 ml-2" id="overallPct">(0%)</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <div class="bg-white shadow sm:rounded-lg p-6 mb-6">
+
                     <h3 class="text-lg font-semibold text-ojt-dark mb-4">Comments and Recommendations</h3>
                     <textarea
                         name="comments_recommendations"
@@ -260,6 +285,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // Comments counter
             const commentsField = document.getElementById('monthlyComments');
             const commentsCounter = document.getElementById('monthlyCommentsCounter');
             const maxChars = 300;
@@ -275,6 +301,61 @@
                 commentsField.addEventListener('input', updateCounter);
                 updateCounter();
             }
+
+            // Rating calculation
+            const categories = [
+                { start: 1, end: 5, avgId: 'avg_0' },      // Related Skills
+                { start: 6, end: 10, avgId: 'avg_1' },     // Quality of Work
+                { start: 11, end: 15, avgId: 'avg_2' },    // Work Approach
+                { start: 16, end: 20, avgId: 'avg_3' }     // Job Interest
+            ];
+
+            function calculateAverages() {
+                let totalSum = 0;
+                let totalCount = 0;
+
+                // Calculate each category average
+                categories.forEach(category => {
+                    let sum = 0;
+                    let count = 0;
+
+                    for (let i = category.start; i <= category.end; i++) {
+                        const selected = document.querySelector(`input[name="rating_row_${i}"]:checked`);
+                        if (selected) {
+                            sum += parseInt(selected.value);
+                            count++;
+                        }
+                    }
+
+                    const average = count > 0 ? (sum / count) : 0;
+                    const percentage = Math.round((average / 5) * 100);
+                    
+                    // Update category display
+                    document.getElementById(category.avgId).textContent = average.toFixed(1) + ' / 5.0';
+                    document.getElementById('pct_' + categories.indexOf(category)).textContent = '(' + percentage + '%)';
+
+                    totalSum += sum;
+                    totalCount += count;
+                });
+
+                // Calculate overall average
+                const overallAverage = totalCount > 0 ? (totalSum / totalCount) : 0;
+                const overallPercentage = Math.round((overallAverage / 5) * 100);
+                
+                document.getElementById('overallAvg').textContent = overallAverage.toFixed(1) + ' / 5.0';
+                document.getElementById('overallPct').textContent = '(' + overallPercentage + '%)';
+            }
+
+            // Add event listeners to all rating inputs
+            for (let i = 1; i <= 20; i++) {
+                const radios = document.querySelectorAll(`input[name="rating_row_${i}"]`);
+                radios.forEach(radio => {
+                    radio.addEventListener('change', calculateAverages);
+                });
+            }
+
+            // Initialize on load
+            calculateAverages();
         });
     </script>
 </x-app-layout>

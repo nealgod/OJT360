@@ -136,6 +136,66 @@
                 </div>
             @endforeach
 
+            <!-- Category Averages (Simple Style) -->
+            @php
+                $skillsAvg = $evaluation->getCategoryAverage('skills');
+                $qualityAvg = $evaluation->getCategoryAverage('quality');
+                $approachAvg = $evaluation->getCategoryAverage('approach');
+                $cooperationAvg = $evaluation->getCategoryAverage('cooperation');
+                $totalAvg = $evaluation->getTotalAverage();
+                
+                $skillsPct = round(($skillsAvg / 5) * 100);
+                $qualityPct = round(($qualityAvg / 5) * 100);
+                $approachPct = round(($approachAvg / 5) * 100);
+                $cooperationPct = round(($cooperationAvg / 5) * 100);
+                $totalPct = round(($totalAvg / 5) * 100);
+            @endphp
+
+            <div class="bg-white shadow sm:rounded-lg p-6 mb-6">
+                <h3 class="text-lg font-semibold text-ojt-dark mb-4">Evaluation Summary</h3>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span class="text-sm font-medium text-gray-700">Related Skills (Items 1-5):</span>
+                        <div class="text-right">
+                            <span class="text-lg font-bold text-ojt-primary">{{ number_format($skillsAvg, 1) }} / 5.0</span>
+                            <span class="text-xs text-gray-500 ml-2">({{ $skillsPct }}%)</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span class="text-sm font-medium text-gray-700">Quality of Work (Items 6-10):</span>
+                        <div class="text-right">
+                            <span class="text-lg font-bold text-ojt-primary">{{ number_format($qualityAvg, 1) }} / 5.0</span>
+                            <span class="text-xs text-gray-500 ml-2">({{ $qualityPct }}%)</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span class="text-sm font-medium text-gray-700">Work Approach (Items 11-15):</span>
+                        <div class="text-right">
+                            <span class="text-lg font-bold text-ojt-primary">{{ number_format($approachAvg, 1) }} / 5.0</span>
+                            <span class="text-xs text-gray-500 ml-2">({{ $approachPct }}%)</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span class="text-sm font-medium text-gray-700">Job Interest (Items 16-20):</span>
+                        <div class="text-right">
+                            <span class="text-lg font-bold text-ojt-primary">{{ number_format($cooperationAvg, 1) }} / 5.0</span>
+                            <span class="text-xs text-gray-500 ml-2">({{ $cooperationPct }}%)</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between p-4 bg-ojt-primary/5 border-2 border-ojt-primary rounded-lg mt-4">
+                        <span class="text-base font-semibold text-gray-900">Overall Average:</span>
+                        <div class="text-right">
+                            <span class="text-2xl font-bold text-ojt-primary">{{ number_format($totalAvg, 1) }} / 5.0</span>
+                            <span class="text-sm text-gray-600 ml-2">({{ $totalPct }}%)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Comments -->
             @if($evaluation->comments_recommendations)
                 <div class="bg-white shadow sm:rounded-lg p-6">

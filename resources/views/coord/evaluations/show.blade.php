@@ -81,71 +81,124 @@
                         </dl>
                     </div>
 
-                    <!-- Performance Ratings -->
-                    <div class="bg-white rounded-lg border border-gray-200 p-6">
-                        <h3 class="text-lg font-semibold text-ojt-dark mb-4">Performance Ratings</h3>
-                        <p class="text-sm text-gray-600 mb-4">Rating Scale: 1 (Poor) to 5 (Excellent)</p>
+                    <!-- Category Averages (Simple Style) -->
+                    @php
+                        $skillsAvg = $evaluation->getCategoryAverage('skills');
+                        $qualityAvg = $evaluation->getCategoryAverage('quality');
+                        $approachAvg = $evaluation->getCategoryAverage('approach');
+                        $cooperationAvg = $evaluation->getCategoryAverage('cooperation');
+                        $totalAvg = $evaluation->getTotalAverage();
                         
+                        $skillsPct = round(($skillsAvg / 5) * 100);
+                        $qualityPct = round(($qualityAvg / 5) * 100);
+                        $approachPct = round(($approachAvg / 5) * 100);
+                        $cooperationPct = round(($cooperationAvg / 5) * 100);
+                        $totalPct = round(($totalAvg / 5) * 100);
+                    @endphp
+
+                    <div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+                        <h3 class="text-lg font-semibold text-ojt-dark mb-4">Evaluation Summary</h3>
                         <div class="space-y-3">
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <span class="text-sm font-medium text-gray-700">Related Skills (Items 1-5):</span>
+                                <div class="text-right">
+                                    <span class="text-lg font-bold text-ojt-primary">{{ number_format($skillsAvg, 1) }} / 5.0</span>
+                                    <span class="text-xs text-gray-500 ml-2">({{ $skillsPct }}%)</span>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <span class="text-sm font-medium text-gray-700">Quality of Work (Items 6-10):</span>
+                                <div class="text-right">
+                                    <span class="text-lg font-bold text-ojt-primary">{{ number_format($qualityAvg, 1) }} / 5.0</span>
+                                    <span class="text-xs text-gray-500 ml-2">({{ $qualityPct }}%)</span>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <span class="text-sm font-medium text-gray-700">Work Approach (Items 11-15):</span>
+                                <div class="text-right">
+                                    <span class="text-lg font-bold text-ojt-primary">{{ number_format($approachAvg, 1) }} / 5.0</span>
+                                    <span class="text-xs text-gray-500 ml-2">({{ $approachPct }}%)</span>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <span class="text-sm font-medium text-gray-700">Job Interest (Items 16-20):</span>
+                                <div class="text-right">
+                                    <span class="text-lg font-bold text-ojt-primary">{{ number_format($cooperationAvg, 1) }} / 5.0</span>
+                                    <span class="text-xs text-gray-500 ml-2">({{ $cooperationPct }}%)</span>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between p-4 bg-ojt-primary/5 border-2 border-ojt-primary rounded-lg mt-4">
+                                <span class="text-base font-semibold text-gray-900">Overall Average:</span>
+                                <div class="text-right">
+                                    <span class="text-2xl font-bold text-ojt-primary">{{ number_format($totalAvg, 1) }} / 5.0</span>
+                                    <span class="text-sm text-gray-600 ml-2">({{ $totalPct }}%)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Performance Ratings (Detailed View) -->
+                    <div class="bg-white rounded-lg border border-gray-200 p-6">
+                        <h3 class="text-lg font-semibold text-ojt-dark mb-4">Detailed Ratings</h3>
+                        <p class="text-sm text-gray-600 mb-4">Rating Scale: 1 (Needs Improvement) to 5 (Excellent)</p>
+                        
+                        <div class="space-y-6">
                             @php
-                                $criteria = [
-                                    'Quality of Work',
-                                    'Productivity',
-                                    'Job Knowledge',
-                                    'Reliability',
-                                    'Attendance',
-                                    'Initiative',
-                                    'Communication',
-                                    'Cooperation',
-                                    'Judgment',
-                                    'Planning & Organization',
-                                    'Analytical Ability',
-                                    'Creativity',
-                                    'Problem Solving',
-                                    'Decision Making',
-                                    'Leadership',
-                                    'Adaptability',
-                                    'Professionalism',
-                                    'Time Management',
-                                    'Technical Skills',
-                                    'Overall Performance'
+                                $categories = [
+                                    'RELATED SKILLS AND COMPETENCIES' => [1, 2, 3, 4, 5],
+                                    'QUALITY OF WORK' => [6, 7, 8, 9, 10],
+                                    'WORK APPROACH' => [11, 12, 13, 14, 15],
+                                    'JOB INTEREST AND COOPERATION' => [16, 17, 18, 19, 20],
                                 ];
-                                $totalRating = 0;
-                                $ratingCount = 0;
+                                $attributeNames = \App\Models\MonthlyEvaluation::getAttributeNames();
+                                $ratingLabels = [
+                                    5 => 'Excellent',
+                                    4 => 'Very Good',
+                                    3 => 'Satisfactory',
+                                    2 => 'Fair',
+                                    1 => 'Needs Improvement',
+                                ];
                             @endphp
                             
-                            @foreach($criteria as $index => $criterion)
-                                @php
-                                    $rating = $evaluation->{'rating_row_' . ($index + 1)};
-                                    if ($rating) {
-                                        $totalRating += $rating;
-                                        $ratingCount++;
-                                    }
-                                @endphp
-                                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                    <span class="text-sm font-medium text-gray-700">{{ $criterion }}</span>
-                                    <div class="flex items-center space-x-2">
-                                        <div class="flex space-x-1">
-                                            @for($i = 1; $i <= 5; $i++)
-                                                <svg class="w-5 h-5 {{ $i <= $rating ? 'text-yellow-400' : 'text-gray-300' }}" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                                </svg>
-                                            @endfor
-                                        </div>
-                                        <span class="text-lg font-bold text-ojt-primary">{{ $rating }}</span>
+                            @foreach($categories as $categoryName => $rows)
+                                <div>
+                                    <h4 class="text-sm font-semibold text-gray-700 mb-3 px-3 py-2 bg-gray-50 rounded-lg">
+                                        {{ $categoryName }}
+                                    </h4>
+                                    <div class="space-y-2">
+                                        @foreach($rows as $rowNum)
+                                            @php
+                                                $rating = $evaluation->{"rating_row_$rowNum"};
+                                            @endphp
+                                            <div class="flex items-center justify-between pl-6 pr-3 py-2 hover:bg-gray-50 rounded-lg transition-colors">
+                                                <span class="text-sm text-gray-700">{{ $rowNum }}. {{ $attributeNames[$rowNum] }}</span>
+                                                <div class="flex items-center gap-2">
+                                                    <div class="flex space-x-0.5">
+                                                        @for($i = 1; $i <= 5; $i++)
+                                                            <svg class="w-4 h-4 {{ $i <= $rating ? 'text-yellow-400' : 'text-gray-300' }}" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                                            </svg>
+                                                        @endfor
+                                                    </div>
+                                                    <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold
+                                                        @if($rating == 5) bg-green-100 text-green-800
+                                                        @elseif($rating == 4) bg-blue-100 text-blue-800
+                                                        @elseif($rating == 3) bg-yellow-100 text-yellow-800
+                                                        @elseif($rating == 2) bg-orange-100 text-orange-800
+                                                        @else bg-red-100 text-red-800
+                                                        @endif">
+                                                        {{ $rating }} - {{ $ratingLabels[$rating] }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        @endforeach
                                     </div>
                                 </div>
                             @endforeach
-                            
-                            <!-- Average Rating -->
-                            <div class="mt-4 p-4 bg-ojt-primary/10 border border-ojt-primary/20 rounded-lg">
-                                <div class="flex items-center justify-between">
-                                    <span class="text-base font-semibold text-ojt-dark">Average Rating</span>
-                                    <span class="text-2xl font-bold text-ojt-primary">
-                                        {{ $ratingCount > 0 ? number_format($totalRating / $ratingCount, 2) : 'N/A' }}
-                                    </span>
-                                </div>
-                            </div>
                         </div>
                     </div>
 
@@ -251,16 +304,16 @@
                             </div>
                             <div class="flex justify-between items-center">
                                 <span class="text-sm text-gray-600">Average Score</span>
-                                <span class="font-semibold text-ojt-primary">
-                                    {{ $ratingCount > 0 ? number_format($totalRating / $ratingCount, 2) : 'N/A' }}
-                                </span>
+                                <div class="text-right">
+                                    <span class="font-semibold text-ojt-primary">{{ number_format($totalAvg, 1) }} / 5.0</span>
+                                    <span class="text-xs text-gray-500 ml-1">({{ $totalPct }}%)</span>
+                                </div>
                             </div>
                             <div class="flex justify-between items-center">
                                 <span class="text-sm text-gray-600">Performance</span>
                                 @php
-                                    $avg = $ratingCount > 0 ? $totalRating / $ratingCount : 0;
-                                    $performance = $avg >= 4.5 ? 'Excellent' : ($avg >= 3.5 ? 'Good' : ($avg >= 2.5 ? 'Fair' : 'Needs Improvement'));
-                                    $perfColor = $avg >= 4.5 ? 'text-green-600' : ($avg >= 3.5 ? 'text-blue-600' : ($avg >= 2.5 ? 'text-yellow-600' : 'text-red-600'));
+                                    $performance = $totalAvg >= 4.5 ? 'Excellent' : ($totalAvg >= 3.5 ? 'Very Good' : ($totalAvg >= 2.5 ? 'Satisfactory' : 'Needs Improvement'));
+                                    $perfColor = $totalAvg >= 4.5 ? 'text-green-600' : ($totalAvg >= 3.5 ? 'text-blue-600' : ($totalAvg >= 2.5 ? 'text-yellow-600' : 'text-red-600'));
                                 @endphp
                                 <span class="font-semibold {{ $perfColor }}">{{ $performance }}</span>
                             </div>
