@@ -229,17 +229,17 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         // For students, check StudentProfile
         if ($this->isStudent() && $this->studentProfile && $this->studentProfile->profile_image) {
-            return asset('storage/'.$this->studentProfile->profile_image);
+            return \Illuminate\Support\Facades\Storage::url($this->studentProfile->profile_image);
         }
 
         // For coordinators, check CoordinatorProfile
         if ($this->isCoordinator() && $this->coordinatorProfile && $this->coordinatorProfile->profile_image) {
-            return asset('storage/'.$this->coordinatorProfile->profile_image);
+            return \Illuminate\Support\Facades\Storage::url($this->coordinatorProfile->profile_image);
         }
 
         // For supervisors, check SupervisorProfile
         if ($this->isSupervisor() && $this->supervisorProfile && $this->supervisorProfile->profile_image) {
-            return asset('storage/'.$this->supervisorProfile->profile_image);
+            return \Illuminate\Support\Facades\Storage::url($this->supervisorProfile->profile_image);
         }
 
         return null;
