@@ -322,7 +322,7 @@
         let currentDocumentId = null;
         let allStudents = @json($students);
         let allRequirements = @json($requirements);
-        const storageBase = "{{ asset('storage') }}/";
+        const storageBase = "{{ \Illuminate\Support\Facades\Storage::url('') }}";
         let currentTab = 'queue';
         let selectedStudentId = null;
 
