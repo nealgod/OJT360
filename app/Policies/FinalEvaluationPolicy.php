@@ -16,7 +16,7 @@ class FinalEvaluationPolicy
         }
 
         // Check if student belongs to this supervisor
-        if ($student->studentProfile && $student->studentProfile->supervisor_id !== $user->id) {
+        if ($student->studentProfile && (int) $student->studentProfile->supervisor_id !== (int) $user->id) {
             return false;
         }
 
@@ -36,7 +36,7 @@ class FinalEvaluationPolicy
 
     public function viewAsSupervisor(User $user, FinalEvaluation $evaluation): bool
     {
-        return $user->role === 'supervisor' && $evaluation->supervisor_user_id === $user->id;
+        return $user->role === 'supervisor' && (int) $evaluation->supervisor_user_id === (int) $user->id;
     }
 
     public function viewAsCoordinator(User $user, FinalEvaluation $evaluation): bool
@@ -46,7 +46,7 @@ class FinalEvaluationPolicy
         }
 
         // Check if coordinator is assigned to this evaluation
-        if ($evaluation->coordinator_user_id === $user->id) {
+        if ((int) $evaluation->coordinator_user_id === (int) $user->id) {
             return true;
         }
 
@@ -73,14 +73,14 @@ class FinalEvaluationPolicy
     public function update(User $user, FinalEvaluation $evaluation): bool
     {
         return $user->role === 'supervisor' &&
-               $evaluation->supervisor_user_id === $user->id &&
+               (int) $evaluation->supervisor_user_id === (int) $user->id &&
                $evaluation->status === 'draft';
     }
 
     public function submit(User $user, FinalEvaluation $evaluation): bool
     {
         return $user->role === 'supervisor' &&
-               $evaluation->supervisor_user_id === $user->id &&
+               (int) $evaluation->supervisor_user_id === (int) $user->id &&
                $evaluation->canBeSubmitted();
     }
 
@@ -91,7 +91,7 @@ class FinalEvaluationPolicy
         }
 
         // Check if coordinator is assigned to this evaluation
-        if ($evaluation->coordinator_user_id === $user->id) {
+        if ((int) $evaluation->coordinator_user_id === (int) $user->id) {
             return true;
         }
 

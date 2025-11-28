@@ -17,8 +17,8 @@ class AcceptanceLetterController extends Controller
         }
 
         // Allow student, supervisor, or coordinator to download
-        if ($user->id !== $letter->student_user_id &&
-            $user->id !== $letter->supervisor_user_id &&
+        if ((int) $user->id !== (int) $letter->student_user_id &&
+            (int) $user->id !== (int) $letter->supervisor_user_id &&
             ! $user->isCoordinator()) {
             abort(403, 'Unauthorized');
         }

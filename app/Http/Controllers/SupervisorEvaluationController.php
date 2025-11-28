@@ -31,7 +31,7 @@ class SupervisorEvaluationController extends Controller
         }
 
         // Verify supervisor has access to this student
-        if ($student->studentProfile->supervisor_id !== Auth::id()) {
+        if ((int) $student->studentProfile->supervisor_id !== (int) Auth::id()) {
             abort(403, 'You are not authorized to evaluate this student.');
         }
 

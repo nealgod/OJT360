@@ -12,7 +12,7 @@ class MonthlyEvaluationPolicy
      */
     public function viewAsSupervisor(User $user, MonthlyEvaluation $evaluation): bool
     {
-        return $user->isSupervisor() && $evaluation->supervisor_user_id === $user->id;
+        return $user->isSupervisor() && (int) $evaluation->supervisor_user_id === (int) $user->id;
     }
 
     /**
@@ -21,7 +21,7 @@ class MonthlyEvaluationPolicy
     public function update(User $user, MonthlyEvaluation $evaluation): bool
     {
         return $user->isSupervisor()
-            && $evaluation->supervisor_user_id === $user->id
+            && (int) $evaluation->supervisor_user_id === (int) $user->id
             && $evaluation->status === 'draft';
     }
 
@@ -31,7 +31,7 @@ class MonthlyEvaluationPolicy
     public function submit(User $user, MonthlyEvaluation $evaluation): bool
     {
         return $user->isSupervisor()
-            && $evaluation->supervisor_user_id === $user->id
+            && (int) $evaluation->supervisor_user_id === (int) $user->id
             && $evaluation->status === 'draft';
     }
 
@@ -40,7 +40,7 @@ class MonthlyEvaluationPolicy
      */
     public function viewAsCoordinator(User $user, MonthlyEvaluation $evaluation): bool
     {
-        return $user->isCoordinator() && $evaluation->coordinator_user_id === $user->id;
+        return $user->isCoordinator() && (int) $evaluation->coordinator_user_id === (int) $user->id;
     }
 
     /**
@@ -48,6 +48,6 @@ class MonthlyEvaluationPolicy
      */
     public function review(User $user, MonthlyEvaluation $evaluation): bool
     {
-        return $user->isCoordinator() && $evaluation->coordinator_user_id === $user->id;
+        return $user->isCoordinator() && (int) $evaluation->coordinator_user_id === (int) $user->id;
     }
 }

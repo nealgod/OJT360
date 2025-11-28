@@ -48,7 +48,7 @@
                                 <p class="text-lg text-gray-600">{{ $student->studentProfile->student_id ?? 'N/A' }}</p>
                             </div>
                             @if($student->studentProfile && $student->studentProfile->supervisor_id)
-                                @if($student->studentProfile->supervisor_id === Auth::id())
+                                @if((int)$student->studentProfile->supervisor_id === (int)Auth::id())
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
                                         Your Trainee
                                     </span>
@@ -236,12 +236,12 @@
             </div>
 
             @php
-                $isSupervised = $student->studentProfile && $student->studentProfile->supervisor_id === Auth::id();
+                $isSupervised = $student->studentProfile && (int)$student->studentProfile->supervisor_id === (int)Auth::id();
                 // Use the variable passed from controller, or check if student has supervisor
                 $hasLetter = $hasAcceptanceLetter ?? false;
             @endphp
 
-            @if($isSupervised && $hasLetter)
+            @if($isSupervised)
                 <!-- Final Evaluation Section -->
                 @php
                     $finalEvaluation = \App\Models\FinalEvaluation::where('student_user_id', $student->id)->first();

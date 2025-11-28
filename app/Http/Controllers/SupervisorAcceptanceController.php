@@ -156,7 +156,7 @@ class SupervisorAcceptanceController extends Controller
         // Check if student already has a different supervisor
         if ($student->studentProfile && $student->studentProfile->supervisor_id) {
             // If it's a different supervisor trying to view, block them
-            if (Auth::id() !== $student->studentProfile->supervisor_id) {
+            if ((int) Auth::id() !== (int) $student->studentProfile->supervisor_id) {
                 return redirect()->route('supervisor.students.search')
                     ->with('error', 'This student already has a supervisor. You cannot accept this student.');
             }
@@ -181,7 +181,7 @@ class SupervisorAcceptanceController extends Controller
             ->firstOrFail();
 
         // Check if student already has a supervisor
-        if ($student->studentProfile && $student->studentProfile->supervisor_id && $student->studentProfile->supervisor_id !== Auth::id()) {
+        if ($student->studentProfile && $student->studentProfile->supervisor_id && (int) $student->studentProfile->supervisor_id !== (int) Auth::id()) {
             return redirect()->route('supervisor.students.search')
                 ->with('error', 'This student already has a supervisor.');
         }
@@ -203,7 +203,7 @@ class SupervisorAcceptanceController extends Controller
             ->firstOrFail();
 
         // Check if student already has a supervisor
-        if ($student->studentProfile && $student->studentProfile->supervisor_id && $student->studentProfile->supervisor_id !== Auth::id()) {
+        if ($student->studentProfile && $student->studentProfile->supervisor_id && (int) $student->studentProfile->supervisor_id !== (int) Auth::id()) {
             return back()->with('error', 'This student already has a supervisor.');
         }
 
@@ -573,7 +573,7 @@ class SupervisorAcceptanceController extends Controller
         $letter = AcceptanceLetter::with('student', 'company')->findOrFail($letterId);
 
         // Ensure the logged-in supervisor owns this letter
-        if ($letter->supervisor_user_id !== Auth::id()) {
+        if ((int) $letter->supervisor_user_id !== (int) Auth::id()) {
             abort(403);
         }
 
