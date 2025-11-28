@@ -315,12 +315,12 @@ class ResumeController extends Controller
         // Allow owner, supervisor, or coordinator to download
         $canDownload = false;
 
-        if ($resume->user_id === $user->id) {
+        if ((int) $resume->user_id === (int) $user->id) {
             $canDownload = true;
         } elseif ($user->isSupervisor()) {
             // Check if this supervisor supervises this student
             $student = \App\Models\User::find($resume->user_id);
-            if ($student && $student->studentProfile && $student->studentProfile->supervisor_id === $user->id) {
+            if ($student && $student->studentProfile && (int) $student->studentProfile->supervisor_id === (int) $user->id) {
                 $canDownload = true;
             }
         } elseif ($user->isCoordinator()) {

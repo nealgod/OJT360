@@ -203,7 +203,8 @@ class StudentDocumentController extends Controller
     {
         $user = Auth::user();
 
-        if ($resume->user_id !== $user->id) {
+        $resume = $resume->fresh();
+        if ((int) $resume->user_id !== (int) $user->id) {
             abort(403);
         }
 
@@ -220,7 +221,8 @@ class StudentDocumentController extends Controller
     {
         $user = Auth::user();
 
-        if ($resume->user_id !== $user->id) {
+        $resume = $resume->fresh();
+        if ((int) $resume->user_id !== (int) $user->id) {
             abort(403);
         }
 
@@ -317,7 +319,7 @@ class StudentDocumentController extends Controller
     {
         $user = Auth::user();
 
-        if ($resume->user_id !== $user->id) {
+        if ((int) $resume->user_id !== (int) $user->id) {
             abort(403);
         }
 
@@ -339,11 +341,11 @@ class StudentDocumentController extends Controller
 
         $canDownload = false;
 
-        if ($resume->user_id === $user->id) {
+        if ((int) $resume->user_id === (int) $user->id) {
             $canDownload = true;
         } elseif ($user->isSupervisor()) {
             $student = \App\Models\User::find($resume->user_id);
-            if ($student && $student->studentProfile && $student->studentProfile->supervisor_id === $user->id) {
+            if ($student && $student->studentProfile && (int) $student->studentProfile->supervisor_id === (int) $user->id) {
                 $canDownload = true;
             }
         } elseif ($user->isCoordinator()) {
@@ -418,7 +420,8 @@ class StudentDocumentController extends Controller
     {
         $user = Auth::user();
 
-        if ($letter->user_id !== $user->id) {
+        $letter = $letter->fresh();
+        if ((int) $letter->user_id !== (int) $user->id) {
             abort(403);
         }
 
@@ -438,7 +441,8 @@ class StudentDocumentController extends Controller
     {
         $user = Auth::user();
 
-        if ($letter->user_id !== $user->id) {
+        $letter = $letter->fresh();
+        if ((int) $letter->user_id !== (int) $user->id) {
             abort(403);
         }
 
@@ -464,7 +468,7 @@ class StudentDocumentController extends Controller
     {
         $user = Auth::user();
 
-        if ($letter->user_id !== $user->id) {
+        if ((int) $letter->user_id !== (int) $user->id) {
             abort(403);
         }
 
@@ -480,8 +484,9 @@ class StudentDocumentController extends Controller
     {
         $user = Auth::user();
 
-        if ($resume->user_id !== $user->id) {
-            return back()->with('error', 'You can only submit your own documents.');
+        $resume = $resume->fresh();
+        if ((int) $resume->user_id !== (int) $user->id) {
+            abort(403, 'You can only submit your own documents.');
         }
 
         $requirements = \App\Models\DocumentRequirement::where(function ($query) {
@@ -592,8 +597,9 @@ class StudentDocumentController extends Controller
     {
         $user = Auth::user();
 
-        if ($letter->user_id !== $user->id) {
-            return back()->with('error', 'You can only submit your own documents.');
+        $letter = $letter->fresh();
+        if ((int) $letter->user_id !== (int) $user->id) {
+            abort(403, 'You can only submit your own documents.');
         }
 
         $requirements = \App\Models\DocumentRequirement::where('name', 'LIKE', '%Application Letter%')
@@ -703,11 +709,11 @@ class StudentDocumentController extends Controller
 
         $canDownload = false;
 
-        if ($letter->user_id === $user->id) {
+        if ((int) $letter->user_id === (int) $user->id) {
             $canDownload = true;
         } elseif ($user->isSupervisor()) {
             $student = \App\Models\User::find($letter->user_id);
-            if ($student && $student->studentProfile && $student->studentProfile->supervisor_id === $user->id) {
+            if ($student && $student->studentProfile && (int) $student->studentProfile->supervisor_id === (int) $user->id) {
                 $canDownload = true;
             }
         } elseif ($user->isCoordinator()) {

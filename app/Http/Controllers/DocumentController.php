@@ -221,7 +221,7 @@ class DocumentController extends Controller
     {
         $user = Auth::user();
         abort_unless($user->isStudent(), 403);
-        abort_unless($submission->student_user_id === $user->id, 403);
+        abort_unless((int) $submission->student_user_id === (int) $user->id, 403);
 
         // Only allow cancellation if status is 'submitted' (not reviewed yet)
         if ($submission->status !== 'submitted') {
@@ -272,12 +272,12 @@ class DocumentController extends Controller
         // Check permissions
         $canDownload = false;
 
-        if ($user->isStudent() && $submission->student_user_id === $user->id) {
+        if ($user->isStudent() && (int) $submission->student_user_id === (int) $user->id) {
             $canDownload = true;
         } elseif ($user->isSupervisor()) {
             // Check if this supervisor supervises this student
             $student = \App\Models\User::find($submission->student_user_id);
-            if ($student && $student->studentProfile && $student->studentProfile->supervisor_id === $user->id) {
+            if ($student && $student->studentProfile && (int) $student->studentProfile->supervisor_id === (int) $user->id) {
                 $canDownload = true;
             }
         } elseif ($user->isCoordinator()) {
@@ -303,7 +303,7 @@ class DocumentController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->isStudent() && $submission->student_user_id !== $user->id) {
+        if ($user->isStudent() && (int) $submission->student_user_id !== (int) $user->id) {
             abort(403);
         }
 
