@@ -15,9 +15,22 @@ class WeeklyReportController extends Controller
 {
     public function index()
     {
-        $reports = WeeklyReport::forStudent(Auth::id())
-            ->orderByDesc('week_start_date')
-            ->paginate(10);
+        $user = Auth::user();
+        
+        if ($user->isCoordinator()) {
+            // Coordinators see reports from their department students
+            $reports = WeeklyReport::whereHas('student.studentProfile', function($query) use ($user) {
+                $query->where('department', $user->coordinatorProfile?->department);
+            })
+                ->with(['student', 'student.studentProfile'])
+                ->orderByDesc('week_start_date')
+                ->paginate(10);
+        } else {
+            // Students see their own reports
+            $reports = WeeklyReport::forStudent($user->id)
+                ->orderByDesc('week_start_date')
+                ->paginate(10);
+        }
 
         return view('reports.weekly.index', compact('reports'));
     }
@@ -252,8 +265,20 @@ class WeeklyReportController extends Controller
 
     public function show(WeeklyReport $weekly)
     {
-        if ($weekly->student_user_id !== Auth::id()) {
+        $user = Auth::user();
+        
+        // Students can view their own reports
+        if ($user->isStudent() && $weekly->student_user_id != $user->id) {
             abort(403);
+        }
+        
+        // Coordinators can view reports from their department
+        if ($user->isCoordinator()) {
+            $studentDept = $weekly->student?->studentProfile?->department;
+            $coordDept = $user->coordinatorProfile?->department;
+            if ($studentDept != $coordDept) {
+                abort(403);
+            }
         }
 
         return view('reports.weekly.show', [
@@ -263,8 +288,20 @@ class WeeklyReportController extends Controller
 
     public function downloadPdf(WeeklyReport $weekly, WeeklyReportPdfService $pdfService)
     {
-        if ($weekly->student_user_id !== Auth::id()) {
+        $user = Auth::user();
+        
+        // Students can download their own reports
+        if ($user->isStudent() && $weekly->student_user_id != $user->id) {
             abort(403);
+        }
+        
+        // Coordinators can download reports from their department
+        if ($user->isCoordinator()) {
+            $studentDept = $weekly->student?->studentProfile?->department;
+            $coordDept = $user->coordinatorProfile?->department;
+            if ($studentDept != $coordDept) {
+                abort(403);
+            }
         }
 
         $pdf = $pdfService->generate($weekly);
@@ -388,7 +425,7 @@ class WeeklyReportController extends Controller
     public function submit(WeeklyReport $weekly)
     {
         // Verify ownership
-        if ($weekly->student_user_id !== Auth::id()) {
+        if ($weekly->student_user_id != Auth::id()) {
             abort(403);
         }
 
@@ -429,7 +466,7 @@ class WeeklyReportController extends Controller
     public function destroy(WeeklyReport $weekly)
     {
         // Verify ownership
-        if ($weekly->student_user_id !== Auth::id()) {
+        if ($weekly->student_user_id != Auth::id()) {
             abort(403);
         }
 
