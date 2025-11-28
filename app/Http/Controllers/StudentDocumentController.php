@@ -347,7 +347,12 @@ class StudentDocumentController extends Controller
                 $canDownload = true;
             }
         } elseif ($user->isCoordinator()) {
-            $canDownload = true;
+            // Coordinator can download only if the student exists and belongs to the same department
+            $student = \App\Models\User::find($resume->user_id);
+            $department = $user->coordinatorProfile?->department;
+            if ($student && $student->studentProfile && $student->studentProfile->department === $department) {
+                $canDownload = true;
+            }
         }
 
         if (! $canDownload) {
@@ -706,7 +711,12 @@ class StudentDocumentController extends Controller
                 $canDownload = true;
             }
         } elseif ($user->isCoordinator()) {
-            $canDownload = true;
+    // Coordinator can download only if the student exists and belongs to the same department
+    $student = \App\Models\User::find($letter->user_id);
+    $department = $user->coordinatorProfile?->department;
+    if ($student && $student->studentProfile && $student->studentProfile->department === $department) {
+        $canDownload = true;
+    }
         }
 
         if (! $canDownload) {

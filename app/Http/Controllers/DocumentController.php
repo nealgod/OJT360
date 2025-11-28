@@ -283,7 +283,7 @@ class DocumentController extends Controller
         } elseif ($user->isCoordinator()) {
             $student = \App\Models\User::find($submission->student_user_id);
             $department = $user->coordinatorProfile?->department;
-            if ($student->studentProfile?->department === $department) {
+            if ($student && $student->studentProfile?->department === $department) {
                 $canDownload = true;
             }
         }
@@ -310,7 +310,7 @@ class DocumentController extends Controller
         if ($user->isCoordinator()) {
             $student = \App\Models\User::find($submission->student_user_id);
             $department = $user->coordinatorProfile?->department;
-            if ($student->studentProfile?->department !== $department) {
+            if (!$student || $student->studentProfile?->department !== $department) {
                 abort(403);
             }
         }
