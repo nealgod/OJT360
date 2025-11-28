@@ -226,7 +226,7 @@
                                 </div>
                                 <div id="sidebarContent" class="text-sm text-gray-700 space-y-1"></div>
                                 <div class="mt-4 pt-4 border-t">
-                                    <h4 class="text-xs font-medium text-gray-500 mb-2">Pre‑requirements</h4>
+
                                     <div id="sidebarChecklist" class="text-xs text-gray-600 space-y-1"></div>
                             </div>
                             </aside>
@@ -572,7 +572,7 @@
             // Build a map of requirementId -> latest submission status
             const subMap = {};
             (student.document_submissions||[]).forEach(sub => {
-                const key = sub.document_requirement_id;
+                const key = String(sub.document_requirement_id);
                 if (!subMap[key] || new Date(sub.created_at) > new Date(subMap[key].created_at)) {
                     subMap[key] = sub;
                 }
@@ -587,7 +587,7 @@
                 // Only include pre_placement and post_placement, skip ongoing
                 if (req.type === 'ongoing') return;
                 
-                const latest = subMap[req.id] || null;
+                const latest = subMap[String(req.id)] || null;
                 const hasSubmission = !!latest;
                 // Only show "Missing" or "Submitted" - no other statuses
                 const displayStatus = hasSubmission ? 'submitted' : 'missing';
@@ -1021,7 +1021,7 @@
                 }
 
                 const items = reqs.map(r => {
-                    const sub = (s.document_submissions || []).find(ss => ss.document_requirement_id === r.id);
+                    const sub = (s.document_submissions || []).find(ss => String(ss.document_requirement_id) === String(r.id));
                     const submitted = !!sub;
 
                     return `
