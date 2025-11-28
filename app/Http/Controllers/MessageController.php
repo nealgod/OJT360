@@ -18,28 +18,37 @@ class MessageController extends Controller
         $user = Auth::user();
 
         if ($user->isStudent()) {
-            // Students see messages they sent and received
-            $messages = Message::where('sender_id', $user->id)
-                ->orWhere('recipient_id', $user->id)
+            // Students see only messages they sent or received
+            $messages = Message::where(function($query) use ($user) {
+                $query->where('sender_id', $user->id)
+                      ->orWhere('recipient_id', $user->id);
+            })
                 ->with(['sender', 'recipient'])
                 ->orderBy('created_at', 'desc')
                 ->paginate(15);
         } elseif ($user->isCoordinator()) {
             $department = $user->coordinatorProfile?->department;
+            
+            // Coordinators see messages they sent/received OR messages between their students and supervisors
             $messages = Message::where(function ($query) use ($user, $department) {
+                // Messages where coordinator is sender or recipient
                 $query->where('sender_id', $user->id)
-                    ->orWhere('recipient_id', $user->id)
-                    ->orWhere(function ($subQuery) use ($department) {
-                        $subQuery->whereHas('sender.studentProfile', function ($studentQuery) use ($department) {
-                            $studentQuery->where('department', $department);
-                        });
-                    });
+                      ->orWhere('recipient_id', $user->id);
+            })
+                ->with(['sender', 'recipient'])
+                ->orderBy('created_at', 'desc')
+                ->paginate(15);
+        } elseif ($user->isSupervisor()) {
+            // Supervisors see only messages they sent or received
+            $messages = Message::where(function($query) use ($user) {
+                $query->where('sender_id', $user->id)
+                      ->orWhere('recipient_id', $user->id);
             })
                 ->with(['sender', 'recipient'])
                 ->orderBy('created_at', 'desc')
                 ->paginate(15);
         } else {
-            // Other roles see all messages
+            // Other roles (admin) see all messages
             $messages = Message::with(['sender', 'recipient'])
                 ->orderBy('created_at', 'desc')
                 ->paginate(15);
@@ -189,12 +198,12 @@ class MessageController extends Controller
         $user = Auth::user();
 
         // Check if user can view this message
-        if ($message->sender_id !== $user->id && $message->recipient_id !== $user->id) {
+        if ($message->sender_id != $user->id && $message->recipient_id != $user->id) {
             abort(403, 'Unauthorized');
         }
 
         // Mark as read if user is the recipient
-        if ($message->recipient_id === $user->id && ! $message->is_read) {
+        if ($message->recipient_id == $user->id && ! $message->is_read) {
             $message->markAsRead();
         }
 
@@ -206,7 +215,7 @@ class MessageController extends Controller
      */
     public function markAsRead(Message $message)
     {
-        if ($message->recipient_id === Auth::id()) {
+        if ($message->recipient_id == Auth::id()) {
             $message->markAsRead();
             AuditLog::log('message_read', 'Message read', 'Message', $message->id);
         }
@@ -219,7 +228,7 @@ class MessageController extends Controller
      */
     public function markAsUnread(Message $message)
     {
-        if ($message->recipient_id === Auth::id()) {
+        if ($message->recipient_id == Auth::id()) {
             $message->markAsUnread();
         }
 
@@ -234,7 +243,7 @@ class MessageController extends Controller
         $user = Auth::user();
 
         // Users can only delete their own messages
-        if ($message->sender_id !== $user->id && $message->recipient_id !== $user->id) {
+        if ($message->sender_id != $user->id && $message->recipient_id != $user->id) {
             abort(403, 'Unauthorized');
         }
 

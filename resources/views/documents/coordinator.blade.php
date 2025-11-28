@@ -274,21 +274,10 @@
                 
                 <!-- Modal Content -->
                 <div class="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-                    <!-- Search and Filters -->
-                    <div class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="md:col-span-2">
-                            <input type="text" id="studentSearch" placeholder="Search by student name or ID..." 
-                                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-ojt-primary focus:border-ojt-primary">
-                        </div>
-                        <div>
-                            <select id="statusFilter" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-ojt-primary focus:border-ojt-primary">
-                                <option value="">All Status</option>
-                                <option value="submitted">Submitted</option>
-                                <option value="under_review">Under Review</option>
-                                <option value="approved">Approved</option>
-                                <option value="rejected">Rejected</option>
-                            </select>
-                        </div>
+                    <!-- Search -->
+                    <div class="mb-6">
+                        <input type="text" id="studentSearch" placeholder="Search by student name or ID..." 
+                               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-ojt-primary focus:border-ojt-primary">
                     </div>
                     
                     <!-- Quick Actions -->
@@ -896,49 +885,48 @@
         // Enhanced modal functionality
         function setupModalFilters() {
             const searchInput = document.getElementById('studentSearch');
-            const statusFilter = document.getElementById('statusFilter');
             
             function filterSubmissions() {
                 const searchTerm = searchInput.value.toLowerCase();
-                const statusFilter = document.getElementById('statusFilter').value;
-            const studentCards = document.querySelectorAll('#studentsList > div');
-            
-            studentCards.forEach(card => {
+                const studentCards = document.querySelectorAll('#studentsList > div');
+                
+                studentCards.forEach(card => {
                     const studentName = card.getAttribute('data-student') || '';
                     const studentId = card.getAttribute('data-student-id') || '';
-                    const status = card.getAttribute('data-status') || '';
                     
                     const matchesSearch = studentName.includes(searchTerm) || studentId.includes(searchTerm);
-                    const matchesStatus = !statusFilter || status === statusFilter;
                     
-                    card.style.display = (matchesSearch && matchesStatus) ? 'block' : 'none';
+                    card.style.display = matchesSearch ? 'block' : 'none';
                 });
             }
             
             searchInput.addEventListener('input', filterSubmissions);
-            statusFilter.addEventListener('change', filterSubmissions);
         }
         
         function downloadAllSubmissions() {
             if (!currentDocumentId) return;
             
-            // Get all visible submission download links
-            const visibleCards = Array.from(document.querySelectorAll('#studentsList > div')).filter(card => 
+            // Get all cards (visible ones will be those without display:none)
+            const allCards = document.querySelectorAll('#studentsList > div');
+            const cardsToDownload = Array.from(allCards).filter(card => 
                 card.style.display !== 'none'
             );
             
-            if (visibleCards.length === 0) {
+            // If filter hasn't been used, all cards will be visible
+            const finalCards = cardsToDownload.length > 0 ? cardsToDownload : Array.from(allCards);
+            
+            if (finalCards.length === 0) {
                 alert('No submissions to download');
                 return;
             }
             
-            // Download each submission with a small delay
-            visibleCards.forEach((card, index) => {
+            // Download each submission with a delay
+            finalCards.forEach((card, index) => {
                 const downloadLink = card.querySelector('a[href*="/download"]');
                 if (downloadLink) {
                     setTimeout(() => {
                         downloadLink.click();
-                    }, index * 500); // 500ms delay between downloads
+                    }, index * 1000); // 1 second delay between downloads
                 }
             });
         }
