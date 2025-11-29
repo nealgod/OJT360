@@ -19,150 +19,92 @@
             <!-- Header Section -->
             <div class="mb-8">
                 <h1 class="text-2xl sm:text-3xl font-bold text-ojt-dark mb-2">
-                    @if(Auth::user()->isStudent())
-                        Messages
-                    @elseif(Auth::user()->isCoordinator())
-                        Student Messages
-                    @else
-                        All Messages
-                    @endif
+                    Conversations
                 </h1>
                 <p class="text-gray-600">
-                    @if(Auth::user()->isStudent())
-                        Communicate with your coordinator and supervisor.
-                    @elseif(Auth::user()->isCoordinator())
-                        Messages from students in your department.
-                    @else
-                        View all system messages.
-                    @endif
+                    View your recent conversations.
                 </p>
             </div>
 
-            <!-- Messages List -->
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-                @forelse($messages as $message)
-                    @php
-                        $displayUser = $message->sender_id === Auth::id() ? $message->recipient : $message->sender;
-                    @endphp
-                    <div class="p-6 border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors {{ !$message->is_read && $message->recipient_id === Auth::id() ? 'bg-blue-50 hover:bg-blue-100' : '' }}">
-                        <div class="flex items-start space-x-4">
-                            <!-- Avatar -->
-                            <div class="flex-shrink-0">
-                                <x-user-avatar :user="$displayUser" size="w-10 h-10" />
-                            </div>
-                            
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center space-x-3 mb-2">
-                                    <h3 class="text-lg font-semibold text-ojt-dark truncate">
-                                        {{ $message->subject }}
-                                    </h3>
-                                    @if(!$message->is_read && $message->recipient_id === Auth::id())
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 flex-shrink-0">
-                                            New
-                                        </span>
-                                    @endif
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0
-                                        @if($message->sender_id === Auth::id()) bg-green-100 text-green-800
-                                        @else bg-gray-100 text-gray-800
-                                        @endif">
-                                        @if($message->sender_id === Auth::id()) Sent
-                                        @else Received
+            <!-- Conversations List -->
+            <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+                @if($conversations->count() > 0)
+                    <div class="divide-y divide-gray-100">
+                        @foreach($conversations as $conversation)
+                            @php
+                                $user = $conversation['user'];
+                                $lastMessage = $conversation['last_message'];
+                                $unreadCount = $conversation['unread_count'];
+                            @endphp
+                            <a href="{{ route('messages.chat', $user->id) }}" 
+                               class="block hover:bg-gradient-to-r hover:from-gray-50 hover:to-white transition-all duration-200 {{ $unreadCount > 0 ? 'bg-blue-50/30' : '' }}">
+                                <div class="p-4 sm:p-6 flex items-center space-x-4">
+                                    <!-- Avatar -->
+                                    <div class="flex-shrink-0 relative">
+                                        <div class="ring-2 {{ $unreadCount > 0 ? 'ring-ojt-primary ring-offset-2' : 'ring-gray-200' }} rounded-full transition-all duration-200">
+                                            <x-user-avatar :user="$user" size="w-14 h-14 sm:w-16 sm:h-16" />
+                                        </div>
+                                        @if($unreadCount > 0)
+                                            <span class="absolute -top-1 -right-1 flex items-center justify-center min-w-[24px] h-6 bg-red-500 text-white text-xs font-bold px-2 rounded-full border-2 border-white shadow-lg animate-pulse">
+                                                {{ $unreadCount }}
+                                            </span>
                                         @endif
-                                    </span>
-                                </div>
-                                
-                                <div class="flex items-center space-x-4 mb-3">
-                                    <div class="flex items-center text-sm text-gray-600">
-                                        <span class="font-medium">
-                                            @if($message->sender_id === Auth::id())
-                                                To:
-                                            @else
-                                                From:
-                                            @endif
-                                        </span>
-                                        <span class="ml-1">{{ $displayUser->name }}</span>
-                                        <span class="ml-1 text-xs text-gray-500">({{ ucfirst($displayUser->role) }})</span>
                                     </div>
-                                    <div class="flex items-center text-sm text-gray-500">
-                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center justify-between mb-1.5">
+                                            <h3 class="text-lg sm:text-xl font-semibold text-gray-900 truncate {{ $unreadCount > 0 ? 'text-ojt-primary' : '' }}">
+                                                {{ $user->name }}
+                                            </h3>
+                                            <span class="text-xs sm:text-sm text-gray-500 flex-shrink-0 ml-2">
+                                                {{ $lastMessage->created_at->diffForHumans(null, true) }}
+                                            </span>
+                                        </div>
+                                        
+                                        <div class="flex items-center justify-between">
+                                            <p class="text-sm sm:text-base text-gray-600 truncate pr-4 {{ $unreadCount > 0 ? 'font-semibold text-gray-900' : '' }}">
+                                                @if($lastMessage->sender_id === Auth::id())
+                                                    <span class="text-gray-500 mr-1">You:</span>
+                                                @endif
+                                                {{ Str::limit($lastMessage->message, 60) }}
+                                            </p>
+                                            
+                                            <div class="flex items-center space-x-2 flex-shrink-0">
+                                                <span class="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full font-medium capitalize">
+                                                    {{ $user->role === 'intern' ? 'Student' : $user->role }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex-shrink-0 text-gray-400 {{ $unreadCount > 0 ? 'text-ojt-primary' : '' }}">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                                         </svg>
-                                        {{ $message->created_at->format('M d, Y \a\t g:i A') }}
                                     </div>
                                 </div>
-                                
-                                <p class="text-gray-600 mb-3 line-clamp-2">{{ Str::limit($message->message, 150) }}</p>
-                            </div>
-                            
-                            <div class="flex items-center space-x-2 ml-4">
-                                <a href="{{ route('messages.show', $message) }}" 
-                                   class="text-sm text-ojt-primary hover:text-maroon-700 font-medium">
-                                    View
-                                </a>
-                                
-                                @if($message->recipient_id === Auth::id())
-                                    @if(!$message->is_read)
-                                        <form method="POST" action="{{ route('messages.read', $message) }}" class="inline">
-                                            @csrf
-                                            @method('PATCH')
-                                            <button type="submit" class="text-sm text-blue-600 hover:text-blue-800 font-medium">
-                                                Mark Read
-                                            </button>
-                                        </form>
-                                    @else
-                                        <form method="POST" action="{{ route('messages.unread', $message) }}" class="inline">
-                                            @csrf
-                                            @method('PATCH')
-                                            <button type="submit" class="text-sm text-gray-600 hover:text-gray-800 font-medium">
-                                                Mark Unread
-                                            </button>
-                                        </form>
-                                    @endif
-                                @endif
-                                
-                                <form method="POST" action="{{ route('messages.destroy', $message) }}" class="inline" 
-                                      onsubmit="return confirm('Are you sure you want to delete this message?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-sm text-red-600 hover:text-red-800 font-medium">
-                                        Delete
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
+                            </a>
+                        @endforeach
                     </div>
-                @empty
+                @else
                     <div class="p-12 text-center">
                         <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                         </svg>
-                        <h3 class="text-lg font-medium text-gray-900 mb-2">No Messages</h3>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">No Conversations Yet</h3>
                         <p class="text-gray-500 mb-4">
-                            @if(Auth::user()->isStudent())
-                                You haven't sent or received any messages yet.
-                            @elseif(Auth::user()->isCoordinator())
-                                No messages from students yet.
-                            @else
-                                No messages in the system.
-                            @endif
+                            Start a new conversation to communicate with your coordinator or supervisor.
                         </p>
                         <a href="{{ route('messages.create') }}" 
                            class="inline-flex items-center px-4 py-2 bg-ojt-primary text-white font-medium rounded-lg hover:bg-maroon-700 transition-colors duration-200">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                             </svg>
-                            Send First Message
+                            Start Conversation
                         </a>
                     </div>
-                @endforelse
+                @endif
             </div>
-
-            <!-- Pagination -->
-            @if($messages->hasPages())
-                <div class="mt-6">
-                    {{ $messages->links() }}
-                </div>
-            @endif
         </div>
     </div>
 </x-app-layout>

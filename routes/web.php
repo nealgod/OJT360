@@ -51,6 +51,7 @@ Route::middleware(['auth', 'profile.complete'])->group(function () {
     Route::get('/messages', [App\Http\Controllers\MessageController::class, 'index'])->name('messages.index');
     Route::get('/messages/create', [App\Http\Controllers\MessageController::class, 'create'])->name('messages.create');
     Route::post('/messages', [App\Http\Controllers\MessageController::class, 'store'])->name('messages.store');
+    Route::get('/messages/chat/{user}', [App\Http\Controllers\MessageController::class, 'chat'])->name('messages.chat');
     Route::get('/messages/{message}', [App\Http\Controllers\MessageController::class, 'show'])->name('messages.show');
     Route::patch('/messages/{message}/read', [App\Http\Controllers\MessageController::class, 'markAsRead'])->name('messages.read');
     Route::patch('/messages/{message}/unread', [App\Http\Controllers\MessageController::class, 'markAsUnread'])->name('messages.unread');
@@ -60,6 +61,7 @@ Route::middleware(['auth', 'profile.complete'])->group(function () {
     Route::prefix('reports/weekly')->name('reports.weekly.')->group(function () {
         Route::get('/', [App\Http\Controllers\WeeklyReportController::class, 'index'])->name('index');
         Route::get('/create', [App\Http\Controllers\WeeklyReportController::class, 'create'])->name('create');
+
         Route::post('/', [App\Http\Controllers\WeeklyReportController::class, 'store'])->name('store');
         Route::get('/{weekly}', [App\Http\Controllers\WeeklyReportController::class, 'show'])->name('show');
         Route::patch('/{weekly}/submit', [App\Http\Controllers\WeeklyReportController::class, 'submit'])->name('submit');

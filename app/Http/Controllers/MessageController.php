@@ -13,48 +13,81 @@ class MessageController extends Controller
     /**
      * Display messages for the authenticated user
      */
+    /**
+     * Display conversations for the authenticated user
+     */
     public function index()
     {
         $user = Auth::user();
+        $userId = $user->id;
 
-        if ($user->isStudent()) {
-            // Students see only messages they sent or received
-            $messages = Message::where(function($query) use ($user) {
-                $query->where('sender_id', $user->id)
-                      ->orWhere('recipient_id', $user->id);
-            })
-                ->with(['sender', 'recipient'])
-                ->orderBy('created_at', 'desc')
-                ->paginate(15);
-        } elseif ($user->isCoordinator()) {
-            $department = $user->coordinatorProfile?->department;
+        // Get all messages where user is sender or recipient
+        $allMessages = Message::where(function($query) use ($userId) {
+            $query->where('sender_id', $userId)
+                  ->orWhere('recipient_id', $userId);
+        })
+        ->with(['sender', 'recipient'])
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+        // Group by conversation (the other user)
+        $conversations = $allMessages->groupBy(function($message) use ($userId) {
+            return $message->sender_id === $userId ? $message->recipient_id : $message->sender_id;
+        })->map(function($messages) use ($userId) {
+            $otherUser = $messages->first()->sender_id === $userId 
+                ? $messages->first()->recipient 
+                : $messages->first()->sender;
             
-            // Coordinators see messages they sent/received OR messages between their students and supervisors
-            $messages = Message::where(function ($query) use ($user, $department) {
-                // Messages where coordinator is sender or recipient
-                $query->where('sender_id', $user->id)
-                      ->orWhere('recipient_id', $user->id);
-            })
-                ->with(['sender', 'recipient'])
-                ->orderBy('created_at', 'desc')
-                ->paginate(15);
-        } elseif ($user->isSupervisor()) {
-            // Supervisors see only messages they sent or received
-            $messages = Message::where(function($query) use ($user) {
-                $query->where('sender_id', $user->id)
-                      ->orWhere('recipient_id', $user->id);
-            })
-                ->with(['sender', 'recipient'])
-                ->orderBy('created_at', 'desc')
-                ->paginate(15);
-        } else {
-            // Other roles (admin) see all messages
-            $messages = Message::with(['sender', 'recipient'])
-                ->orderBy('created_at', 'desc')
-                ->paginate(15);
+            // Count unread messages from this user
+            $unreadCount = $messages->where('recipient_id', $userId)->where('is_read', false)->count();
+            
+            return [
+                'user' => $otherUser,
+                'last_message' => $messages->first(),
+                'unread_count' => $unreadCount
+            ];
+        });
+
+        return view('messages.index', compact('conversations'));
+    }
+
+    /**
+     * Display chat with a specific user
+     */
+    public function chat(User $user)
+    {
+        $currentUser = Auth::user();
+
+        // Check if user can message this person (or if they have history)
+        // We allow viewing history even if they can't send new messages (e.g. if relationship changed)
+        // But for now, let's strictly enforce the permission for consistency or just check history
+        
+        $hasHistory = Message::where(function($q) use ($currentUser, $user) {
+            $q->where('sender_id', $currentUser->id)->where('recipient_id', $user->id);
+        })->orWhere(function($q) use ($currentUser, $user) {
+            $q->where('sender_id', $user->id)->where('recipient_id', $currentUser->id);
+        })->exists();
+
+        if (!$hasHistory && !$this->canSendMessageTo($currentUser, $user->id)) {
+             return redirect()->route('messages.index')->with('error', 'You cannot start a conversation with this user.');
         }
 
-        return view('messages.index', compact('messages'));
+        // Mark messages from this user as read
+        Message::where('sender_id', $user->id)
+            ->where('recipient_id', $currentUser->id)
+            ->where('is_read', false)
+            ->update(['is_read' => true, 'read_at' => now()]);
+
+        // Get conversation history
+        $messages = Message::where(function($q) use ($currentUser, $user) {
+            $q->where('sender_id', $currentUser->id)->where('recipient_id', $user->id);
+        })->orWhere(function($q) use ($currentUser, $user) {
+            $q->where('sender_id', $user->id)->where('recipient_id', $currentUser->id);
+        })
+        ->orderBy('created_at', 'asc')
+        ->get();
+
+        return view('messages.chat', compact('user', 'messages'));
     }
 
     /**
@@ -157,7 +190,14 @@ class MessageController extends Controller
             $recipients = $students->merge($coordinators);
         }
 
-        return view('messages.create', compact('recipients', 'selectedRecipient', 'prefilledSubject'));
+        $userDepartment = null;
+        if ($user->isStudent()) {
+            $userDepartment = $user->studentProfile?->department;
+        } elseif ($user->isCoordinator()) {
+            $userDepartment = $user->coordinatorProfile?->department;
+        }
+
+        return view('messages.create', compact('recipients', 'selectedRecipient', 'prefilledSubject', 'userDepartment'));
     }
 
     /**
@@ -165,6 +205,10 @@ class MessageController extends Controller
      */
     public function store(Request $request)
     {
+        $request->merge([
+            'subject' => $request->input('subject', 'Message')
+        ]);
+
         $request->validate([
             'recipient_id' => 'required|exists:users,id',
             'subject' => 'required|string|max:255',
@@ -175,6 +219,9 @@ class MessageController extends Controller
 
         // Check if user can send message to this recipient
         if (! $this->canSendMessageTo($user, $request->recipient_id)) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => 'You are not authorized to send messages to this user.'], 403);
+            }
             return back()->with('error', 'You are not authorized to send messages to this user.');
         }
 
@@ -187,7 +234,14 @@ class MessageController extends Controller
 
         AuditLog::log('message_sent', 'Message sent', 'Message', $message->id);
 
-        return redirect()->route('messages.index')->with('success', 'Message sent successfully!');
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $message->load('sender')
+            ]);
+        }
+
+        return redirect()->route('messages.chat', $request->recipient_id);
     }
 
     /**
