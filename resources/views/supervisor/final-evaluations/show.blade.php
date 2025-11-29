@@ -16,9 +16,15 @@
                     </svg>
                     View PDF
                 </a>
-                <a href="{{ route('supervisor.students.view', $evaluation->student) }}" 
+                @php
+                    $previousUrl = url()->previous();
+                    $comesFromList = str_contains($previousUrl, '/final-evaluations') && !str_contains($previousUrl, '/final-evaluations/');
+                    $backUrl = $comesFromList ? route('supervisor.final-evaluations.index') : route('supervisor.students.view', $evaluation->student);
+                    $backText = $comesFromList ? '← Back to List' : '← Back to Student';
+                @endphp
+                <a href="{{ $backUrl }}" 
                    class="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                    ← Back to Student
+                    {{ $backText }}
                 </a>
             </div>
         </div>
