@@ -196,9 +196,9 @@ class ActivationController extends Controller
         ]);
 
         $email = strtolower($request->email);
-        if (! str_ends_with($email, '@evsu.edu.ph')) {
-            return back()->withErrors(['email' => 'Only EVSU emails are allowed.'])->withInput();
-        }
+        // if (! str_ends_with($email, '@evsu.edu.ph')) {
+        //     return back()->withErrors(['email' => 'Only EVSU emails are allowed.'])->withInput();
+        // }
 
         $row = EnrollmentWhitelist::where('student_id', $request->student_id)
             ->where('email', $email)

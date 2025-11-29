@@ -135,9 +135,9 @@ class CoordinatorImportController extends Controller
             if (empty($normalized['email'])) {
                 $errors[] = 'E-Mail required';
             }
-            if (! str_ends_with(strtolower($normalized['email'] ?? ''), '@evsu.edu.ph')) {
-                $errors[] = 'E-Mail must be @evsu.edu.ph';
-            }
+            // if (! str_ends_with(strtolower($normalized['email'] ?? ''), '@evsu.edu.ph')) {
+            //     $errors[] = 'E-Mail must be @evsu.edu.ph';
+            // }
 
             $exists = EnrollmentWhitelist::where('student_id', $normalized['student_id'] ?? '')->exists();
             if ($exists) {
