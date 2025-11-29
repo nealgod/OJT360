@@ -71,7 +71,7 @@
                     <div class="space-y-4">
                         @foreach($generatedLetters as $letter)
                             <div class="border border-gray-200 rounded-lg p-4 hover:border-ojt-primary transition-colors">
-                                <div class="flex items-center justify-between">
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-4">
                                     <div class="flex items-start gap-4 flex-1">
                                         <!-- Student Avatar -->
                                         <div class="flex-shrink-0">
@@ -86,18 +86,18 @@
                                             @endif
                                         </div>
                                         
-                                        <div class="flex-1">
-                                            <div class="flex items-center gap-3 mb-2">
-                                                <h4 class="font-medium text-gray-900">{{ $letter->student->name }}</h4>
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                                                <h4 class="font-medium text-gray-900 truncate">{{ $letter->student->name }}</h4>
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 w-fit">
                                                     Generated
                                                 </span>
                                             </div>
-                                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
-                                                <div>
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 text-sm text-gray-600">
+                                                <div class="truncate">
                                                     <span class="font-medium">Position:</span> {{ $letter->job_title }}
                                                 </div>
-                                                <div>
+                                                <div class="truncate">
                                                     <span class="font-medium">Department:</span> {{ $letter->department }}
                                                 </div>
                                                 <div>
@@ -109,9 +109,9 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="ml-4">
+                                    <div class="flex sm:flex-shrink-0">
                                         <a href="{{ route('acceptance-letters.download', $letter) }}" 
-                                           class="inline-flex items-center px-4 py-2 bg-ojt-primary text-white rounded-lg hover:bg-maroon-700 transition-colors">
+                                           class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-ojt-primary text-white rounded-lg hover:bg-maroon-700 transition-colors">
                                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                             </svg>
