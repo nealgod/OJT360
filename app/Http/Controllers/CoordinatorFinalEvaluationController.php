@@ -70,7 +70,7 @@ class CoordinatorFinalEvaluationController extends Controller
         return redirect()->back()->with('success', 'Final evaluation marked as reviewed.');
     }
 
-    public function downloadPdf(FinalEvaluation $evaluation, FinalEvaluationPdfService $pdfService)
+    public function downloadPdf(Request $request, FinalEvaluation $evaluation, FinalEvaluationPdfService $pdfService)
     {
         $this->authorize('viewAsCoordinator', $evaluation);
 
@@ -81,9 +81,11 @@ class CoordinatorFinalEvaluationController extends Controller
             $evaluation->control_number
         );
 
+        $disposition = $request->has('view') ? 'inline' : 'attachment';
+
         return response($pdf, 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => "inline; filename=\"{$fileName}\"",
+            'Content-Disposition' => "{$disposition}; filename=\"{$fileName}\"",
         ]);
     }
 }
