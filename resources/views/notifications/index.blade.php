@@ -84,7 +84,7 @@
                                         <form method="POST" action="{{ route('notifications.read', $notification) }}">
                                             @csrf
                                             @method('PATCH')
-                                            <button type="submit" class="inline-flex items-center px=3 py-1.5 text-xs font-medium text-white bg-ojt-primary rounded-full hover:bg-maroon-700 transition-colors">
+                                            <button type="submit" class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-ojt-primary rounded-full hover:bg-maroon-700 transition-colors">
                                                 Mark as read
                                             </button>
                                         </form>

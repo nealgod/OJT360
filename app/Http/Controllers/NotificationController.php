@@ -24,11 +24,13 @@ class NotificationController extends Controller
      */
     public function markAsRead(Notification $notification)
     {
-        if ($notification->user_id === auth()->id()) {
-            $notification->update(['read' => true]);
+        if ((int) $notification->user_id !== (int) auth()->id()) {
+            abort(403, 'Unauthorized action.');
         }
 
-        return back();
+        $notification->update(['read' => true]);
+
+        return back()->with('success', 'Notification marked as read.');
     }
 
     /**
@@ -36,11 +38,13 @@ class NotificationController extends Controller
      */
     public function markAsUnread(Notification $notification)
     {
-        if ($notification->user_id === auth()->id()) {
-            $notification->update(['read' => false]);
+        if ((int) $notification->user_id !== (int) auth()->id()) {
+            abort(403, 'Unauthorized action.');
         }
 
-        return back();
+        $notification->update(['read' => false]);
+
+        return back()->with('success', 'Notification marked as unread.');
     }
 
     /**
@@ -48,10 +52,12 @@ class NotificationController extends Controller
      */
     public function destroy(Notification $notification)
     {
-        if ($notification->user_id === auth()->id()) {
-            $notification->delete();
+        if ((int) $notification->user_id !== (int) auth()->id()) {
+            abort(403, 'Unauthorized action.');
         }
 
-        return back();
+        $notification->delete();
+
+        return back()->with('success', 'Notification deleted successfully.');
     }
 }
