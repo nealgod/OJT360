@@ -398,7 +398,7 @@ class AttendanceController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Attendance completed successfully! Your hours have been recorded.',
+                'message' => 'Recovery submitted successfully! Your attendance is now pending coordinator approval.',
                 'minutes_worked' => $minutes,
                 'hours_worked' => round($minutes / 60, 1),
             ]);

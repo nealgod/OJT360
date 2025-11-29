@@ -55,7 +55,16 @@
                             <div>
                                 <p class="text-gray-600 text-sm font-medium">Completed Hours</p>
                                 @php
-                                    $completedMinutes = Auth::user()->attendanceLogs()->sum('minutes_worked');
+                                    // Only count approved hours (exclude pending recovered logs)
+                                    $completedMinutes = Auth::user()->attendanceLogs()
+                                        ->where(function ($query) {
+                                            $query->where('is_recovered', false)
+                                                  ->orWhere(function ($q) {
+                                                      $q->where('is_recovered', true)
+                                                        ->where('recovery_approved', true);
+                                                  });
+                                        })
+                                        ->sum('minutes_worked');
                                     $completedHours = round(($completedMinutes ?? 0) / 60, 1);
                                 @endphp
                                 <p class="text-2xl font-bold text-ojt-dark">{{ $completedHours }}</p>
@@ -1066,27 +1075,27 @@
     </div>
     
     <!-- Recovery Modal -->
-    <div id="recoveryModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
-        <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-white rounded-lg shadow-xl max-w-lg w-full">
-                <div class="p-6">
+    <div id="recoveryModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50 overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen p-4 sm:p-6">
+            <div class="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+                <div class="p-4 sm:p-6">
                     <div class="flex items-center mb-4">
-                        <svg class="w-6 h-6 text-red-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-6 h-6 text-red-600 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 19.5c-.77.833.192 2.5 1.732 2.5z" />
                         </svg>
-                        <h3 class="text-lg font-semibold text-gray-900">Complete Missing Attendance</h3>
+                        <h3 class="text-base sm:text-lg font-semibold text-gray-900">Complete Missing Attendance</h3>
                     </div>
                     
                     <!-- Attendance Info -->
-                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
-                        <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4 mb-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-sm">
                             <div>
                                 <span class="font-medium text-gray-700">Date:</span>
-                                <span id="recoveryDate" class="text-gray-900 ml-2"></span>
+                                <span id="recoveryDate" class="text-gray-900 ml-2 block sm:inline"></span>
                             </div>
                             <div>
                                 <span class="font-medium text-gray-700">Time In:</span>
-                                <span id="recoveryTimeIn" class="text-gray-900 ml-2"></span>
+                                <span id="recoveryTimeIn" class="text-gray-900 ml-2 block sm:inline"></span>
                             </div>
                         </div>
                         <p class="text-xs text-gray-500 mt-2">
@@ -1098,13 +1107,13 @@
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Time Out *</label>
-                                <input type="time" id="recoveryTimeOut" name="time_out" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-red-500 focus:border-red-500" required />
-                                <p class="text-xs text-gray-500 mt-1">Enter the time you actually left work</p>
+                                <input type="time" id="recoveryTimeOut" name="time_out" class="w-full border border-gray-300 rounded-md px-3 py-2 text-base focus:ring-red-500 focus:border-red-500" required />
+                                <p class="text-xs text-gray-500 mt-1">Enter the exact time you actually left work</p>
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Reason *</label>
-                                <textarea id="recoveryReason" name="reason" rows="3" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-red-500 focus:border-red-500" placeholder="Explain why you couldn't time out normally (e.g., forgot to time out, system issue, emergency, etc.)" required></textarea>
+                                <textarea id="recoveryReason" name="reason" rows="3" class="w-full border border-gray-300 rounded-md px-3 py-2 text-base focus:ring-red-500 focus:border-red-500" placeholder="Explain why you couldn't time out normally (e.g., forgot to time out, system issue, emergency, etc.)" required></textarea>
                             </div>
                             
                             <div>
@@ -1120,17 +1129,18 @@
                                     </div>
                                     <div id="photoPreview" class="hidden mt-2">
                                         <img id="previewImage" class="w-20 h-20 object-cover rounded mx-auto" />
-                                        <p class="text-xs text-green-600 mt-1">Photo selected</p>
+                                        <p class="text-xs text-green-600 mt-1">✓ Photo selected</p>
                                     </div>
                                 </div>
+                                <p class="text-xs text-red-600 mt-1 hidden" id="photoError">⚠ Proof photo is required</p>
                             </div>
                         </div>
                         
-                        <div class="flex space-x-3 mt-6">
-                            <button type="button" onclick="closeRecoveryModal()" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors">
+                        <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 mt-6">
+                            <button type="button" onclick="closeRecoveryModal()" class="w-full sm:flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors text-sm sm:text-base">
                                 Cancel
                             </button>
-                            <button type="submit" class="flex-1 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors flex items-center justify-center">
+                            <button type="submit" class="w-full sm:flex-1 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors flex items-center justify-center text-sm sm:text-base">
                                 <span id="submitText">Complete Attendance</span>
                             </button>
                         </div>
@@ -1156,13 +1166,10 @@
             });
             document.getElementById('recoveryTimeIn').textContent = timeIn;
             
-            // Set default time out (suggest 5:30 PM)
-            document.getElementById('recoveryTimeOut').value = '17:30';
-            
-            // Reset form
+            // Reset form - leave time out empty for student to fill
             document.getElementById('recoveryForm').reset();
-            document.getElementById('recoveryTimeOut').value = '17:30';
             document.getElementById('photoPreview').classList.add('hidden');
+            document.getElementById('photoError').classList.add('hidden');
             document.getElementById('photoUploadArea').classList.remove('hidden');
         }
         
@@ -1198,19 +1205,21 @@
             formData.append('log_id', currentLogId);
             formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
             
+            
             // Validate required fields
             if (!formData.get('time_out')) {
-                alert('Please enter your time out.');
+                alert('⚠ Please enter the exact time you left work.');
                 return;
             }
             
             if (!formData.get('reason') || formData.get('reason').trim() === '') {
-                alert('Please provide a reason.');
+                alert('⚠ Please provide a reason for the missed timeout.');
                 return;
             }
             
             if (!formData.get('photo_out')) {
-                alert('Please upload a proof photo.');
+                document.getElementById('photoError').classList.remove('hidden');
+                alert('⚠ Proof photo is required. Please upload a photo as evidence.');
                 return;
             }
             
@@ -1229,7 +1238,7 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        alert('Attendance completed successfully! Your hours have been recorded.');
+                        alert(data.message); // Use server message: "Recovery submitted successfully! Your attendance is now pending coordinator approval."
                         location.reload();
                     } else {
                         alert('Error: ' + data.message);
