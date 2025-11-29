@@ -117,10 +117,13 @@
                                             <input type="hidden" name="entries[{{ $index }}][hours]" value="{{ $entry['hours'] }}">
                                         </div>
                                         <div class="col-span-6">
-                                            <textarea name="entries[{{ $index }}][activity]" rows="2"
+                                            <textarea name="entries[{{ $index }}][activity]" rows="2" maxlength="50"
                                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-ojt-primary focus:ring-ojt-primary {{ !$entry['has_attendance'] ? 'bg-gray-100' : '' }}"
-                                                placeholder="{{ $entry['has_attendance'] ? 'Describe your tasks for this day...' : 'No attendance record for this day' }}"
+                                                placeholder="{{ $entry['has_attendance'] ? 'Describe your tasks for this day (Max 50 chars)...' : 'No attendance record for this day' }}"
                                                 {{ !$entry['has_attendance'] ? 'readonly' : '' }}>{{ old("entries.$index.activity", $entry['activity']) }}</textarea>
+                                            @if($entry['has_attendance'])
+                                                <p class="text-xs text-gray-500 mt-1 text-right">Max 50 characters</p>
+                                            @endif
                                         </div>
                                         <div class="col-span-3 text-right pr-4">
                                             <div class="text-lg font-semibold {{ $entry['has_attendance'] ? 'text-gray-700' : 'text-gray-400' }}">
@@ -139,16 +142,19 @@
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Problems Encountered (Optional)</label>
-                        <textarea name="problems_encountered" rows="4"
+                        <textarea name="problems_encountered" rows="4" maxlength="450"
                                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-ojt-primary focus:ring-ojt-primary"
                                   placeholder="Describe any problems or challenges you encountered during the week...">{{ old('problems_encountered') }}</textarea>
                         <x-input-error class="mt-2" :messages="$errors->get('problems_encountered')" />
-                        <p class="text-xs text-gray-500 mt-1">This will appear on your PDF report.</p>
+                        <div class="flex justify-between mt-1">
+                            <p class="text-xs text-gray-500">This will appear on your PDF report.</p>
+                            <p class="text-xs text-gray-500">Max 450 characters</p>
+                        </div>
                     </div>
 
                     <div class="flex items-center gap-3">
                         <button type="submit" class="inline-flex items-center px-6 py-3 bg-ojt-primary text-white rounded-lg shadow hover:bg-maroon-700 transition" {{ !$hasAnyAttendance ? 'disabled' : '' }}>
-                            Submit Weekly Report
+                            Save as Draft
                         </button>
                         <a href="{{ route('reports.weekly.index') }}" class="text-sm text-gray-600 hover:text-ojt-primary">
                             Cancel

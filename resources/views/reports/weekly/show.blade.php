@@ -35,9 +35,9 @@
                         </button>
                     </form>
                 @endif
-                <a href="{{ route('reports.weekly.pdf', $report) }}"
+                <a href="{{ route('reports.weekly.pdf', ['weekly' => $report->id, 'view' => 1]) }}" target="_blank"
                    class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition">
-                    Download PDF
+                    View PDF
                 </a>
                 <a href="{{ route('reports.weekly.index') }}"
                    class="inline-flex items-center px-4 py-2 bg-ojt-primary text-white rounded-lg shadow hover:bg-maroon-700 transition">

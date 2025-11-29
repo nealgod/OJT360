@@ -150,10 +150,10 @@ class WeeklyReportController extends Controller
         $validated = $request->validate([
             'week_start_date' => ['required', 'date'],
             'week_end_date' => ['required', 'date', 'after_or_equal:week_start_date'],
-            'problems_encountered' => ['nullable', 'string'],
+            'problems_encountered' => ['nullable', 'string', 'max:450'],
             'entries' => ['required', 'array', 'min:1'],
             'entries.*.date' => ['required', 'date'],
-            'entries.*.activity' => ['nullable', 'string', 'max:1000'],
+            'entries.*.activity' => ['nullable', 'string', 'max:50'],
             'entries.*.hours' => ['nullable', 'numeric', 'min:0', 'max:24'],
         ]);
 
@@ -286,7 +286,7 @@ class WeeklyReportController extends Controller
         ]);
     }
 
-    public function downloadPdf(WeeklyReport $weekly, WeeklyReportPdfService $pdfService)
+    public function downloadPdf(Request $request, WeeklyReport $weekly, WeeklyReportPdfService $pdfService)
     {
         $user = Auth::user();
         
@@ -307,9 +307,11 @@ class WeeklyReportController extends Controller
         $pdf = $pdfService->generate($weekly);
         $fileName = sprintf('weekly-report-week-%s.pdf', $weekly->week_number);
 
+        $disposition = $request->has('view') ? 'inline' : 'attachment';
+
         return response($pdf, 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => "inline; filename=\"{$fileName}\"",
+            'Content-Disposition' => "{$disposition}; filename=\"{$fileName}\"",
         ]);
     }
 

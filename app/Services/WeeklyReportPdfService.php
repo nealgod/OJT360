@@ -68,7 +68,14 @@ class WeeklyReportPdfService
             $entry = $entries[$index] ?? null;
             if ($entry) {
                 $this->writeText($pdf, $dateX, $yPosition, $entry['date']);
-                $this->writeText($pdf, $activityX, $yPosition, $entry['activity']);
+                
+                // Handle potentially long activity text
+                $activityText = $entry['activity'];
+                // Use MultiCell for activity to handle wrapping
+                $pdf->SetXY($activityX * 25.4, ($yPosition * 25.4));
+                // 4.5 inches width for activity column (approx 114mm)
+                $pdf->MultiCell(114, 5, $activityText, 0, 'L');
+                
                 $this->writeText($pdf, $hoursX, $yPosition, $entry['hours']);
             }
         }
@@ -78,11 +85,11 @@ class WeeklyReportPdfService
 
         $problems = $report->problems_encountered ?? '';
         if ($problems) {
-            $this->writeWrappedLines($pdf, $problems, [
-                ['x' => 0.53, 'y' => 6.93],
-                ['x' => 0.53, 'y' => 7.38],
-                ['x' => 0.53, 'y' => 7.85],
-            ]);
+            // Use MultiCell for problems encountered to handle wrapping properly
+            // x=0.53 inches (approx 13.5mm), y=6.93 inches (approx 176mm)
+            // Width approx 7 inches (178mm) to fit the box
+            $pdf->SetXY(0.53 * 25.4, 6.93 * 25.4);
+            $pdf->MultiCell(178, 5, $problems, 0, 'L');
         }
 
         // Training Supervisor (BOLD)
