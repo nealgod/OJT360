@@ -26,12 +26,6 @@
 
     <div class="py-10">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            @if(session('success'))
-                <div class="mb-4 rounded-md bg-green-50 border border-green-100 px-4 py-3 text-green-800">
-                    {{ session('success') }}
-                </div>
-            @endif
-
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <!-- Main Content -->
                 <div class="lg:col-span-2 space-y-6">

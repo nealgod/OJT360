@@ -25,12 +25,6 @@
 
     <div class="py-10">
         <div class="max-w-5xl mx-auto sm:px-6 lg:px-8">
-            @if(session('success'))
-                <div class="mb-4 rounded-md bg-green-50 border border-green-100 px-4 py-3 text-green-800">
-                    {{ session('success') }}
-                </div>
-            @endif
-
             <!-- Report Header -->
             <div class="bg-white shadow sm:rounded-lg p-6 mb-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

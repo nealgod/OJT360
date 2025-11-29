@@ -29,12 +29,6 @@
 
     <div class="py-6 sm:py-10">
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-            @if(session('success'))
-                <div class="mb-4 rounded-md bg-green-50 border border-green-100 px-4 py-3 text-green-800">
-                    {{ session('success') }}
-                </div>
-            @endif
-
             <!-- Status Badge -->
             <div class="bg-white shadow sm:rounded-lg p-4 mb-6">
                 <div class="flex items-center justify-between">
