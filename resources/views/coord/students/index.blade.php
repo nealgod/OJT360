@@ -189,10 +189,7 @@
                                                     View Student
                                                 </a>
                                                 @if(!$student->studentProfile?->supervisor)
-                                                    <a href="{{ route('coord.students.show', $student) }}#supervisor-assignment" 
-                                                       class="inline-flex items-center justify-center px-3 py-2 border border-dashed border-yellow-400 text-yellow-700 rounded-md text-xs font-medium hover:bg-yellow-50 transition-colors">
-                                                        Assign Supervisor
-                                                    </a>
+                                                    <!-- Supervisor assignment is now handled via Supervisor Portal -->
                                                 @endif
                                             </div>
                                         </td>

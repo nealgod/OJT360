@@ -589,7 +589,9 @@
                                         </svg>
                                         <div>
                                             <p class="text-sm font-medium text-yellow-800">No supervisor assigned yet</p>
-                                            <p class="text-xs text-yellow-700 mt-1">Student can submit supervisor details, or you can assign an existing supervisor below.</p>
+                                            <p class="text-xs text-yellow-700 mt-1">
+                                                Please instruct the supervisor to register and accept this student via the Supervisor Portal.
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
