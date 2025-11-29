@@ -1,34 +1,66 @@
 <x-app-layout>
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-start gap-4 mb-6">
-                <a href="{{ route('admin.reports.index') }}" class="p-2 hover:bg-gray-100 rounded-lg transition-colors mt-1">
-                    <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                    </svg>
-                </a>
-                <div class="flex-1 flex justify-between items-start">
-                    <div>
-                        <h1 class="text-3xl font-bold text-ojt-dark">Attendance Logs</h1>
-                        <p class="text-gray-600 mt-1">View and filter all intern attendance records</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-sm text-gray-600">Total Records</p>
-                        <p class="text-2xl font-bold text-ojt-primary">{{ $logs->total() }}</p>
-                    </div>
+    <x-slot name="header">
+        <div class="flex items-center gap-3">
+            <a href="{{ route('admin.reports.index') }}" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </a>
+            <div class="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                    <h2 class="font-semibold text-xl text-ojt-dark leading-tight">
+                        Attendance Logs
+                    </h2>
+                    <p class="text-sm text-gray-500">View and filter All Intern attendance records</p>
+                </div>
+                <div class="text-left sm:text-right">
+                    <p class="text-xs sm:text-sm text-gray-600">Total Records</p>
+                    <p class="text-xl sm:text-2xl font-bold text-ojt-primary">{{ $logs->total() }}</p>
                 </div>
             </div>
+        </div>
+    </x-slot>
+
+    <div class="py-6 sm:py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
             <!-- Filters -->
             <div class="bg-white rounded-lg border p-6 mb-6 shadow-sm">
                 <h3 class="font-semibold text-gray-700 mb-4">Filters</h3>
-                <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <form method="GET" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Department</label>
+                        <select name="department_id" id="department_filter_attendance" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-ojt-primary focus:border-ojt-primary">
+                            <option value="">All Departments</option>
+                            @foreach($departments as $dept)
+                                <option value="{{ $dept->id }}" {{ request('department_id') == $dept->id ? 'selected' : '' }}>
+                                    {{ $dept->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Program</label>
+                        <select name="program_id" id="program_filter_attendance" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-ojt-primary focus:border-ojt-primary">
+                            <option value="">All Programs</option>
+                            @foreach($programs as $program)
+                                <option value="{{ $program->id }}" 
+                                        data-department="{{ $program->department_id }}"
+                                        {{ request('program_id') == $program->id ? 'selected' : '' }}>
+                                    {{ $program->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Search Intern</label>
-                        <select name="user_id" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-ojt-primary focus:border-ojt-primary">
+                        <select name="user_id" id="student_filter_attendance" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-ojt-primary focus:border-ojt-primary">
                             <option value="">All Interns</option>
                             @foreach($interns as $intern)
-                                <option value="{{ $intern->id }}" {{ request('user_id') == $intern->id ? 'selected' : '' }}>
+                                <option value="{{ $intern->id }}" 
+                                        data-department="{{ $intern->studentProfile->department_id ?? '' }}"
+                                        data-program="{{ $intern->studentProfile->program_id ?? '' }}"
+                                        {{ request('user_id') == $intern->id ? 'selected' : '' }}>
                                     {{ $intern->name }}
                                 </option>
                             @endforeach
@@ -46,7 +78,7 @@
                         <button type="submit" class="bg-ojt-primary text-white px-6 py-2 rounded-lg hover:bg-maroon-700 transition-colors">
                             Apply Filters
                         </button>
-                        @if(request()->hasAny(['user_id', 'date_from', 'date_to']))
+                        @if(request()->hasAny(['user_id', 'date_from', 'date_to', 'department_id', 'program_id']))
                             <a href="{{ route('admin.reports.attendance') }}" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors">
                                 Clear
                             </a>
@@ -55,9 +87,65 @@
                 </form>
             </div>
 
-            <!-- Table -->
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const departmentSelect = document.getElementById('department_filter_attendance');
+                    const programSelect = document.getElementById('program_filter_attendance');
+                    const studentSelect = document.getElementById('student_filter_attendance');
+                    const allProgramOptions = Array.from(programSelect.options);
+                    const allStudentOptions = Array.from(studentSelect.options);
+
+                    function filterPrograms() {
+                        const selectedDept = departmentSelect.value;
+                        
+                        programSelect.innerHTML = '';
+                        programSelect.add(allProgramOptions[0].cloneNode(true));
+
+                        allProgramOptions.slice(1).forEach(option => {
+                            if (!selectedDept || option.dataset.department === selectedDept) {
+                                programSelect.add(option.cloneNode(true));
+                            }
+                        });
+
+                        const currentValue = programSelect.querySelector(`option[value="${programSelect.value}"]`);
+                        if (!currentValue) {
+                            programSelect.value = '';
+                        }
+                        
+                        filterStudents();
+                    }
+
+                    function filterStudents() {
+                        const selectedDept = departmentSelect.value;
+                        const selectedProg = programSelect.value;
+                        
+                        studentSelect.innerHTML = '';
+                        studentSelect.add(allStudentOptions[0].cloneNode(true));
+
+                        allStudentOptions.slice(1).forEach(option => {
+                            const matchDept = !selectedDept || option.dataset.department === selectedDept;
+                            const matchProg = !selectedProg || option.dataset.program === selectedProg;
+                            
+                            if (matchDept && matchProg) {
+                                studentSelect.add(option.cloneNode(true));
+                            }
+                        });
+
+                        const currentValue = studentSelect.querySelector(`option[value="${studentSelect.value}"]`);
+                        if (!currentValue) {
+                            studentSelect.value = '';
+                        }
+                    }
+
+                    departmentSelect.addEventListener('change', filterPrograms);
+                    programSelect.addEventListener('change', filterStudents);
+                    filterPrograms();
+                });
+            </script>
+
+
             <div class="bg-white rounded-lg border shadow-sm overflow-hidden">
-                <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
+                <div class="overflow-x-auto max-h-[560px] overflow-y-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50 sticky top-0 z-10">
                             <tr>
