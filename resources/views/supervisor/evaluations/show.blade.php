@@ -8,12 +8,13 @@
                 <p class="text-sm text-gray-500">{{ $evaluation->student->name }} - Month {{ $evaluation->month_number }}</p>
             </div>
             <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                <a href="{{ route('supervisor.evaluations.pdf', $evaluation) }}" 
+                <a href="{{ route('supervisor.evaluations.pdf', ['evaluation' => $evaluation->id, 'view' => 1]) }}" target="_blank"
                    class="inline-flex items-center px-4 py-2 bg-ojt-primary text-white rounded-lg hover:bg-maroon-700 transition-colors">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
-                    Download
+                    View PDF
                 </a>
                 <a href="{{ route('supervisor.students.view', $evaluation->student) }}" 
                    class="inline-flex items-center text-ojt-primary hover:text-maroon-700 font-medium">

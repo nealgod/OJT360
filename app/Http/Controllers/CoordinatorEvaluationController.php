@@ -59,7 +59,7 @@ class CoordinatorEvaluationController extends Controller
         return view('coord.evaluations.show', compact('evaluation'));
     }
 
-    public function downloadPdf(MonthlyEvaluation $evaluation, \App\Services\MonthlyEvaluationPdfService $pdfService)
+    public function downloadPdf(Request $request, MonthlyEvaluation $evaluation, \App\Services\MonthlyEvaluationPdfService $pdfService)
     {
         $this->authorize('viewAsCoordinator', $evaluation);
 
@@ -71,9 +71,11 @@ class CoordinatorEvaluationController extends Controller
             $evaluation->evaluation_year
         );
 
+        $disposition = $request->has('view') ? 'inline' : 'attachment';
+
         return response($pdf, 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => "inline; filename=\"{$fileName}\"",
+            'Content-Disposition' => "{$disposition}; filename=\"{$fileName}\"",
         ]);
     }
 

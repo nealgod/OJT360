@@ -201,7 +201,7 @@ class SupervisorFinalEvaluationController extends Controller
         return view('supervisor.final-evaluations.show', compact('evaluation'));
     }
 
-    public function downloadPdf(FinalEvaluation $evaluation, FinalEvaluationPdfService $pdfService)
+    public function downloadPdf(Request $request, FinalEvaluation $evaluation, FinalEvaluationPdfService $pdfService)
     {
         $this->authorize('viewAsSupervisor', $evaluation);
 
@@ -212,9 +212,11 @@ class SupervisorFinalEvaluationController extends Controller
             $evaluation->control_number
         );
 
+        $disposition = $request->has('view') ? 'inline' : 'attachment';
+
         return response($pdf, 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => "inline; filename=\"{$fileName}\"",
+            'Content-Disposition' => "{$disposition}; filename=\"{$fileName}\"",
             'Cache-Control' => 'no-cache, no-store, must-revalidate',
             'Pragma' => 'no-cache',
             'Expires' => '0',

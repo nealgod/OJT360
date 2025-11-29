@@ -224,24 +224,22 @@ class SupervisorEvaluationController extends Controller
         return view('supervisor.evaluations.show', compact('evaluation'));
     }
 
-    public function downloadPdf(MonthlyEvaluation $evaluation, \App\Services\MonthlyEvaluationPdfService $pdfService)
+    public function downloadPdf(Request $request, MonthlyEvaluation $evaluation, \App\Services\MonthlyEvaluationPdfService $pdfService)
     {
         $this->authorize('viewAsSupervisor', $evaluation);
 
         $pdf = $pdfService->generate($evaluation);
         $fileName = sprintf(
-            'monthly-evaluation-%s-%s-%s.pdf',
+            'monthly-evaluation-%s-%s.pdf',
             $evaluation->student->studentProfile->student_id ?? 'student',
-            $evaluation->getMonthName(),
-            $evaluation->evaluation_year
+            $evaluation->getMonthYearLabel()
         );
+
+        $disposition = $request->has('view') ? 'inline' : 'attachment';
 
         return response($pdf, 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => "inline; filename=\"{$fileName}\"",
-            'Cache-Control' => 'no-cache, no-store, must-revalidate',
-            'Pragma' => 'no-cache',
-            'Expires' => '0',
+            'Content-Disposition' => "{$disposition}; filename=\"{$fileName}\"",
         ]);
     }
 }
