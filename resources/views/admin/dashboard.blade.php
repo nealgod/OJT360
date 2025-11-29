@@ -1,19 +1,31 @@
 <x-app-layout>
+    <x-slot name="header">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <h2 class="font-semibold text-xl text-ojt-dark leading-tight">
+                    Admin Dashboard
+                </h2>
+                <p class="text-sm text-gray-500">System overview and quick actions</p>
+            </div>
+            <div class="flex gap-2">
+                <a href="{{ route('admin.users') }}" class="inline-flex items-center px-4 py-2 bg-ojt-primary text-white rounded-lg hover:bg-maroon-700 transition-colors">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+                    </svg>
+                    Manage Users
+                </a>
+                <a href="{{ route('admin.departments.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                    </svg>
+                    Departments
+                </a>
+            </div>
+        </div>
+    </x-slot>
+
     <div class="py-6 sm:py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <!-- Header -->
-            <div class="mb-8">
-                <h1 class="text-2xl sm:text-3xl font-bold text-ojt-dark mb-2">Admin Dashboard</h1>
-                <p class="text-gray-600">Overview of system users and quick actions</p>
-                <div class="mt-4">
-                    <a href="/admin/users" class="inline-block bg-ojt-primary text-white px-6 py-2 rounded-lg hover:bg-maroon-700">
-                        Go to Manage Users (Direct Link)
-                    </a>
-                    <a href="/admin/companies" class="inline-block ml-3 bg-white text-ojt-dark border border-gray-300 px-6 py-2 rounded-lg hover:bg-gray-50">
-                        Go to Manage Companies
-                    </a>
-                </div>
-            </div>
 
             <!-- Quick Stats -->
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
