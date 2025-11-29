@@ -10,94 +10,124 @@ class AdminAuditController extends Controller
 {
     public function index(Request $request)
     {
-        $query = AuditLog::with('user');
+        try {
+            $query = AuditLog::with('user');
 
-        // Filter by user
-        if ($request->filled('user_id')) {
-            $query->where('user_id', $request->user_id);
-        }
+            // Filter by user
+            if ($request->filled('user_id')) {
+                $query->where('user_id', $request->user_id);
+            }
 
-        // Filter by action
-        if ($request->filled('action')) {
-            $query->where('action', $request->action);
-        }
+            // Filter by action
+            if ($request->filled('action')) {
+                $query->where('action', $request->action);
+            }
 
-        // Filter by model type
-        if ($request->filled('model_type')) {
-            $query->where('model_type', $request->model_type);
-        }
+            // Filter by model type
+            if ($request->filled('model_type')) {
+                $query->where('model_type', $request->model_type);
+            }
 
-        if ($request->filled('role')) {
-            $query->whereHas('user', function ($q) use ($request) {
-                $q->where('role', $request->role);
+            if ($request->filled('role')) {
+                $query->whereHas('user', function ($q) use ($request) {
+                    $q->where('role', $request->role);
+                });
+            }
+
+            // Filter by date range with validation
+            if ($request->filled('date_from')) {
+                $query->whereDate('created_at', '>=', $request->date_from);
+            }
+
+            if ($request->filled('date_to')) {
+                $query->whereDate('created_at', '<=', $request->date_to);
+            }
+
+            // Validate date range
+            if ($request->filled('date_from') && $request->filled('date_to')) {
+                if ($request->date_from > $request->date_to) {
+                    return redirect()->route('admin.audit.index')
+                        ->with('error', 'Start date must be before or equal to end date.')
+                        ->withInput($request->except('date_from', 'date_to'));
+                }
+            }
+
+            // Search in description
+            if ($request->filled('search')) {
+                $query->where('description', 'like', '%' . $request->search . '%');
+            }
+
+            // Quick filter presets
+            if ($request->filled('preset')) {
+                switch ($request->preset) {
+                    case 'today':
+                        $query->whereDate('created_at', today());
+                        break;
+                    case 'week':
+                        $query->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()]);
+                        break;
+                    case 'month':
+                        $query->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year);
+                        break;
+                }
+            }
+
+            // Sorting
+            $sortBy = $request->get('sort_by', 'created_at');
+            $sortOrder = $request->get('sort_order', 'desc');
+            $allowedSorts = ['created_at', 'action', 'model_type'];
+            if (in_array($sortBy, $allowedSorts)) {
+                $query->orderBy($sortBy, $sortOrder);
+            } else {
+                $query->orderBy('created_at', 'desc');
+            }
+
+            $logs = $query->paginate(20)->withQueryString();
+
+            // Get filter options (optimized - limit users and cache)
+            $users = User::orderBy('name')->limit(500)->get(['id', 'name']); // Limit to prevent huge dropdowns
+            $actions = AuditLog::distinct()->orderBy('action')->pluck('action');
+            
+            // Filter model types to show only common/relevant ones
+            $allModelTypes = AuditLog::distinct()->whereNotNull('model_type')->orderBy('model_type')->pluck('model_type');
+            $modelTypes = $allModelTypes->filter(function($modelType) {
+                // Only show models that are commonly used or user-facing
+                $basename = class_basename($modelType);
+                $relevantModels = [
+                    'User', 'WeeklyReport', 'AttendanceLog', 'MonthlyEvaluation', 
+                    'FinalEvaluation', 'Department', 'Program', 'StudentProfile',
+                    'Supervisor', 'Coordinator', 'Acceptance'
+                ];
+                return in_array($basename, $relevantModels);
             });
+            
+            $roles = ['admin', 'coordinator', 'supervisor', 'intern'];
+
+            // Get statistics
+            $stats = [
+                'total' => AuditLog::count(),
+                'today' => AuditLog::whereDate('created_at', today())->count(),
+                'this_week' => AuditLog::whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
+                'this_month' => AuditLog::whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count(),
+            ];
+
+            return view('admin.audit.index', compact('logs', 'users', 'actions', 'modelTypes', 'roles', 'stats', 'sortBy', 'sortOrder'));
+        } catch (\Exception $e) {
+            \Log::error('Admin audit logs error: ' . $e->getMessage());
+            
+            // Return empty data with error message
+            $users = collect();
+            $actions = collect();
+            $modelTypes = collect();
+            $roles = ['admin', 'coordinator', 'supervisor', 'intern'];
+            $stats = ['total' => 0, 'today' => 0, 'this_week' => 0, 'this_month' => 0];
+            $logs = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 20);
+            $sortBy = 'created_at';
+            $sortOrder = 'desc';
+            
+            return view('admin.audit.index', compact('logs', 'users', 'actions', 'modelTypes', 'roles', 'stats', 'sortBy', 'sortOrder'))
+                ->with('error', 'Unable to load audit logs. Please try again or adjust your filters.');
         }
-
-        // Filter by date range with validation
-        if ($request->filled('date_from')) {
-            $query->whereDate('created_at', '>=', $request->date_from);
-        }
-
-        if ($request->filled('date_to')) {
-            $query->whereDate('created_at', '<=', $request->date_to);
-        }
-
-        // Validate date range
-        if ($request->filled('date_from') && $request->filled('date_to')) {
-            if ($request->date_from > $request->date_to) {
-                return redirect()->route('admin.audit.index')
-                    ->with('error', 'Start date must be before or equal to end date.')
-                    ->withInput($request->except('date_from', 'date_to'));
-            }
-        }
-
-        // Search in description
-        if ($request->filled('search')) {
-            $query->where('description', 'like', '%' . $request->search . '%');
-        }
-
-        // Quick filter presets
-        if ($request->filled('preset')) {
-            switch ($request->preset) {
-                case 'today':
-                    $query->whereDate('created_at', today());
-                    break;
-                case 'week':
-                    $query->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()]);
-                    break;
-                case 'month':
-                    $query->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year);
-                    break;
-            }
-        }
-
-        // Sorting
-        $sortBy = $request->get('sort_by', 'created_at');
-        $sortOrder = $request->get('sort_order', 'desc');
-        $allowedSorts = ['created_at', 'action', 'model_type'];
-        if (in_array($sortBy, $allowedSorts)) {
-            $query->orderBy($sortBy, $sortOrder);
-        } else {
-            $query->orderBy('created_at', 'desc');
-        }
-
-        $logs = $query->paginate(50)->withQueryString();
-
-        // Get filter options (optimized - limit users and cache)
-        $users = User::orderBy('name')->limit(500)->get(['id', 'name']); // Limit to prevent huge dropdowns
-        $actions = AuditLog::distinct()->orderBy('action')->pluck('action');
-        $modelTypes = AuditLog::distinct()->whereNotNull('model_type')->orderBy('model_type')->pluck('model_type');
-        $roles = ['admin', 'coordinator', 'supervisor', 'intern'];
-
-        // Get statistics
-        $stats = [
-            'total' => AuditLog::count(),
-            'today' => AuditLog::whereDate('created_at', today())->count(),
-            'this_week' => AuditLog::whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
-            'this_month' => AuditLog::whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count(),
-        ];
-
-        return view('admin.audit.index', compact('logs', 'users', 'actions', 'modelTypes', 'roles', 'stats', 'sortBy', 'sortOrder'));
     }
 
     public function show(AuditLog $audit)
@@ -230,5 +260,46 @@ class AdminAuditController extends Controller
         ];
 
         return view('admin.audit.user-activity', compact('user', 'logs', 'stats'));
+    }
+    public function bulkDelete(Request $request)
+    {
+        try {
+            $request->validate([
+                'log_ids' => 'required|array',
+                'log_ids.*' => 'exists:audit_logs,id'
+            ]);
+
+            $count = AuditLog::whereIn('id', $request->log_ids)->delete();
+
+            return redirect()->route('admin.audit.index')
+                ->with('success', "Successfully deleted {$count} audit log(s).");
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            \Log::error('Bulk delete audit logs error: ' . $e->getMessage());
+            return redirect()->route('admin.audit.index')
+                ->with('error', 'Failed to delete audit logs. Please try again.');
+        }
+    }
+
+    public function deleteOlderThan(Request $request)
+    {
+        try {
+            $request->validate([
+                'days' => 'required|integer|min:1|max:365'
+            ]);
+
+            $date = now()->subDays($request->days);
+            $count = AuditLog::where('created_at', '<', $date)->delete();
+
+            return redirect()->route('admin.audit.index')
+                ->with('success', "Successfully deleted {$count} audit log(s) older than {$request->days} days.");
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            \Log::error('Delete old audit logs error: ' . $e->getMessage());
+            return redirect()->route('admin.audit.index')
+                ->with('error', 'Failed to delete old audit logs. Please try again.');
+        }
     }
 }

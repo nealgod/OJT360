@@ -153,6 +153,8 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
         // Audit Logs
         Route::get('/audit', [App\Http\Controllers\AdminAuditController::class, 'index'])->name('audit.index');
         Route::get('/audit/export', [App\Http\Controllers\AdminAuditController::class, 'export'])->name('audit.export');
+        Route::post('/audit/bulk-delete', [App\Http\Controllers\AdminAuditController::class, 'bulkDelete'])->name('audit.bulk-delete');
+        Route::post('/audit/delete-older-than', [App\Http\Controllers\AdminAuditController::class, 'deleteOlderThan'])->name('audit.delete-older-than');
         Route::get('/audit/user/{user}', [App\Http\Controllers\AdminAuditController::class, 'userActivity'])->name('audit.user');
         Route::get('/audit/{audit}', [App\Http\Controllers\AdminAuditController::class, 'show'])->name('audit.show');
 
