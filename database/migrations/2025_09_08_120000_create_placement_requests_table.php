@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('placement_requests', function (Blueprint $table) {
             $table->id();
             $table->foreignId('student_user_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
+            $table->foreignId('company_id')->nullable()->constrained('companies')->cascadeOnDelete();
             $table->enum('status', ['pending', 'approved', 'declined'])->default('pending');
             $table->date('start_date')->nullable();
             $table->string('contact_person')->nullable();
