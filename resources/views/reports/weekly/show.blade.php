@@ -49,18 +49,6 @@
 
     <div class="py-10">
         <div class="max-w-5xl mx-auto sm:px-6 lg:px-8 space-y-8">
-            @if(session('success'))
-                <div class="rounded-md bg-green-50 border border-green-100 px-4 py-3 text-green-800">
-                    {{ session('success') }}
-                </div>
-            @endif
-
-            @if(session('error'))
-                <div class="rounded-md bg-red-50 border border-red-100 px-4 py-3 text-red-800">
-                    {{ session('error') }}
-                </div>
-            @endif
-
             <!-- Status Badge -->
             @if($report->status !== 'draft')
                 <div class="bg-white shadow sm:rounded-lg p-4">

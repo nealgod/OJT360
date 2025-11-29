@@ -21,17 +21,6 @@
 
     <div class="py-10">
         <div class="max-w-6xl mx-auto sm:px-6 lg:px-8">
-            @if (session('success'))
-                <div class="mb-4 rounded-md bg-green-50 border border-green-100 px-4 py-3 text-green-800">
-                    {{ session('success') }}
-                </div>
-            @endif
-            @if (session('info'))
-                <div class="mb-4 rounded-md bg-blue-50 border border-blue-100 px-4 py-3 text-blue-800">
-                    {{ session('info') }}
-                </div>
-            @endif
-
             <!-- Stats Overview -->
             @if ($reports->isNotEmpty())
                 <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
