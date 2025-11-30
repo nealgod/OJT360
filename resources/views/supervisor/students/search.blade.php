@@ -16,7 +16,7 @@
                             </svg>
                         </div>
                         <h3 class="text-2xl font-bold text-ojt-dark mb-2">Search for Student</h3>
-                        <p class="text-gray-600">Enter the student's ID to view their profile and generate an acceptance letter</p>
+                        <p class="text-gray-600">Enter the student's Name or ID to view their profile and generate an acceptance letter</p>
                     </div>
 
                     @if (session('error'))
@@ -46,7 +46,7 @@
 
                         <div class="relative">
                             <label for="student_id" class="block text-sm font-medium text-gray-700 mb-2">
-                                Student ID *
+                                Student Name or ID *
                             </label>
                             <input 
                                 type="text" 
@@ -56,7 +56,7 @@
                                 required
                                 autofocus
                                 autocomplete="off"
-                                placeholder="e.g., 2022-31481"
+                                placeholder="e.g., Juan Dela Cruz or 2022-31481"
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ojt-primary focus:border-transparent text-lg"
                             >
                             
@@ -94,7 +94,7 @@
                             <div class="text-sm text-blue-800">
                                 <p class="font-medium mb-1">How it works:</p>
                                 <ol class="list-decimal list-inside space-y-1">
-                                    <li>Enter the student's ID number</li>
+                                    <li>Enter the student's Name or ID number</li>
                                     <li>Review their profile and documents</li>
                                     <li>Click "Accept & Generate Letter"</li>
                                     <li>Fill in the job details</li>
@@ -176,7 +176,7 @@
                             resultsDiv.innerHTML = '<div class="p-4 text-sm text-red-500 text-center">Error loading results</div>';
                             resultsDiv.classList.remove('hidden');
                         });
-                }, 300); // 300ms debounce
+                }, 150); // 150ms debounce for faster live search
             });
 
             // Hide results when clicking outside

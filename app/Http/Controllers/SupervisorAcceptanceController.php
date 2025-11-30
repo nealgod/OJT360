@@ -74,45 +74,53 @@ class SupervisorAcceptanceController extends Controller
      */
     public function autocomplete(Request $request)
     {
-        $query = $request->get('q', '');
+        try {
+            $query = $request->get('q', '');
 
-        if (strlen($query) < 2) {
-            return response()->json([]);
+            if (strlen($query) < 2) {
+                return response()->json([]);
+            }
+
+            // Use JOIN for better performance instead of nested whereHas
+            // Filter: Only students WITHOUT a supervisor
+            $students = User::select('users.*')
+                ->join('student_profiles', 'users.id', '=', 'student_profiles.user_id')
+                ->where('users.role', 'intern')
+                ->whereNull('student_profiles.supervisor_id')
+                ->where(function($q) use ($query) {
+                    $q->where('users.name', 'LIKE', '%'.$query.'%')
+                      ->orWhere('student_profiles.student_id', 'LIKE', '%'.$query.'%');
+                })
+                ->with('studentProfile:user_id,student_id,course,department,supervisor_id,profile_image')
+                ->limit(50)
+                ->get()
+                ->map(function ($student) {
+                    $profileImage = null;
+                    if ($student->studentProfile && $student->studentProfile->profile_image) {
+                        $profileImage = Storage::url($student->studentProfile->profile_image);
+                    }
+
+                    return [
+                        'id' => $student->id,
+                        'student_id' => $student->studentProfile->student_id ?? '',
+                        'name' => $student->name,
+                        'course' => $student->studentProfile->course ?? 'N/A',
+                        'department' => $student->studentProfile->department ?? 'N/A',
+                        'has_supervisor' => false,
+                        'profile_image' => $profileImage,
+                        'initials' => substr($student->name, 0, 1),
+                    ];
+                });
+
+            return response()->json($students);
+        } catch (\Exception $e) {
+            \Log::error('Autocomplete Error: ' . $e->getMessage());
+            return response()->json(['error' => 'Search failed'], 500);
         }
-
-        // Search students by student_id, limit to 5 results
-        $students = User::where('role', 'intern')
-            ->whereHas('studentProfile', function ($q) use ($query) {
-                $q->where('student_id', 'LIKE', '%'.$query.'%');
-            })
-            ->with(['studentProfile' => function ($q) {
-                $q->select('user_id', 'student_id', 'course', 'department', 'supervisor_id', 'profile_image');
-            }])
-            ->limit(5)
-            ->get()
-            ->map(function ($student) {
-                $profileImage = null;
-                if ($student->studentProfile && $student->studentProfile->profile_image) {
-                    $profileImage = Storage::url($student->studentProfile->profile_image);
-                }
-
-                return [
-                    'id' => $student->id,
-                    'student_id' => $student->studentProfile->student_id ?? '',
-                    'name' => $student->name,
-                    'course' => $student->studentProfile->course ?? 'N/A',
-                    'department' => $student->studentProfile->department ?? 'N/A',
-                    'has_supervisor' => ! is_null($student->studentProfile->supervisor_id ?? null),
-                    'profile_image' => $profileImage,
-                    'initials' => substr($student->name, 0, 1),
-                ];
-            });
-
-        return response()->json($students);
     }
 
     /**
-     * Search for student by ID
+     * Search for student by ID or Name
      */
     public function search(Request $request)
     {
@@ -120,23 +128,31 @@ class SupervisorAcceptanceController extends Controller
             'student_id' => 'required|string',
         ]);
 
-        $studentId = trim($request->student_id);
+        $search = trim($request->student_id);
 
-        // Search for student by student_id in student_profiles table
-        $student = User::where('role', 'intern')
-            ->whereHas('studentProfile', function ($q) use ($studentId) {
-                $q->where('student_id', $studentId);
-            })
-            ->with(['studentProfile', 'documentSubmissions.requirement'])
-            ->first();
+        // Use JOIN for better performance - Filter: Only students WITHOUT a supervisor
+        $baseQuery = User::select('users.*')
+            ->join('student_profiles', 'users.id', '=', 'student_profiles.user_id')
+            ->where('users.role', 'intern')
+            ->whereNull('student_profiles.supervisor_id')
+            ->with(['studentProfile', 'documentSubmissions.requirement']);
 
+        // 1. Try exact match by student_id
+        $student = (clone $baseQuery)->where('student_profiles.student_id', $search)->first();
+
+        // 2. If not found, try searching by name
         if (! $student) {
-            return back()->with('error', 'Student not found. Please check the Student ID and try again.');
+            $studentsByName = (clone $baseQuery)->where('users.name', 'LIKE', "%{$search}%")->get();
+
+            if ($studentsByName->count() === 1) {
+                $student = $studentsByName->first();
+            } elseif ($studentsByName->count() > 1) {
+                return back()->with('error', "Multiple available students found matching '{$search}'. Please select a specific student from the suggestions list.");
+            }
         }
 
-        // Check if student already has a supervisor
-        if ($student->studentProfile && $student->studentProfile->supervisor_id) {
-            return back()->with('error', 'This student already has a supervisor.');
+        if (! $student) {
+            return back()->with('error', 'Student not found or already has a supervisor. Please check the ID/Name.');
         }
 
         // Redirect to student view page
