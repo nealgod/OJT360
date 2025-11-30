@@ -273,7 +273,13 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
     // Coordinator whitelist import (static routes must be BEFORE the {student} param route)
     Route::get('/coord/students/import', [App\Http\Controllers\CoordinatorImportController::class, 'showImport'])->name('coord.students.import');
     Route::post('/coord/students/import/preview', [App\Http\Controllers\CoordinatorImportController::class, 'preview'])->name('coord.students.import.preview');
+    Route::get('/coord/students/import/preview', function () {
+        return redirect()->route('coord.students.import');
+    });
     Route::post('/coord/students/import/commit', [App\Http\Controllers\CoordinatorImportController::class, 'commit'])->name('coord.students.import.commit');
+    Route::get('/coord/students/import/commit', function () {
+        return redirect()->route('coord.students.import');
+    });
     Route::get('/coord/students/whitelist', [App\Http\Controllers\CoordinatorImportController::class, 'status'])->name('coord.students.whitelist');
     Route::get('/coord/students/whitelist/export', [App\Http\Controllers\CoordinatorImportController::class, 'export'])->name('coord.students.whitelist.export');
     Route::get('/coord/students/whitelist/uploaded-file', [App\Http\Controllers\CoordinatorImportController::class, 'downloadUploaded'])->name('coord.students.whitelist.uploaded');

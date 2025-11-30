@@ -58,7 +58,12 @@ class CoordinatorImportController extends Controller
                         }
                         $assoc = [];
                         foreach ($normalized as $i => $key) {
-                            $assoc[$key] = isset($data[$i]) ? trim((string) $data[$i]) : null;
+                            $val = isset($data[$i]) ? trim((string) $data[$i]) : null;
+                            if ($val) {
+                                // Fix for special characters (like Ñ)
+                                $val = mb_convert_encoding($val, 'UTF-8', 'UTF-8, ISO-8859-1, Windows-1252');
+                            }
+                            $assoc[$key] = $val;
                         }
                         $rows[] = $assoc;
                     }
@@ -208,12 +213,18 @@ class CoordinatorImportController extends Controller
         // Support JSON payload or array
         $rowsPayload = $request->input('rows');
         if (is_string($rowsPayload)) {
-            $rowsPayload = json_decode($rowsPayload, true) ?? [];
+            $rowsPayload = json_decode($rowsPayload, true);
+        }
+
+        // If decoding failed or empty
+        if (! is_array($rowsPayload) || empty($rowsPayload)) {
+            return redirect()->route('coord.students.import')
+                ->with('error', 'Import failed: No valid data to commit. Please try uploading the file again.');
         }
 
         $request->merge(['rows' => $rowsPayload]);
 
-        $validated = $request->validate([
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
             'rows' => ['required', 'array', 'min:1'],
             'rows.*.student_id' => ['required', 'string'],
             'rows.*.name' => ['required', 'string'],
@@ -222,14 +233,15 @@ class CoordinatorImportController extends Controller
             'rows.*.contact_number' => ['nullable', 'string'],
         ]);
 
-        // Enforce single upload per program: clear existing pending rows for this program before inserting
-        $programId = $validated['rows'][0]['program_id'] ?? null;
-        if ($programId) {
-            EnrollmentWhitelist::where('program_id', $programId)
-                ->where('status', 'pending')
-                ->delete();
+        if ($validator->fails()) {
+            return redirect()->route('coord.students.import')
+                ->withErrors($validator)
+                ->with('error', 'Validation failed during commit.');
         }
 
+        $validated = $validator->validated();
+
+        // Add new students without removing existing pending ones
         foreach ($validated['rows'] as $row) {
             EnrollmentWhitelist::firstOrCreate(
                 ['student_id' => $row['student_id']],
