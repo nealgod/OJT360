@@ -64,9 +64,9 @@
                                     <p class="text-xs text-gray-500 mt-1">Current image</p>
                                 </div>
                             @endif
-                            <input type="file" id="profile_image" name="profile_image" accept="image/*"
+                            <input type="file" id="profile_image" name="profile_image" accept="image/jpeg,image/png,image/webp"
                                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-ojt-primary file:text-white hover:file:bg-maroon-700">
-                            <p class="mt-1 text-sm text-gray-500">Upload a new profile photo (JPG, PNG, max 2MB). Leave empty to keep current image.</p>
+                            <p class="mt-1 text-sm text-gray-500">Upload a new profile photo (JPG, PNG, WEBP, max 5MB). Leave empty to keep current image.</p>
                             @error('profile_image')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                         </div>
                     </div>

@@ -57,9 +57,9 @@
                         </div>
                         <div class="md:col-span-2">
                             <label for="profile_image" class="block text-sm font-medium text-gray-700 mb-1">Profile Image</label>
-                            <input type="file" id="profile_image" name="profile_image" accept="image/*"
+                            <input type="file" id="profile_image" name="profile_image" accept="image/jpeg,image/png,image/webp"
                                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-ojt-primary file:text-white hover:file:bg-maroon-700">
-                            <p class="mt-1 text-sm text-gray-500">Upload your profile photo (JPG, PNG, max 2MB)</p>
+                            <p class="mt-1 text-sm text-gray-500">Upload your profile photo (JPG, PNG, WEBP, max 5MB)</p>
                             @error('profile_image')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                         </div>
                     </div>

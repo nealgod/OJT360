@@ -123,7 +123,7 @@ class StudentDocumentController extends Controller
             'work_experience' => 'nullable|array',
             'skills' => 'nullable|array',
             'certifications' => 'nullable|array',
-            'profile_image' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+            'profile_image' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:5120',
         ]);
 
         // Personal info sanitization
@@ -238,7 +238,7 @@ class StudentDocumentController extends Controller
             'work_experience' => 'nullable|array',
             'skills' => 'nullable|array',
             'certifications' => 'nullable|array',
-            'profile_image' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+            'profile_image' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:5120',
         ]);
 
         $personalInfo = $validated['personal_info'];
