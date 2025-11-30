@@ -32,9 +32,9 @@ class MessageController extends Controller
 
         // Group by conversation (the other user)
         $conversations = $allMessages->groupBy(function($message) use ($userId) {
-            return $message->sender_id === $userId ? $message->recipient_id : $message->sender_id;
+            return (int)$message->sender_id == (int)$userId ? $message->recipient_id : $message->sender_id;
         })->map(function($messages) use ($userId) {
-            $otherUser = $messages->first()->sender_id === $userId 
+            $otherUser = (int)$messages->first()->sender_id == (int)$userId 
                 ? $messages->first()->recipient 
                 : $messages->first()->sender;
             
@@ -323,7 +323,7 @@ class MessageController extends Controller
                 return $sender->studentProfile?->department === $recipient->coordinatorProfile?->department;
             }
             if ($recipient->isSupervisor()) {
-                return $sender->studentProfile?->supervisor_id === $recipient->id;
+                return (int)$sender->studentProfile?->supervisor_id == (int)$recipient->id;
             }
         } elseif ($sender->isCoordinator()) {
             // Coordinators can message students in their department
@@ -342,7 +342,7 @@ class MessageController extends Controller
         } elseif ($sender->isSupervisor()) {
             // Supervisors can message their supervised students
             if ($recipient->isStudent()) {
-                return $recipient->studentProfile?->supervisor_id === $sender->id;
+                return (int)$recipient->studentProfile?->supervisor_id == (int)$sender->id;
             }
             // Supervisors can message coordinators of their students
             if ($recipient->isCoordinator()) {
