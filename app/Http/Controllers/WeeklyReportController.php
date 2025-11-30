@@ -128,6 +128,22 @@ class WeeklyReportController extends Controller
                 ->with('error', 'Cannot create report yet. You have incomplete attendance (no time out) on: '.$incompleteDates.'. Please complete your time out first or wait until the day is complete.');
         }
 
+        // Check for pending recovery requests
+        $pendingRecoveries = AttendanceLog::where('student_user_id', Auth::id())
+            ->whereBetween('work_date', [$weekStart->toDateString(), $weekEnd->toDateString()])
+            ->where('is_recovered', true)
+            ->whereNull('recovery_approved')
+            ->get();
+
+        if ($pendingRecoveries->isNotEmpty()) {
+            $pendingDates = $pendingRecoveries->map(function ($log) {
+                return Carbon::parse($log->work_date)->format('M d, Y');
+            })->join(', ');
+
+            return redirect()->route('reports.weekly.index')
+                ->with('error', 'Cannot create report yet. You have pending attendance recovery requests on: '.$pendingDates.'. Please wait for coordinator approval.');
+        }
+
         $attendanceSummary = $this->getAttendanceSummary($weekStart, $weekEnd);
         $entries = $this->buildWeekEntriesFromAttendance($weekStart, $weekEnd);
 
@@ -230,6 +246,23 @@ class WeeklyReportController extends Controller
                 ->withInput();
         }
 
+        // Check for pending recovery requests
+        $pendingRecoveries = AttendanceLog::where('student_user_id', Auth::id())
+            ->whereBetween('work_date', [$weekStart->toDateString(), $weekEnd->toDateString()])
+            ->where('is_recovered', true)
+            ->whereNull('recovery_approved')
+            ->get();
+
+        if ($pendingRecoveries->isNotEmpty()) {
+            $pendingDates = $pendingRecoveries->map(function ($log) {
+                return Carbon::parse($log->work_date)->format('M d, Y');
+            })->join(', ');
+
+            return back()
+                ->withErrors(['week_end_date' => 'Cannot submit report yet. You have pending recovery requests on: '.$pendingDates.'. Please wait for approval.'])
+                ->withInput();
+        }
+
         $attendanceSummary = $this->getAttendanceSummary($weekStart, $weekEnd);
 
         // Get coordinator for this student's program
@@ -319,6 +352,13 @@ class WeeklyReportController extends Controller
     {
         $logs = AttendanceLog::where('student_user_id', Auth::id())
             ->whereBetween('work_date', [$weekStart->toDateString(), $weekEnd->toDateString()])
+            ->where(function ($query) {
+                $query->where('is_recovered', false)
+                    ->orWhere(function ($q) {
+                        $q->where('is_recovered', true)
+                            ->where('recovery_approved', true);
+                    });
+            })
             ->get();
 
         $hoursByDate = [];
@@ -354,6 +394,13 @@ class WeeklyReportController extends Controller
         // Get actual attendance logs for the week
         $logs = AttendanceLog::where('student_user_id', Auth::id())
             ->whereBetween('work_date', [$weekStart->toDateString(), $weekEnd->toDateString()])
+            ->where(function ($query) {
+                $query->where('is_recovered', false)
+                    ->orWhere(function ($q) {
+                        $q->where('is_recovered', true)
+                            ->where('recovery_approved', true);
+                    });
+            })
             ->orderBy('work_date')
             ->get()
             ->keyBy(function ($log) {
