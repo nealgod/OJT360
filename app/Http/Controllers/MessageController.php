@@ -125,13 +125,23 @@ class MessageController extends Controller
 
         if ($user->isStudent()) {
             // Students can message their coordinator
-            $coordinator = User::where('role', 'coordinator')
+            // Fetch ALL matching coordinators, not just the first one
+            $coordinators = User::where('role', 'coordinator')
                 ->whereHas('coordinatorProfile', function ($query) use ($user) {
                     $query->where('department', $user->studentProfile?->department);
+                    
+                    // If student has a specific program, try to match it
+                    if ($user->studentProfile?->program_id) {
+                        // Match coordinators with same program_id OR no program_id (department head)
+                        $query->where(function($q) use ($user) {
+                            $q->where('program_id', $user->studentProfile->program_id)
+                              ->orWhereNull('program_id');
+                        });
+                    }
                 })
-                ->first();
+                ->get();
 
-            if ($coordinator) {
+            foreach ($coordinators as $coordinator) {
                 $recipients->push($coordinator);
             }
 
@@ -144,19 +154,29 @@ class MessageController extends Controller
             }
         } elseif ($user->isCoordinator()) {
             $department = $user->coordinatorProfile?->department;
+            $programId = $user->coordinatorProfile?->program_id;
 
-            // Coordinators can message students in their department
-            $students = User::where('role', 'intern')
-                ->whereHas('studentProfile', function ($query) use ($department) {
+            // Coordinators can message students in their department (and program if specific)
+            $studentsQuery = User::where('role', 'intern')
+                ->whereHas('studentProfile', function ($query) use ($department, $programId) {
                     $query->where('department', $department);
+                    
+                    // If coordinator is assigned to a specific program, only show students from that program
+                    if ($programId) {
+                        $query->where('program_id', $programId);
+                    }
                 })
-                ->with('studentProfile')
-                ->get();
+                ->with('studentProfile');
+                
+            $students = $studentsQuery->get();
 
             // Coordinators can also message supervisors handling their students
             $supervisors = User::where('role', 'supervisor')
-                ->whereHas('studentProfiles', function ($query) use ($department) {
+                ->whereHas('studentProfiles', function ($query) use ($department, $programId) {
                     $query->where('department', $department);
+                    if ($programId) {
+                        $query->where('program_id', $programId);
+                    }
                 })
                 ->with('supervisorProfile')
                 ->get();
@@ -174,14 +194,24 @@ class MessageController extends Controller
             // Supervisors can also message coordinators of their students
             $coordinatorIds = $students->pluck('studentProfile.department')
                 ->unique()
-                ->map(function ($department) {
+                ->map(function ($department) use ($students) {
+                    // Get program IDs of my students in this department
+                    $programIds = $students->where('studentProfile.department', $department)
+                        ->pluck('studentProfile.program_id')
+                        ->unique()
+                        ->filter();
+
                     return User::where('role', 'coordinator')
-                        ->whereHas('coordinatorProfile', function ($query) use ($department) {
-                            $query->where('department', $department);
+                        ->whereHas('coordinatorProfile', function ($query) use ($department, $programIds) {
+                            $query->where('department', $department)
+                                  ->where(function($q) use ($programIds) {
+                                      $q->whereIn('program_id', $programIds)
+                                        ->orWhereNull('program_id');
+                                  });
                         })
-                        ->first();
+                        ->get(); // Get ALL matching coordinators
                 })
-                ->filter()
+                ->flatten()
                 ->pluck('id')
                 ->unique();
 
@@ -320,7 +350,17 @@ class MessageController extends Controller
         if ($sender->isStudent()) {
             // Students can message their coordinator or supervisor
             if ($recipient->isCoordinator()) {
-                return $sender->studentProfile?->department === $recipient->coordinatorProfile?->department;
+                // Must match Department
+                if ($sender->studentProfile?->department !== $recipient->coordinatorProfile?->department) {
+                    return false;
+                }
+                
+                // If coordinator is assigned to a specific program, student must match it
+                if ($recipient->coordinatorProfile?->program_id) {
+                    return (int)$sender->studentProfile?->program_id == (int)$recipient->coordinatorProfile->program_id;
+                }
+                
+                return true;
             }
             if ($recipient->isSupervisor()) {
                 return (int)$sender->studentProfile?->supervisor_id == (int)$recipient->id;
@@ -328,7 +368,17 @@ class MessageController extends Controller
         } elseif ($sender->isCoordinator()) {
             // Coordinators can message students in their department
             if ($recipient->isStudent()) {
-                return $sender->coordinatorProfile?->department === $recipient->studentProfile?->department;
+                // Must match Department
+                if ($sender->coordinatorProfile?->department !== $recipient->studentProfile?->department) {
+                    return false;
+                }
+                
+                // If coordinator is assigned to a specific program, student must match it
+                if ($sender->coordinatorProfile?->program_id) {
+                    return (int)$sender->coordinatorProfile->program_id == (int)$recipient->studentProfile?->program_id;
+                }
+                
+                return true;
             }
             // Coordinators can message supervisors who oversee their students
             if ($recipient->isSupervisor()) {
@@ -336,6 +386,11 @@ class MessageController extends Controller
                     ->whereHas('studentProfile', function ($query) use ($sender, $recipient) {
                         $query->where('department', $sender->coordinatorProfile?->department)
                               ->where('supervisor_id', $recipient->id);
+                              
+                        // If coordinator is program-specific, only check their program's students
+                        if ($sender->coordinatorProfile?->program_id) {
+                            $query->where('program_id', $sender->coordinatorProfile->program_id);
+                        }
                     })
                     ->exists();
             }
@@ -346,11 +401,16 @@ class MessageController extends Controller
             }
             // Supervisors can message coordinators of their students
             if ($recipient->isCoordinator()) {
-                // Check if supervisor has any student in this coordinator's department
+                // Check if supervisor has any student in this coordinator's department AND program
                 $hasStudentInDepartment = User::where('role', 'intern')
                     ->whereHas('studentProfile', function ($query) use ($sender, $recipient) {
                         $query->where('supervisor_id', $sender->id)
                               ->where('department', $recipient->coordinatorProfile?->department);
+                        
+                        // If coordinator is program-specific, student must match that program
+                        if ($recipient->coordinatorProfile?->program_id) {
+                            $query->where('program_id', $recipient->coordinatorProfile->program_id);
+                        }
                     })
                     ->exists();
 
