@@ -112,7 +112,7 @@ I am writing to express my interest in...
                             <div class="mt-6 mb-6">
                                 <p class="font-semibold text-center text-gray-900">APPLICATION LETTER</p>
                             </div>
-                            <div id="preview-content" class="whitespace-pre-wrap text-gray-700 min-h-[100px]">
+                            <div id="preview-content" class="whitespace-pre-wrap text-gray-700 min-h-[100px] break-words overflow-wrap-anywhere">
                                 <span class="italic text-gray-400">Start typing to see your letter preview...</span>
                             </div>
                             <div class="mt-6">

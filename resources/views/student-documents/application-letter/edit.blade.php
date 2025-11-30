@@ -97,7 +97,7 @@
                             <div class="mt-6 mb-6">
                                 <p class="font-semibold text-center text-gray-900">APPLICATION LETTER</p>
                             </div>
-                            <p class="whitespace-pre-wrap">{{ $letter->content }}</p>
+                            <p class="whitespace-pre-wrap break-words overflow-wrap-anywhere">{{ $letter->content }}</p>
                             <div class="mt-6">
                                 <p>Sincerely yours,</p>
                                 <p class="mt-4 font-semibold">{{ $user->name }}</p>
