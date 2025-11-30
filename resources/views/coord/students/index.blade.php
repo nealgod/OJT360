@@ -148,7 +148,14 @@
                                                     @endif
                                                 </div>
                                                 <div class="ml-4">
-                                                    <div class="text-sm font-medium text-gray-900">{{ $student->name }}</div>
+                                                    <div class="text-sm font-medium text-gray-900">
+                                                        {{ $student->name }}
+                                                        @if($student->pending_recoveries_count > 0)
+                                                            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
+                                                                {{ $student->pending_recoveries_count }} pending
+                                                            </span>
+                                                        @endif
+                                                    </div>
                                                     <div class="text-sm text-gray-500">{{ $student->studentProfile?->student_id ?? 'No ID' }}</div>
                                                 </div>
                                             </div>

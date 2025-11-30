@@ -60,7 +60,11 @@ class CoordinatorStudentController extends Controller
                 'studentProfile.company',
                 'studentProfile.supervisor',
                 'studentProfile.program',
-            ]);
+            ])
+            ->withCount(['attendanceLogs as pending_recoveries_count' => function ($q) {
+                $q->where('is_recovered', true)
+                  ->whereNull('recovery_approved');
+            }]);
 
         // Apply filters (status, supervisor, search; program is fixed)
         $status = $request->get('status', 'all');

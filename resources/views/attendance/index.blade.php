@@ -39,11 +39,12 @@
                     </div>
                 </div>
 
+
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                     <div>
                         <h3 class="font-semibold text-ojt-dark mb-2">Time In (Camera)</h3>
                         <div class="aspect-video bg-black rounded-lg overflow-hidden relative">
-                            <video id="videoIn" autoplay playsinline class="w-full h-full object-cover"></video>
+                            <video id="videoIn" autoplay playsinline class="w-full h-full object-contain"></video>
                             <canvas id="canvasIn" class="hidden"></canvas>
                             <div id="capturedImageIn" class="hidden absolute inset-0 bg-gray-900 flex items-center justify-center">
                                 <img id="previewIn" class="max-w-full max-h-full object-contain" />
@@ -56,6 +57,11 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
                                 <span id="camInText">Open Camera</span>
+                            </button>
+                            <button id="switchCamIn" class="hidden bg-gray-100 text-gray-800 px-4 py-2 rounded-lg text-sm sm:text-base hover:bg-gray-200 transition-colors" title="Switch Camera">
+                                <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
                             </button>
                             <button id="captureIn" class="bg-ojt-primary text-white px-4 py-2 rounded-lg text-sm sm:text-base hover:bg-maroon-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                                 <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -90,7 +96,7 @@
                     <div>
                         <h3 class="font-semibold text-ojt-dark mb-2">Time Out (Camera)</h3>
                         <div class="aspect-video bg-black rounded-lg overflow-hidden relative">
-                            <video id="videoOut" autoplay playsinline class="w-full h-full object-cover"></video>
+                            <video id="videoOut" autoplay playsinline class="w-full h-full object-contain"></video>
                             <canvas id="canvasOut" class="hidden"></canvas>
                             <div id="capturedImageOut" class="hidden absolute inset-0 bg-gray-900 flex items-center justify-center">
                                 <img id="previewOut" class="max-w-full max-h-full object-contain" />
@@ -103,6 +109,11 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
                                 <span id="camOutText">Open Camera</span>
+                            </button>
+                            <button id="switchCamOut" class="hidden bg-gray-100 text-gray-800 px-4 py-2 rounded-lg text-sm sm:text-base hover:bg-gray-200 transition-colors" title="Switch Camera">
+                                <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
                             </button>
                             <button id="captureOut" class="bg-ojt-dark text-white px-4 py-2 rounded-lg text-sm sm:text-base hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                                 <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -193,22 +204,17 @@
                     // Update time every second
                     setInterval(updateTime, 1000);
 
-                    async function startCamera(videoEl) {
+                    async function startCamera(videoEl, facingMode = 'user') {
                         try {
-                            // Try back camera first, then any camera
-                            let stream;
-                            try {
-                                stream = await navigator.mediaDevices.getUserMedia({ 
-                                    video: { facingMode: 'environment' }, 
-                                    audio: false 
-                                });
-                            } catch (e) {
-                                // Back camera failed, trying any camera
-                                stream = await navigator.mediaDevices.getUserMedia({ 
-                                    video: true, 
-                                    audio: false 
-                                });
+                            // Stop any existing streams first
+                            if (videoEl.srcObject) {
+                                videoEl.srcObject.getTracks().forEach(track => track.stop());
                             }
+
+                            const stream = await navigator.mediaDevices.getUserMedia({ 
+                                video: { facingMode: facingMode }, 
+                                audio: false 
+                            });
                             
                             videoEl.srcObject = stream;
                             if (!videoEl.readyState || videoEl.readyState < 2) {
@@ -292,11 +298,13 @@
                     // Time In handlers
                     let streamIn = null;
                     let isCameraInOpen = false;
+                    let facingModeIn = 'user'; // Default to front camera
                     const videoIn = document.getElementById('videoIn');
                     const canvasIn = document.getElementById('canvasIn');
                     const previewIn = document.getElementById('previewIn');
                     const capturedImageIn = document.getElementById('capturedImageIn');
                     const camInText = document.getElementById('camInText');
+                    const switchCamIn = document.getElementById('switchCamIn');
                     
                     document.getElementById('openCamIn').addEventListener('click', async (e) => {
                         e.preventDefault();
@@ -304,13 +312,14 @@
                         if (!isCameraInOpen) {
                             // Open camera
                             try {
-                                streamIn = await startCamera(videoIn);
+                                streamIn = await startCamera(videoIn, facingModeIn);
                                 videoIn.style.display = 'block';
                                 capturedImageIn.classList.add('hidden');
                                 isCameraInOpen = true;
                                 camInText.textContent = 'Close Camera';
                                 document.getElementById('openCamIn').classList.remove('bg-gray-100');
                                 document.getElementById('openCamIn').classList.add('bg-red-100', 'text-red-800');
+                                switchCamIn.classList.remove('hidden');
                             } catch (err) {
                                 console.error('Camera error:', err);
                                 showError('Failed to open camera. Please try again.');
@@ -326,6 +335,22 @@
                             camInText.textContent = 'Open Camera';
                             document.getElementById('openCamIn').classList.remove('bg-red-100', 'text-red-800');
                             document.getElementById('openCamIn').classList.add('bg-gray-100');
+                            switchCamIn.classList.add('hidden');
+                        }
+                    });
+
+                    switchCamIn.addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        if (!isCameraInOpen) return;
+                        
+                        // Toggle mode
+                        facingModeIn = facingModeIn === 'user' ? 'environment' : 'user';
+                        
+                        try {
+                            streamIn = await startCamera(videoIn, facingModeIn);
+                        } catch (err) {
+                            console.error('Camera switch error:', err);
+                            showError('Failed to switch camera.');
                         }
                     });
                     
@@ -433,11 +458,13 @@
                     // Time Out handlers
                     let streamOut = null;
                     let isCameraOutOpen = false;
+                    let facingModeOut = 'user'; // Default to front camera
                     const videoOut = document.getElementById('videoOut');
                     const canvasOut = document.getElementById('canvasOut');
                     const previewOut = document.getElementById('previewOut');
                     const capturedImageOut = document.getElementById('capturedImageOut');
                     const camOutText = document.getElementById('camOutText');
+                    const switchCamOut = document.getElementById('switchCamOut');
                     
                     document.getElementById('openCamOut').addEventListener('click', async (e) => {
                         e.preventDefault();
@@ -445,13 +472,14 @@
                         if (!isCameraOutOpen) {
                             // Open camera
                             try {
-                                streamOut = await startCamera(videoOut);
+                                streamOut = await startCamera(videoOut, facingModeOut);
                                 videoOut.style.display = 'block';
                                 capturedImageOut.classList.add('hidden');
                                 isCameraOutOpen = true;
                                 camOutText.textContent = 'Close Camera';
                                 document.getElementById('openCamOut').classList.remove('bg-gray-100');
                                 document.getElementById('openCamOut').classList.add('bg-red-100', 'text-red-800');
+                                switchCamOut.classList.remove('hidden');
                             } catch (err) {
                                 console.error('Camera error:', err);
                                 showError('Failed to open camera. Please try again.');
@@ -467,6 +495,22 @@
                             camOutText.textContent = 'Open Camera';
                             document.getElementById('openCamOut').classList.remove('bg-red-100', 'text-red-800');
                             document.getElementById('openCamOut').classList.add('bg-gray-100');
+                            switchCamOut.classList.add('hidden');
+                        }
+                    });
+
+                    switchCamOut.addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        if (!isCameraOutOpen) return;
+                        
+                        // Toggle mode
+                        facingModeOut = facingModeOut === 'user' ? 'environment' : 'user';
+                        
+                        try {
+                            streamOut = await startCamera(videoOut, facingModeOut);
+                        } catch (err) {
+                            console.error('Camera switch error:', err);
+                            showError('Failed to switch camera.');
                         }
                     });
                     
