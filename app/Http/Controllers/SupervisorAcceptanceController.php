@@ -80,18 +80,15 @@ class SupervisorAcceptanceController extends Controller
             return response()->json([]);
         }
 
-        // Search students by name OR student_id, limit to 20 results
+        // Search students by student_id, limit to 5 results
         $students = User::where('role', 'intern')
-            ->where(function($q) use ($query) {
-                $q->where('name', 'LIKE', '%'.$query.'%')
-                  ->orWhereHas('studentProfile', function ($q2) use ($query) {
-                      $q2->where('student_id', 'LIKE', '%'.$query.'%');
-                  });
+            ->whereHas('studentProfile', function ($q) use ($query) {
+                $q->where('student_id', 'LIKE', '%'.$query.'%');
             })
             ->with(['studentProfile' => function ($q) {
                 $q->select('user_id', 'student_id', 'course', 'department', 'supervisor_id', 'profile_image');
             }])
-            ->limit(20)
+            ->limit(5)
             ->get()
             ->map(function ($student) {
                 $profileImage = null;
@@ -123,14 +120,12 @@ class SupervisorAcceptanceController extends Controller
             'student_id' => 'required|string',
         ]);
 
-        $searchTerm = trim($request->student_id);
+        $studentId = trim($request->student_id);
 
-        // Search for student by student_id OR name
+        // Search for student by student_id in student_profiles table
         $student = User::where('role', 'intern')
-            ->where(function($q) use ($searchTerm) {
-                $q->whereHas('studentProfile', function ($q2) use ($searchTerm) {
-                    $q2->where('student_id', $searchTerm);
-                })->orWhere('name', 'LIKE', '%'.$searchTerm.'%');
+            ->whereHas('studentProfile', function ($q) use ($studentId) {
+                $q->where('student_id', $studentId);
             })
             ->with(['studentProfile', 'documentSubmissions.requirement'])
             ->first();
