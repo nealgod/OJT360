@@ -471,7 +471,7 @@ class WeeklyReportController extends Controller
             ->all();
     }
 
-    public function submit(WeeklyReport $weekly)
+    public function submit(WeeklyReport $weekly, WeeklyReportPdfService $pdfService)
     {
         // Verify ownership
         if ($weekly->student_user_id != Auth::id()) {
@@ -508,8 +508,90 @@ class WeeklyReportController extends Controller
 
         AuditLog::log('weekly_submitted', 'Weekly report submitted', 'WeeklyReport', $weekly->id);
 
+        // Auto-submit to document checklist
+        $this->autoSubmitToDocuments($weekly, $pdfService);
+
         return redirect()->route('reports.weekly.show', $weekly)
             ->with('success', 'Weekly report submitted successfully! Your coordinator will review it.');
+    }
+
+    /**
+     * Automatically submit weekly report PDF to document checklist
+     */
+    private function autoSubmitToDocuments(WeeklyReport $weekly, WeeklyReportPdfService $pdfService)
+    {
+        try {
+            // Find "Weekly Accomplishment Report" document requirement
+            $requirement = \App\Models\DocumentRequirement::where('name', 'Weekly Accomplishment Report')
+                ->where('type', 'post_placement')
+                ->where('is_active', true)
+                ->first();
+
+            if (!$requirement) {
+                \Log::warning('Weekly Accomplishment Report document requirement not found');
+                return;
+            }
+
+            // Generate PDF
+            $pdfContent = $pdfService->generate($weekly);
+            
+            // Create filename
+            $fileName = sprintf('weekly-report-week-%s-%s.pdf', 
+                $weekly->week_number, 
+                now()->format('Ymd-His')
+            );
+
+            // Store PDF file
+            $filePath = 'document-submissions/' . $fileName;
+            \Storage::disk('public')->put($filePath, $pdfContent);
+
+            // Get file info
+            $fileSize = strlen($pdfContent);
+
+            // Create document submission
+            $submission = \App\Models\StudentDocumentSubmission::create([
+                'student_user_id' => $weekly->student_user_id,
+                'document_requirement_id' => $requirement->id,
+                'file_path' => $filePath,
+                'original_filename' => $fileName,
+                'file_size' => $fileSize,
+                'mime_type' => 'application/pdf',
+            ]);
+
+            AuditLog::log('document_submitted', 'Weekly report auto-submitted to documents', 'StudentDocumentSubmission', $submission->id);
+
+            // Notify coordinator
+            $coordinator = \App\Models\User::where('role', 'coordinator')
+                ->whereHas('coordinatorProfile', function ($q) use ($weekly) {
+                    $student = $weekly->student;
+                    if ($student && $student->studentProfile) {
+                        $q->where('department', $student->studentProfile->department);
+                    }
+                })
+                ->first();
+
+            if ($coordinator) {
+                \App\Models\Notification::create([
+                    'user_id' => $coordinator->id,
+                    'type' => 'document_submitted',
+                    'title' => 'Weekly Report Submitted',
+                    'message' => $weekly->student->name . ' submitted Week ' . $weekly->week_number . ' report.',
+                    'data' => [
+                        'requirement_id' => $requirement->id,
+                        'requirement_name' => $requirement->name,
+                        'student_user_id' => $weekly->student_user_id,
+                        'week_number' => $weekly->week_number,
+                    ],
+                ]);
+            }
+
+            // Recalculate pre-placement completion (in case it affects post-placement tracking)
+            \App\Services\PrePlacementService::recalculateForStudent($weekly->student_user_id);
+
+        } catch (\Exception $e) {
+            // Log error but don't fail the weekly report submission
+            \Log::error('Failed to auto-submit weekly report to documents: ' . $e->getMessage());
+        }
     }
 
     public function destroy(WeeklyReport $weekly)
