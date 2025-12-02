@@ -272,4 +272,14 @@ class User extends Authenticatable implements MustVerifyEmail
             return '<div class="'.$size.' '.$avatarColor.' rounded-full flex items-center justify-center text-white font-bold">'.$initials.'</div>';
         }
     }
+    /**
+     * Send the password reset notification.
+     *
+     * @param  string  $token
+     * @return void
+     */
+    public function sendPasswordResetNotification($token)
+    {
+        $this->notify(new \App\Notifications\QueuedResetPassword($token));
+    }
 }
