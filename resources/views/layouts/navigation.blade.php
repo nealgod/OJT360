@@ -43,9 +43,9 @@
                         @endif
                         <x-nav-link :href="route('messages.index')" :active="request()->routeIs('messages.*')">
                             {{ __('Messages') }}
-                            @if(auth()->user()->unreadMessages()->count() > 0)
+                            @if(auth()->user()->unreadConversationsCount() > 0)
                                 <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                    {{ auth()->user()->unreadMessages()->count() }}
+                                    {{ auth()->user()->unreadConversationsCount() }}
                                 </span>
                             @endif
                         </x-nav-link>
@@ -89,9 +89,9 @@
                         </x-nav-link>
                         <x-nav-link :href="route('messages.index')" :active="request()->routeIs('messages.*')">
                             {{ __('Messages') }}
-                            @if(auth()->user()->unreadMessages()->count() > 0)
+                            @if(auth()->user()->unreadConversationsCount() > 0)
                                 <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                    {{ auth()->user()->unreadMessages()->count() }}
+                                    {{ auth()->user()->unreadConversationsCount() }}
                                 </span>
                             @endif
                         </x-nav-link>
@@ -112,9 +112,9 @@
                         </x-nav-link>
                         <x-nav-link :href="route('messages.index')" :active="request()->routeIs('messages.*')">
                             {{ __('Messages') }}
-                            @if(auth()->user()->unreadMessages()->count() > 0)
+                            @if(auth()->user()->unreadConversationsCount() > 0)
                                 <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                    {{ auth()->user()->unreadMessages()->count() }}
+                                    {{ auth()->user()->unreadConversationsCount() }}
                                 </span>
                             @endif
                         </x-nav-link>
@@ -242,9 +242,9 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                     </svg>
                     {{ __('Messages') }}
-                    @if(auth()->user()->unreadMessages()->count() > 0)
+                    @if(auth()->user()->unreadConversationsCount() > 0)
                         <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                            {{ auth()->user()->unreadMessages()->count() }}
+                            {{ auth()->user()->unreadConversationsCount() }}
                         </span>
                     @endif
                 </x-responsive-nav-link>
@@ -289,9 +289,9 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                     </svg>
                     {{ __('Messages') }}
-                    @if(auth()->user()->unreadMessages()->count() > 0)
+                    @if(auth()->user()->unreadConversationsCount() > 0)
                         <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                            {{ auth()->user()->unreadMessages()->count() }}
+                            {{ auth()->user()->unreadConversationsCount() }}
                         </span>
                     @endif
                 </x-responsive-nav-link>
@@ -324,9 +324,9 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                     </svg>
                     {{ __('Messages') }}
-                    @if(auth()->user()->unreadMessages()->count() > 0)
+                    @if(auth()->user()->unreadConversationsCount() > 0)
                         <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                            {{ auth()->user()->unreadMessages()->count() }}
+                            {{ auth()->user()->unreadConversationsCount() }}
                         </span>
                     @endif
                 </x-responsive-nav-link>

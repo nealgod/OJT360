@@ -69,6 +69,15 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->receivedMessages()->unread();
     }
 
+    /**
+     * Count unique senders with unread messages
+     * Used for navigation badge
+     */
+    public function unreadConversationsCount()
+    {
+        return $this->unreadMessages()->distinct('sender_id')->count('sender_id');
+    }
+
     // Removed placementRequests - using acceptance letters now
 
     public function attendanceLogs()
