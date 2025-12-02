@@ -31,9 +31,9 @@ return [
     |
     */
 
-    'lifetime' => env('SESSION_LIFETIME', 43200), // 30 days instead of 120 minutes
+    'lifetime' => env('SESSION_LIFETIME', 120), // 2 hours (120 minutes)
 
-    'expire_on_close' => false,
+    'expire_on_close' => true, // Sessions expire when browser closes
 
     /*
     |--------------------------------------------------------------------------
@@ -196,6 +196,6 @@ return [
     |
     */
 
-    'same_site' => 'lax',
+    'same_site' => 'strict', // Strict same-site policy for better security
 
 ];

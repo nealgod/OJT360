@@ -178,6 +178,7 @@ class ActivationController extends Controller
         $user->forceFill(['email_verified_at' => now()])->save();
 
         Auth::login($user);
+        $request->session()->regenerate(); // Regenerate session to prevent fixation
 
         return redirect()->route('dashboard')->with('success', 'Welcome to OJT360! Your account is ready.');
     }
@@ -244,6 +245,7 @@ class ActivationController extends Controller
 
         // Auto-login
         Auth::login($user);
+        $request->session()->regenerate(); // Regenerate session to prevent fixation
 
         return redirect()->route('dashboard')->with('success', 'Account created. Please verify your email from your inbox.');
     }
@@ -335,6 +337,7 @@ class ActivationController extends Controller
         $invite->delete();
 
         Auth::login($user);
+        $request->session()->regenerate(); // Regenerate session to prevent fixation
 
         return redirect()->route('dashboard');
     }

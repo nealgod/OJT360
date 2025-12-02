@@ -238,6 +238,7 @@ class SupervisorRegistrationController extends Controller
 
             // Log the user in
             Auth::login($user);
+            $request->session()->regenerate(); // Regenerate session to prevent fixation
 
             return redirect()->route('dashboard')->with('success', 'Account created successfully! You can now search for students to accept.');
         } catch (\Exception $e) {
