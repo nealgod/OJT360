@@ -36,6 +36,12 @@
                         <p class="text-gray-600">Student ID: {{ $student->studentProfile?->student_id ?? 'N/A' }}</p>
                         <p class="text-gray-600">{{ $student->studentProfile?->course ?? 'N/A' }}</p>
                         <p class="text-gray-600">{{ $student->studentProfile?->department ?? 'N/A' }}</p>
+                        <p class="text-gray-600">
+                            <span class="font-medium">Phone:</span> {{ $student->studentProfile?->phone ?? 'N/A' }}
+                        </p>
+                        <p class="text-gray-600">
+                            <span class="font-medium">Address:</span> {{ $student->studentProfile?->address ?? 'N/A' }}
+                        </p>
                         
                         @php
                             $status = $student->studentProfile?->ojt_status ?? 'pending';

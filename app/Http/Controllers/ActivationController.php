@@ -99,6 +99,7 @@ class ActivationController extends Controller
             'program' => $row->program?->name,
             'yearLevels' => ProgramCodeResolver::yearLevels(),
             'sectionOptions' => ProgramCodeResolver::sectionsForCourse($row->program?->name),
+            'phone' => $row->contact_number,
         ]);
     }
 
@@ -177,8 +178,10 @@ class ActivationController extends Controller
         // Auto-verify email for OJT registration flow
         $user->forceFill(['email_verified_at' => now()])->save();
 
+        // Regenerate session BEFORE login to prevent session issues
+        $request->session()->regenerate();
+        
         Auth::login($user);
-        $request->session()->regenerate(); // Regenerate session to prevent fixation
 
         return redirect()->route('dashboard')->with('success', 'Welcome to OJT360! Your account is ready.');
     }
@@ -243,9 +246,11 @@ class ActivationController extends Controller
         // Send email verification
         $user->sendEmailVerificationNotification();
 
+        // Regenerate session BEFORE login to prevent session issues
+        $request->session()->regenerate();
+        
         // Auto-login
         Auth::login($user);
-        $request->session()->regenerate(); // Regenerate session to prevent fixation
 
         return redirect()->route('dashboard')->with('success', 'Account created. Please verify your email from your inbox.');
     }
@@ -336,8 +341,10 @@ class ActivationController extends Controller
         // Consume invitation
         $invite->delete();
 
+        // Regenerate session BEFORE login to prevent session issues
+        $request->session()->regenerate();
+        
         Auth::login($user);
-        $request->session()->regenerate(); // Regenerate session to prevent fixation
 
         return redirect()->route('dashboard');
     }
