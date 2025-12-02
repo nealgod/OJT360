@@ -253,6 +253,107 @@
         </div>
     </div>
 
+    <!-- Pre-Placement Completion Modal -->
+    @if(Auth::user()->isStudent())
+        @php
+            $profile = Auth::user()->studentProfile;
+            // Show modal if completed within last 2 minutes (just completed)
+            $justCompleted = $profile && 
+                           $profile->preplacement_complete && 
+                           $profile->preplacement_completed_at &&
+                           $profile->preplacement_completed_at->gt(now()->subMinutes(2));
+        @endphp
+
+        @if($justCompleted)
+            <div x-data="{ show: true }" 
+                 x-show="show"
+                 x-cloak
+                 class="fixed inset-0 z-50 overflow-y-auto"
+                 aria-labelledby="modal-title" 
+                 role="dialog" 
+                 aria-modal="true">
+                <!-- Background overlay -->
+                <div class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity" 
+                     @click="show = false"></div>
+
+                <!-- Modal panel -->
+                <div class="flex items-center justify-center min-h-screen p-4">
+                    <div x-show="show"
+                         x-transition:enter="transition ease-out duration-300"
+                         x-transition:enter-start="opacity-0 transform scale-95"
+                         x-transition:enter-end="opacity-100 transform scale-100"
+                         x-transition:leave="transition ease-in duration-200"
+                         x-transition:leave-start="opacity-100 transform scale-100"
+                         x-transition:leave-end="opacity-0 transform scale-95"
+                         class="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-auto overflow-hidden">
+                        
+                        <!-- Success Icon Header -->
+                        <div class="bg-gradient-to-r from-green-500 to-emerald-500 px-6 py-8 text-center">
+                            <div class="mx-auto w-20 h-20 bg-white rounded-full flex items-center justify-center mb-4 animate-bounce">
+                                <svg class="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <h2 class="text-2xl sm:text-3xl font-bold text-white mb-2">
+                                🎉 Congratulations!
+                            </h2>
+                            <p class="text-green-50 text-sm sm:text-base">
+                                Pre-Placement Requirements Complete
+                            </p>
+                        </div>
+
+                        <!-- Content -->
+                        <div class="px-6 py-6 space-y-4">
+                            <div class="flex items-start space-x-3 bg-green-50 p-4 rounded-lg">
+                                <svg class="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <div>
+                                    <p class="text-sm font-semibold text-green-900">All Online Documents Submitted!</p>
+                                    <p class="text-xs text-green-700 mt-1">Great job completing all required pre-placement documents online.</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start space-x-3 bg-yellow-50 border-2 border-yellow-400 p-4 rounded-lg">
+                                <svg class="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <div>
+                                    <p class="text-sm font-bold text-yellow-900">📄 IMPORTANT NEXT STEP:</p>
+                                    <p class="text-sm text-yellow-800 mt-2">
+                                        Please submit the <strong>hard copies (printed versions)</strong> of your documents to your department coordinator for final verification.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start space-x-3 bg-blue-50 p-4 rounded-lg">
+                                <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <div class="text-xs text-blue-800">
+                                    <p><strong>💡 Tip:</strong> Bring all physical documents to your coordinator's office during their consultation hours.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="px-6 py-4 bg-gray-50 flex flex-col sm:flex-row gap-3">
+                            <button @click="show = false" 
+                                    class="flex-1 px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-200 shadow-md hover:shadow-lg">
+                                Got it, thanks!
+                            </button>
+                            <a href="{{ route('notifications.index') }}" 
+                               class="flex-1 px-4 py-3 bg-white border-2 border-gray-300 text-gray-700 font-medium text-center rounded-lg hover:bg-gray-50 transition-colors">
+                                View Notifications
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+    @endif
+
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const searchInput = document.getElementById('searchInput');

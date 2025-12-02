@@ -53,11 +53,12 @@ class PrePlacementService
             \App\Models\Notification::create([
                 'user_id' => $studentId,
                 'type' => 'pre_placement_complete',
-                'title' => '✅ Pre-Placement Checklist Complete',
-                'message' => 'Great job! All required pre-placement documents are in. Attendance, reports, and other OJT tools are now unlocked.',
+                'title' => '✅ Pre-Placement Requirements Complete!',
+                'message' => 'Congratulations! You have completed all pre-placement document requirements. IMPORTANT: Please submit the hard copies of your documents to your department coordinator for final verification.',
                 'data' => [
                     'type' => 'pre_placement_complete',
                     'completed_at' => now()->toISOString(),
+                    'requires_hard_copy' => true,
                 ],
             ]);
         }
