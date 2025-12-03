@@ -552,7 +552,7 @@ class ResumeController extends Controller
                 $pdf->MultiCell($leftColumnWidth, $lineHeight, 'Email: '.$email, 0, 'L');
             }
             if ($phone) {
-                $pdf->SetXY($inchToMm(0.62), $inchToMm(4.58));
+                $pdf->SetXY($inchToMm(0.62), $inchToMm(4.77));
                 $pdf->MultiCell($leftColumnWidth, $lineHeight, 'Phone: '.$phone, 0, 'L');
             }
             if ($address) {
