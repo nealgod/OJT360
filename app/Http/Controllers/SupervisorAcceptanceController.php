@@ -63,6 +63,10 @@ class SupervisorAcceptanceController extends Controller
                         ->latest('generated_at');
                 },
             ])
+            ->withCount(['attendanceLogs as pending_recovery_count' => function ($query) {
+                $query->where('is_recovered', true)
+                      ->whereNull('recovery_approved');
+            }])
             ->orderBy('name')
             ->paginate(10);
 

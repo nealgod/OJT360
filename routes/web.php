@@ -224,6 +224,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{evaluation}', [App\Http\Controllers\SupervisorFinalEvaluationController::class, 'show'])->name('show');
         Route::get('/{evaluation}/pdf', [App\Http\Controllers\SupervisorFinalEvaluationController::class, 'downloadPdf'])->name('pdf');
     });
+
+    // Supervisor Attendance Recovery Approval
+    Route::post('/supervisor/attendance/{log}/approve-recovery', [App\Http\Controllers\SupervisorAttendanceController::class, 'approveRecovery'])->name('supervisor.attendance.approve-recovery');
+    Route::post('/supervisor/attendance/{log}/reject-recovery', [App\Http\Controllers\SupervisorAttendanceController::class, 'rejectRecovery'])->name('supervisor.attendance.reject-recovery');
 });
 
 // Coordinator placement inbox
@@ -292,8 +296,7 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
     Route::post('/coord/notify-moa', [App\Http\Controllers\CoordinatorStudentController::class, 'notifyMoaReady'])->name('coord.notify-moa');
 
     // Coordinator attendance recovery approval
-    Route::post('/coord/attendance/{log}/approve-recovery', [App\Http\Controllers\CoordinatorAttendanceController::class, 'approveRecovery'])->name('coord.attendance.approve-recovery');
-    Route::post('/coord/attendance/{log}/reject-recovery', [App\Http\Controllers\CoordinatorAttendanceController::class, 'rejectRecovery'])->name('coord.attendance.reject-recovery');
+
 
     // Coordinator document review
     Route::get('/coord/documents', [App\Http\Controllers\DocumentController::class, 'index'])->name('coord.documents.index');
