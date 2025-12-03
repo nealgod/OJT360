@@ -1293,36 +1293,80 @@
                         </button>
                     </div>
                     <div class="mb-4">
-                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                            <div class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                </svg>
-                                <div>
-                                    <p class="text-sm font-medium text-blue-800">Program: {{ $programName ?? 'Your Program' }}</p>
-                                    <p class="text-xs text-blue-700 mt-1">
-                                        This will notify <strong>all students</strong> in your program who haven't been notified yet that their MOA is ready.
-                                    </p>
-                                    <p class="text-xs text-blue-700 mt-2">
-                                        Students will receive a notification: "Your MOA is ready. Please contact your coordinator."
-                                    </p>
+                        <form id="notify-moa-form" method="POST" action="{{ route('coord.notify-moa') }}">
+                            @csrf
+                            
+                            <!-- Company Selection -->
+                            <div class="mb-4">
+                                <label for="moa_company_id" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Select Company <span class="text-red-500">*</span>
+                                </label>
+                                @php
+                                    $department = Auth::user()->coordinatorProfile?->department;
+                                    $programName = Auth::user()->coordinatorProfile?->program?->name;
+                                    
+                                    // Get companies where supervisors have students in this program
+                                    $companyIds = \App\Models\StudentProfile::where('department', $department)
+                                        ->when($programName, function($q) use ($programName) {
+                                            $q->where('course', $programName);
+                                        })
+                                        ->whereNotNull('supervisor_id')
+                                        ->with('supervisor.supervisorProfile')
+                                        ->get()
+                                        ->pluck('supervisor.supervisorProfile.company_id')
+                                        ->filter()
+                                        ->unique();
+                                    
+                                    $moaCompanies = \App\Models\Company::whereIn('id', $companyIds)
+                                        ->orderBy('name')
+                                        ->get();
+                                @endphp
+                                <select id="moa_company_id" name="company_id" required
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ojt-primary focus:border-ojt-primary">
+                                    <option value="">-- Select Company --</option>
+                                    @if($moaCompanies->isEmpty())
+                                        <option value="" disabled>No companies found (no students with supervisors yet)</option>
+                                    @else
+                                        @foreach($moaCompanies as $company)
+                                            <option value="{{ $company->id }}">{{ $company->name }}</option>
+                                        @endforeach
+                                    @endif
+                                </select>
+                                @if($moaCompanies->isEmpty())
+                                    <p class="text-xs text-gray-500 mt-1">No companies available. Students need supervisors first.</p>
+                                @endif
+                            </div>
+
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                                <div class="flex items-start gap-3">
+                                    <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    <div>
+                                        <p class="text-sm font-medium text-blue-800">Program: {{ $programName ?? 'Your Program' }}</p>
+                                        <p class="text-xs text-blue-700 mt-1">
+                                            This will notify <strong>students whose supervisor is from the selected company</strong> in your program who haven't been notified yet that their MOA is ready.
+                                        </p>
+                                        <p class="text-xs text-blue-700 mt-2">
+                                            Students will receive a notification: "Your MOA with [Company Name] is ready. Please contact your coordinator to collect the hard copy."
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <p class="text-sm text-gray-700 mb-4">
-                            Are you sure you want to proceed?
-                        </p>
-                    </div>
-                    <div class="flex gap-2">
-                        <form id="notify-moa-form" method="POST" action="{{ route('coord.notify-moa') }}" class="flex-1">
-                            @csrf
-                            <button type="submit" class="w-full px-4 py-2 bg-ojt-primary text-white rounded-md hover:bg-maroon-700 text-sm font-medium">
-                                ✓ Notify Students
-                            </button>
+                            
+                            <p class="text-sm text-gray-700 mb-4">
+                                Are you sure you want to proceed?
+                            </p>
+
+                            <div class="flex gap-2">
+                                <button type="submit" class="flex-1 px-4 py-2 bg-ojt-primary text-white rounded-md hover:bg-maroon-700 text-sm font-medium">
+                                    ✓ Notify Students
+                                </button>
+                                <button type="button" onclick="closeMoaNotificationModal()" class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm font-medium">
+                                    Cancel
+                                </button>
+                            </div>
                         </form>
-                        <button onclick="closeMoaNotificationModal()" class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm font-medium">
-                            Cancel
-                        </button>
                     </div>
                 </div>
             </div>

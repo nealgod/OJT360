@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Models\Company;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
@@ -9,14 +10,16 @@ class MoaReadyNotification extends Notification
 {
     use Queueable;
 
+    protected $company;
+
     /**
      * Create a new notification instance.
      *
      * @return void
      */
-    public function __construct()
+    public function __construct(Company $company)
     {
-        //
+        $this->company = $company;
     }
 
     /**
@@ -38,8 +41,10 @@ class MoaReadyNotification extends Notification
     {
         return [
             'type' => 'moa_ready',
-            'title' => 'MOA Ready',
-            'message' => 'Your Memorandum of Agreement (MOA) is ready. Please contact your coordinator for details.',
+            'company_id' => $this->company->id,
+            'company_name' => $this->company->name,
+            'title' => 'MOA Ready for ' . $this->company->name,
+            'message' => 'Your Memorandum of Agreement (MOA) with ' . $this->company->name . ' is ready. Please contact your coordinator to collect the hard copy.',
             'action_url' => route('dashboard'),
         ];
     }

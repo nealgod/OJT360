@@ -341,30 +341,45 @@ class CoordinatorStudentController extends Controller
         $department = $info['department'];
         $programName = $info['programName'];
 
-        // Get all students in coordinator's program
+        // Validate company_id is provided
+        $request->validate([
+            'company_id' => ['required', 'exists:companies,id'],
+        ]);
+
+        $companyId = $request->input('company_id');
+
+        // Get company details
+        $company = Company::findOrFail($companyId);
+
+        // Get students in coordinator's program whose SUPERVISOR is from this company
         $students = User::where('role', 'intern')
-            ->whereHas('studentProfile', function ($q) use ($department, $programName) {
+            ->whereHas('studentProfile', function ($q) use ($department, $programName, $companyId) {
                 $q->where('department', $department)
-                  ->where('course', $programName);
+                  ->where('course', $programName)
+                  ->whereNotNull('supervisor_id') // Must have a supervisor
+                  ->whereHas('supervisor.supervisorProfile', function ($supervisorQuery) use ($companyId) {
+                      $supervisorQuery->where('company_id', $companyId); // Supervisor's company matches
+                  });
             })
             ->get();
 
         if ($students->isEmpty()) {
-            return back()->with('info', 'No students found in your program.');
+            return back()->with('info', "No students found in {$programName} with supervisors from {$company->name}.");
         }
 
         $notifiedCount = 0;
         $alreadyNotifiedCount = 0;
 
         foreach ($students as $student) {
-            // Check if student already has MOA Ready notification
+            // Check if student already has MOA Ready notification for this company
             $hasNotification = $student->notifications()
                 ->where('type', 'App\\Notifications\\MoaReadyNotification')
                 ->whereJsonContains('data->type', 'moa_ready')
+                ->whereJsonContains('data->company_id', $companyId)
                 ->exists();
 
             if (!$hasNotification) {
-                $student->notify(new \App\Notifications\MoaReadyNotification());
+                $student->notify(new \App\Notifications\MoaReadyNotification($company));
                 $notifiedCount++;
             } else {
                 $alreadyNotifiedCount++;
@@ -372,10 +387,10 @@ class CoordinatorStudentController extends Controller
         }
 
         if ($notifiedCount === 0) {
-            return back()->with('info', "All {$students->count()} student(s) in {$programName} have already been notified.");
+            return back()->with('info', "All {$students->count()} student(s) with supervisors from {$company->name} have already been notified.");
         }
 
-        $message = "Successfully notified {$notifiedCount} student(s) in {$programName}.";
+        $message = "Successfully notified {$notifiedCount} student(s) in {$programName} with supervisors from {$company->name}.";
         if ($alreadyNotifiedCount > 0) {
             $message .= " ({$alreadyNotifiedCount} already notified)";
         }
