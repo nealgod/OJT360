@@ -74,7 +74,7 @@ class WeeklyReportPdfService
                 // Use MultiCell for activity to handle wrapping
                 $pdf->SetXY($activityX * 25.4, ($yPosition * 25.4));
                 // 4.5 inches width for activity column (approx 114mm)
-                $pdf->MultiCell(114, 5, $activityText, 0, 'L');
+                $pdf->MultiCell(114, 5, utf8_decode($activityText), 0, 'L');
                 
                 $this->writeText($pdf, $hoursX, $yPosition, $entry['hours']);
             }
@@ -89,7 +89,7 @@ class WeeklyReportPdfService
             // x=0.53 inches (approx 13.5mm), y=6.93 inches (approx 176mm)
             // Width approx 7 inches (178mm) to fit the box
             $pdf->SetXY(0.53 * 25.4, 6.93 * 25.4);
-            $pdf->MultiCell(178, 5, $problems, 0, 'L');
+            $pdf->MultiCell(178, 5, utf8_decode($problems), 0, 'L');
         }
 
         // Training Supervisor (BOLD)
@@ -108,7 +108,7 @@ class WeeklyReportPdfService
         $pdf->SetFont('Helvetica', $style, $fontSize);
         $x = $xInches * 25.4; // Convert inches to mm
         $y = ($yInches * 25.4) + 3; // Convert inches to mm and add 3mm offset for baseline
-        $pdf->Text($x, $y, $text);
+        $pdf->Text($x, $y, utf8_decode($text));
     }
 
     private function writeWrappedLines(Fpdi $pdf, string $text, array $lines): void

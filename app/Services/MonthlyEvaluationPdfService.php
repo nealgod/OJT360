@@ -122,7 +122,7 @@ class MonthlyEvaluationPdfService
         // Add 3mm offset for baseline alignment (same as WeeklyReportPdfService)
         $x = $xInches * 25.4;
         $y = ($yInches * 25.4) + 3;
-        $pdf->Text($x, $y, $text);
+        $pdf->Text($x, $y, utf8_decode($text));
     }
 
     private function writeCheckmark(Fpdi $pdf, float $xInches, float $yInches, int $fontSize): void

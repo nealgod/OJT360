@@ -34,7 +34,7 @@ abstract class BasePdfService
         $x = ($xInches + $leftMargin) * 25.4; // Convert inches to mm
         $y = (($yInches + $topMargin) * 25.4) + 3; // Convert inches to mm and add 3mm offset for baseline
 
-        $pdf->Text($x, $y, $text);
+        $pdf->Text($x, $y, utf8_decode($text));
     }
 
     /**
