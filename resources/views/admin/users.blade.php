@@ -119,51 +119,65 @@
 							<tr>
 								<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
 								<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-								<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
 								<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
 								<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
 							</tr>
 						</thead>
 						<tbody class="bg-white divide-y divide-gray-200">
 							@forelse($users as $user)
-								<tr class="hover:bg-gray-50 transition-colors">
+								<tr>
 									<td class="px-6 py-4 whitespace-nowrap">
 										<div class="flex items-center">
-											@php
-												$profileImage = null;
-												if ($user->role === 'intern' && $user->studentProfile?->profile_image) {
-													$profileImage = $user->studentProfile->profile_image;
-												} elseif ($user->role === 'coordinator' && $user->coordinatorProfile?->profile_image) {
-													$profileImage = $user->coordinatorProfile->profile_image;
-												} elseif ($user->role === 'supervisor' && $user->supervisorProfile?->profile_image) {
-													$profileImage = $user->supervisorProfile->profile_image;
-												}
-											@endphp
-											
-											@if($profileImage)
-												<img src="{{ Storage::url($profileImage) }}" alt="{{ $user->name }}" class="w-10 h-10 rounded-full object-cover border-2 border-gray-200">
-											@else
-												<div class="w-10 h-10 {{ $user->getAvatarColor() }} rounded-full flex items-center justify-center text-white text-sm font-bold border-2 border-gray-200">
-													{{ substr($user->name, 0, 1) }}
-												</div>
-											@endif
+											<div class="flex-shrink-0 h-10 w-10">
+												<x-user-avatar :user="$user" size="h-10 w-10" />
+											</div>
 											<div class="ml-4">
-												<div class="text-sm font-medium text-ojt-dark">{{ $user->name }}</div>
+												<div class="text-sm font-medium text-gray-900">{{ $user->name }}</div>
 												<div class="text-xs text-gray-500">{{ $user->email }}</div>
 											</div>
 										</div>
 									</td>
 									<td class="px-6 py-4 whitespace-nowrap">
-										<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-											@if($user->role === 'admin') bg-red-100 text-red-800
-											@elseif($user->role === 'coordinator') bg-blue-100 text-blue-800
-											@elseif($user->role === 'supervisor') bg-green-100 text-green-800
-											@else bg-gray-100 text-gray-800
-											@endif">
-											{{ ucfirst($user->role ?? 'unknown') }}
-										</span>
+										<div class="flex flex-col items-start">
+											<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+												@if($user->role === 'admin') bg-red-100 text-red-800
+												@elseif($user->role === 'coordinator') bg-blue-100 text-blue-800
+												@elseif($user->role === 'supervisor') bg-green-100 text-green-800
+												@elseif($user->role === 'intern') bg-purple-100 text-purple-800
+												@else bg-gray-100 text-gray-800
+												@endif">
+												{{ ucfirst($user->role ?? 'unknown') }}
+											</span>
+											
+											{{-- Role-specific details --}}
+											@if($user->role === 'supervisor' && $user->supervisorProfile?->company)
+												<div class="text-xs text-gray-500 mt-1 flex items-center">
+													<svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+													{{ $user->supervisorProfile->company->name }}
+												</div>
+											@elseif($user->role === 'intern' && $user->studentProfile)
+												@if($user->studentProfile->program)
+													<div class="text-xs text-gray-500 mt-1 flex items-center">
+														<svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
+														{{ $user->studentProfile->program->name }}
+													</div>
+												@endif
+												@if($user->studentProfile->supervisor?->supervisorProfile?->company)
+													<div class="text-xs text-gray-500 mt-0.5 flex items-center">
+														<svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+														{{ $user->studentProfile->supervisor->supervisorProfile->company->name }}
+													</div>
+												@endif
+											@elseif($user->role === 'coordinator' && $user->coordinatorProfile)
+												@if($user->coordinatorProfile->program)
+													<div class="text-xs text-gray-500 mt-1 flex items-center">
+														<svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+														{{ $user->coordinatorProfile->program->name }}
+													</div>
+												@endif
+											@endif
+										</div>
 									</td>
-									<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $user->email }}</td>
 									<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $user->created_at->format('M d, Y') }}</td>
 									<td class="px-6 py-4 whitespace-nowrap">
 										@if($user->email_verified_at)
@@ -175,7 +189,7 @@
 								</tr>
 							@empty
 								<tr>
-									<td colspan="5" class="px-6 py-12 text-center text-gray-500">
+									<td colspan="4" class="px-6 py-12 text-center text-gray-500">
 										<div class="flex flex-col items-center">
 											<svg class="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
