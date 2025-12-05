@@ -30,7 +30,11 @@ Route::prefix('register/supervisor')->name('supervisor.register')->group(functio
 });
 
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    $response = response()->view('dashboard');
+    $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    $response->headers->set('Pragma', 'no-cache');
+    $response->headers->set('Expires', 'Sat, 01 Jan 2000 00:00:00 GMT');
+    return $response;
 })->middleware(['auth', 'verified', 'profile.complete'])->name('dashboard');
 
 Route::middleware(['auth', 'profile.complete'])->group(function () {
