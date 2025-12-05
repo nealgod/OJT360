@@ -444,7 +444,7 @@ class SupervisorAcceptanceController extends Controller
                 [$family, $style, $size] = $options['font'];
                 $pdf->SetFont($family, $style, $size);
                 $pdf->SetXY($x, $y);
-                $pdf->MultiCell($options['width'], $options['lineHeight'], $content, 0, $options['align']);
+                $pdf->MultiCell($options['width'], $options['lineHeight'], utf8_decode($content), 0, $options['align']);
             };
 
             // Header section
@@ -504,18 +504,18 @@ class SupervisorAcceptanceController extends Controller
             $pdf->Cell(0, 8, 'Date: '.now()->format('F d, Y'), 0, 1);
             $pdf->Ln(5);
 
-            $pdf->MultiCell(0, 6, "This is to signify the approval of on-the-job request allowing {$student->name}, a {$studentProfile->course} student, to render practicum at {$company->name}.");
+            $pdf->MultiCell(0, 6, utf8_decode("This is to signify the approval of on-the-job request allowing {$student->name}, a {$studentProfile->course} student, to render practicum at {$company->name}."));
             $pdf->Ln(10);
 
             $pdf->SetFont('Arial', 'B', 11);
             $pdf->Cell(0, 8, 'Job Assignment Details:', 0, 1);
             $pdf->SetFont('Arial', '', 10);
             $pdf->Cell(60, 7, 'Job Title:', 0, 0);
-            $pdf->Cell(0, 7, $data['job_title'], 0, 1);
+            $pdf->Cell(0, 7, utf8_decode($data['job_title']), 0, 1);
             $pdf->Cell(60, 7, 'Department:', 0, 0);
-            $pdf->Cell(0, 7, $data['department'] ?? 'N/A', 0, 1);
+            $pdf->Cell(0, 7, utf8_decode($data['department'] ?? 'N/A'), 0, 1);
             $pdf->Cell(60, 7, 'Immediate Supervisor:', 0, 0);
-            $pdf->Cell(0, 7, $data['immediate_supervisor'], 0, 1);
+            $pdf->Cell(0, 7, utf8_decode($data['immediate_supervisor']), 0, 1);
             $pdf->Cell(60, 7, 'Total Hours:', 0, 0);
             $pdf->Cell(0, 7, $data['total_hours'].' hours', 0, 1);
             $pdf->Cell(60, 7, 'Effective Date:', 0, 0);
@@ -525,8 +525,8 @@ class SupervisorAcceptanceController extends Controller
             $pdf->SetFont('Arial', 'B', 11);
             $pdf->Cell(0, 8, 'Company Representative:', 0, 1);
             $pdf->SetFont('Arial', '', 10);
-            $pdf->Cell(0, 7, $supervisor->name, 0, 1);
-            $pdf->Cell(0, 7, $supervisor->supervisorProfile->position ?? '', 0, 1);
+            $pdf->Cell(0, 7, utf8_decode($supervisor->name), 0, 1);
+            $pdf->Cell(0, 7, utf8_decode($supervisor->supervisorProfile->position ?? ''), 0, 1);
             $pdf->Cell(0, 7, $supervisor->email, 0, 1);
         }
 
