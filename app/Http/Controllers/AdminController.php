@@ -58,7 +58,13 @@ class AdminController extends Controller
 
     public function users(Request $request)
     {
-        $query = User::with(['studentProfile', 'coordinatorProfile', 'supervisorProfile']);
+        $query = User::with([
+            'studentProfile.program',
+            'studentProfile.supervisor.supervisorProfile.company',
+            'coordinatorProfile.department', 
+            'coordinatorProfile.program', 
+            'supervisorProfile.company'
+        ]);
 
         // Filter by role if provided
         if ($request->filled('role') && $request->role !== 'all') {
