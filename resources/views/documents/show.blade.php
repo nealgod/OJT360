@@ -183,6 +183,42 @@
                             </p>
                         </div>
                     </div>
+                @elseif($requirement->name === "Supervisor's Evaluation Form")
+                    <!-- Supervisor's Evaluation Form - System Generated -->
+                    <div class="bg-white rounded-lg border border-gray-200 p-6">
+                        <h2 class="text-lg font-semibold text-ojt-dark mb-4">Supervisor's Evaluation Form</h2>
+                        
+                        <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-amber-600 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                                <div>
+                                    <h3 class="text-sm font-medium text-amber-900 mb-1">System-Generated Document</h3>
+                                    <p class="text-sm text-amber-800">
+                                        This evaluation form is filled out by your supervisor within the OJT360 system. 
+                                        You cannot manually upload this document.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <h4 class="text-sm font-medium text-gray-900 mb-2">Evaluation Process:</h4>
+                            <ol class="text-sm text-gray-700 space-y-1 list-decimal list-inside">
+                                <li>Your supervisor completes monthly/final evaluations in the system</li>
+                                <li>Evaluations are reviewed by your coordinator</li>
+                                <li>Approved evaluations are automatically added to your documents</li>
+                                <li>You can view the status but not the detailed scores</li>
+                            </ol>
+                        </div>
+
+                        <div class="mt-6 text-center">
+                            <p class="text-sm text-gray-600">
+                                Waiting for supervisor evaluations to be completed and approved.
+                            </p>
+                        </div>
+                    </div>
                 @else
                     <!-- Regular Document Submission Form -->
                     <div class="bg-white rounded-lg border border-gray-200 p-6">
