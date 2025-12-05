@@ -16,19 +16,15 @@ class AdminReportController extends Controller
     {
         // Overall statistics
         $stats = [
-            'total_users' => User::count(),
-            'total_interns' => User::where('role', 'intern')->count(),
             'active_interns' => User::where('role', 'intern')
                 ->whereHas('studentProfile', fn ($q) => $q->where('ojt_status', 'active'))
                 ->count(),
-            'total_coordinators' => User::where('role', 'coordinator')->count(),
-            'total_supervisors' => User::where('role', 'supervisor')->count(),
-            'total_companies' => Company::count(),
-            'total_attendance_logs' => AttendanceLog::count(),
+            'total_interns' => User::where('role', 'intern')->count(),
             'total_hours' => round(AttendanceLog::sum('minutes_worked') / 60, 1),
-            'total_weekly_reports' => WeeklyReport::count(),
-            'total_monthly_evaluations' => MonthlyEvaluation::count(),
-            'total_final_evaluations' => FinalEvaluation::count(),
+            'pending_weekly_reports' => WeeklyReport::whereNull('coordinator_reviewed_at')->count(),
+            'pending_monthly_evaluations' => MonthlyEvaluation::whereNull('reviewed_at')->count(),
+            'pending_final_evaluations' => FinalEvaluation::whereNull('reviewed_at')->count(),
+            'total_companies' => Company::count(),
         ];
 
         // Recent activity

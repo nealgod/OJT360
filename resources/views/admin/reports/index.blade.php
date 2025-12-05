@@ -10,38 +10,30 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
             <!-- Stats Grid -->
+            <!-- Stats Grid -->
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
                 <div class="bg-white rounded-lg border p-4">
-                    <p class="text-sm text-gray-600">Total Users</p>
-                    <p class="text-2xl font-bold text-ojt-dark">{{ $stats['total_users'] }}</p>
-                </div>
-                <div class="bg-white rounded-lg border p-4">
                     <p class="text-sm text-gray-600">Active Interns</p>
-                    <p class="text-2xl font-bold text-green-600">{{ $stats['active_interns'] }}</p>
+                    <div class="flex items-baseline gap-1">
+                        <p class="text-2xl font-bold text-green-600">{{ $stats['active_interns'] }}</p>
+                        <span class="text-xs text-gray-400">/ {{ $stats['total_interns'] }}</span>
+                    </div>
                 </div>
                 <div class="bg-white rounded-lg border p-4">
-                    <p class="text-sm text-gray-600">Total Hours Logged</p>
+                    <p class="text-sm text-gray-600">Total Hours</p>
                     <p class="text-2xl font-bold text-blue-600">{{ number_format($stats['total_hours'], 1) }}</p>
                 </div>
                 <div class="bg-white rounded-lg border p-4">
-                    <p class="text-sm text-gray-600">Weekly Reports</p>
-                    <p class="text-2xl font-bold text-purple-600">{{ $stats['total_weekly_reports'] }}</p>
+                    <p class="text-sm text-gray-600">Pending Reports</p>
+                    <p class="text-2xl font-bold {{ $stats['pending_weekly_reports'] > 0 ? 'text-orange-500' : 'text-gray-700' }}">
+                        {{ $stats['pending_weekly_reports'] }}
+                    </p>
                 </div>
                 <div class="bg-white rounded-lg border p-4">
-                    <p class="text-sm text-gray-600">Companies</p>
-                    <p class="text-2xl font-bold">{{ $stats['total_companies'] }}</p>
-                </div>
-                <div class="bg-white rounded-lg border p-4">
-                    <p class="text-sm text-gray-600">Coordinators</p>
-                    <p class="text-2xl font-bold">{{ $stats['total_coordinators'] }}</p>
-                </div>
-                <div class="bg-white rounded-lg border p-4">
-                    <p class="text-sm text-gray-600">Supervisors</p>
-                    <p class="text-2xl font-bold">{{ $stats['total_supervisors'] }}</p>
-                </div>
-                <div class="bg-white rounded-lg border p-4">
-                    <p class="text-sm text-gray-600">Evaluations</p>
-                    <p class="text-2xl font-bold">{{ $stats['total_monthly_evaluations'] + $stats['total_final_evaluations'] }}</p>
+                    <p class="text-sm text-gray-600">Pending Evals</p>
+                    <p class="text-2xl font-bold {{ ($stats['pending_monthly_evaluations'] + $stats['pending_final_evaluations']) > 0 ? 'text-orange-500' : 'text-gray-700' }}">
+                        {{ $stats['pending_monthly_evaluations'] + $stats['pending_final_evaluations'] }}
+                    </p>
                 </div>
             </div>
 
