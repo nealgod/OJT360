@@ -530,7 +530,7 @@ class ResumeController extends Controller
                 $pdf->SetXY($inchToMm(3.49), $inchToMm(1.18));
                 $pdf->SetFont('Times', 'B', 25);
                 $nameLineHeight = $pointsToMm(25 * 1.2);
-                $pdf->MultiCell($rightColumnWidth, $nameLineHeight, $name, 0, 'L');
+                $pdf->MultiCell($rightColumnWidth, $nameLineHeight, utf8_decode($name), 0, 'L');
             }
 
             // Determine baseline for job title (ensuring it appears below name if name wraps)
@@ -543,56 +543,56 @@ class ResumeController extends Controller
                 $pdf->SetXY($inchToMm(3.49), $jobTitleY);
                 $pdf->SetFont('Times', '', 20);
                 $jobLineHeight = $pointsToMm(20 * 1.2);
-                $pdf->MultiCell($rightColumnWidth, $jobLineHeight, $jobTitle, 0, 'L');
+                $pdf->MultiCell($rightColumnWidth, $jobLineHeight, utf8_decode($jobTitle), 0, 'L');
             }
 
             $pdf->SetFont('Times', '', $bodyFontPt);
             if ($email) {
                 $pdf->SetXY($inchToMm(0.62), $inchToMm(4.08));
-                $pdf->MultiCell($leftColumnWidth, $lineHeight, 'Email: '.$email, 0, 'L');
+                $pdf->MultiCell($leftColumnWidth, $lineHeight, utf8_decode('Email: '.$email), 0, 'L');
             }
             if ($phone) {
                 $pdf->SetXY($inchToMm(0.62), $inchToMm(4.77));
-                $pdf->MultiCell($leftColumnWidth, $lineHeight, 'Phone: '.$phone, 0, 'L');
+                $pdf->MultiCell($leftColumnWidth, $lineHeight, utf8_decode('Phone: '.$phone), 0, 'L');
             }
             if ($address) {
                 $pdf->SetXY($inchToMm(0.62), $inchToMm(5.08));
-                $pdf->MultiCell($leftColumnWidth, $lineHeight, 'Address: '.$address, 0, 'L');
+                $pdf->MultiCell($leftColumnWidth, $lineHeight, utf8_decode('Address: '.$address), 0, 'L');
             }
 
             // {{ Summary }} x 3.76 and y 3.01
             if ($objective) {
                 $pdf->SetXY($inchToMm(3.76), $inchToMm(3.01));
                 $pdf->SetFont('Times', '', $bodyFontPt);
-                $pdf->MultiCell($rightColumnWidth, $lineHeight, $objective, 0, 'L');
+                $pdf->MultiCell($rightColumnWidth, $lineHeight, utf8_decode($objective), 0, 'L');
             }
 
             // {{ education }} x 3.71 and y 5.14
             if ($educationText) {
                 $pdf->SetXY($inchToMm(3.71), $inchToMm(5.14));
                 $pdf->SetFont('Times', '', $bodyFontPt);
-                $pdf->MultiCell($rightColumnWidth, $lineHeight, trim($educationText), 0, 'L');
+                $pdf->MultiCell($rightColumnWidth, $lineHeight, utf8_decode(trim($educationText)), 0, 'L');
             }
 
             // {{ experience }} x 3.71 and y 9.08
             if ($experienceText) {
                 $pdf->SetXY($inchToMm(3.71), $inchToMm(9.08));
                 $pdf->SetFont('Times', '', $bodyFontPt);
-                $pdf->MultiCell($rightColumnWidth, $lineHeight, trim($experienceText), 0, 'L');
+                $pdf->MultiCell($rightColumnWidth, $lineHeight, utf8_decode(trim($experienceText)), 0, 'L');
             }
 
             // {{ skills }} x 0.64 and y 6.65
             if ($skillsText) {
                 $pdf->SetXY($inchToMm(0.64), $inchToMm(6.65));
                 $pdf->SetFont('Times', '', $bodyFontPt);
-                $pdf->MultiCell($leftColumnWidth, $lineHeight, $skillsText, 0, 'L');
+                $pdf->MultiCell($leftColumnWidth, $lineHeight, utf8_decode($skillsText), 0, 'L');
             }
 
             // {{ certifications }} x 0.82 and y 10.13 (unchanged)
             if (! empty($certificationsText)) {
                 $pdf->SetXY($inchToMm(0.82), $inchToMm(10.13));
                 $pdf->SetFont('Times', '', $bodyFontPt);
-                $pdf->MultiCell($leftColumnWidth, $lineHeight, $certificationsText, 0, 'L');
+                $pdf->MultiCell($leftColumnWidth, $lineHeight, utf8_decode($certificationsText), 0, 'L');
             }
 
             // {{ Image }} x 0.34 and y 0.68 - Add profile image
