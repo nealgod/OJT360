@@ -244,7 +244,7 @@
                                     </td>
                                     <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 cursor-pointer" onclick="window.location='{{ route('admin.audit.show', $log) }}'">
                                         <div class="font-medium">{{ $log->created_at->format('M d, Y') }}</div>
-                                        <div class="text-gray-500 text-xs">{{ $log->created_at->format('H:i:s') }}</div>
+                                        <div class="text-gray-500 text-xs">{{ $log->created_at->format('g:i A') }}</div>
                                     </td>
                                     <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm cursor-pointer" onclick="window.location='{{ route('admin.audit.show', $log) }}'">
                                         @if($log->user)
