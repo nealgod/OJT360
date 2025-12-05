@@ -19,50 +19,13 @@
 
     <div class="py-6 sm:py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            @if(session('success'))
-                <div class="bg-green-50 border-l-4 border-green-400 p-4 mb-6 rounded-r-lg">
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 text-green-400 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                        </svg>
-                        <p class="text-green-700 font-medium text-sm sm:text-base">{{ session('success') }}</p>
-                    </div>
-                </div>
-            @endif
-
-            @if($errors->any())
-                <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-6 rounded-r-lg">
-                    <div class="flex items-center mb-2">
-                        <svg class="w-5 h-5 text-red-400 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-                        </svg>
-                        <p class="text-red-700 font-medium text-sm sm:text-base">Please correct the following errors:</p>
-                    </div>
-                    <ul class="list-disc list-inside text-sm text-red-600 ml-8">
-                        @foreach($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
-            @if(session('error'))
-                <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-6 rounded-r-lg">
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 text-red-400 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-                        </svg>
-                        <p class="text-red-700 font-medium text-sm sm:text-base">{{ session('error') }}</p>
-                    </div>
-                </div>
-            @endif
 
             <!-- Bulk Actions & Delete Old Logs -->
-            <div class="flex flex-col sm:flex-row gap-3 mb-6">
+            <div class="flex flex-col sm:flex-row gap-3 mb-6 justify-between items-center">
                 <form id="bulkDeleteForm" method="POST" action="{{ route('admin.audit.bulk-delete') }}" class="flex-1" onsubmit="return handleBulkDelete(event)">
                     @csrf
                     <div class="flex gap-2">
-                        <button type="submit" id="bulkDeleteBtn" disabled class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium text-sm inline-flex items-center disabled:opacity-50 disabled:cursor-not-allowed">
+                        <button type="submit" id="bulkDeleteBtn" disabled class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium text-sm inline-flex items-center disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                             </svg>
@@ -71,7 +34,7 @@
                     </div>
                 </form>
 
-                <button onclick="document.getElementById('deleteOldModal').classList.remove('hidden')" class="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors font-medium text-sm inline-flex items-center justify-center">
+                <button onclick="document.getElementById('deleteOldModal').classList.remove('hidden')" class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 hover:text-ojt-primary transition-colors font-medium text-sm inline-flex items-center shadow-sm">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
@@ -345,28 +308,33 @@
             </div>
         </div>
     <!-- Delete Old Logs Modal -->
-    <div id="deleteOldModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md">
-            <div class="p-6 border-b">
-                <h3 class="text-xl font-bold text-ojt-dark">Delete Old Logs</h3>
-                <p class="text-sm text-gray-600 mt-1">Clean up database by removing old records</p>
+    <div id="deleteOldModal" class="hidden fixed inset-0 bg-gray-200 bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md border-2 border-gray-300">
+            <div class="p-6 border-b bg-white">
+                <h3 class="text-xl font-bold text-gray-800">Delete Logs from Past X Days</h3>
+                <p class="text-sm text-gray-600 mt-1">Remove recent audit log records</p>
             </div>
-            <form action="{{ route('admin.audit.delete-older-than') }}" method="POST" class="p-6" onsubmit="return confirm('Are you sure you want to delete these logs? This action cannot be undone.')">
+            <form action="{{ route('admin.audit.delete-older-than') }}" method="POST" class="p-6" onsubmit="return confirm('Are you sure? This will delete recent logs and keep older ones.')">
                 @csrf
                 <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Delete logs older than</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Delete logs from the past</label>
                     <div class="relative">
-                        <input type="number" name="days" min="1" max="365" value="30" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-ojt-primary focus:border-ojt-primary pr-12">
-                        <span class="absolute right-4 top-2 text-gray-500">days</span>
+                        <input type="number" name="days" min="1" max="365" value="30" required class="w-full border-2 border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-ojt-primary focus:border-ojt-primary pr-12">
+                        <span class="absolute right-4 top-2.5 text-gray-500 font-medium">days</span>
                     </div>
-                    <p class="text-xs text-gray-500 mt-2">This will permanently delete all audit logs created more than the specified number of days ago.</p>
+                    <p class="text-xs text-gray-700 mt-2 bg-yellow-50 p-3 rounded border-l-4 border-yellow-400">
+                        <span class="font-bold">⚠️ Warning:</span> This will delete all logs from the <strong>past X days</strong> (keeping older records). This action cannot be undone.
+                    </p>
                 </div>
-                <div class="flex gap-3">
-                    <button type="submit" class="flex-1 bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-medium">
-                        Delete Logs
-                    </button>
-                    <button type="button" onclick="document.getElementById('deleteOldModal').classList.add('hidden')" class="flex-1 bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors font-medium">
+                <div class="flex gap-3 pt-2">
+                    <button type="button" onclick="document.getElementById('deleteOldModal').classList.add('hidden')" class="flex-1 bg-white border-2 border-gray-300 text-gray-700 px-4 py-2.5 rounded-lg hover:bg-gray-50 transition-colors font-medium">
                         Cancel
+                    </button>
+                    <button type="submit" class="flex-1 bg-red-600 text-white px-4 py-2.5 rounded-lg hover:bg-red-700 transition-colors font-medium flex justify-center items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                        Delete Logs
                     </button>
                 </div>
             </form>
@@ -411,11 +379,11 @@
 
             const form = document.getElementById('bulkDeleteForm');
             
-            // Remove any existing hidden inputs
+            // Remove any existing hidden inputs to avoid duplicates
             const existingInputs = form.querySelectorAll('input[name="log_ids[]"]');
             existingInputs.forEach(input => input.remove());
 
-            // Append new hidden inputs
+            // Append new hidden inputs for each checked box
             checkboxes.forEach(checkbox => {
                 const input = document.createElement('input');
                 input.type = 'hidden';

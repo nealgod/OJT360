@@ -68,20 +68,12 @@
                                 <p class="text-xs text-gray-500 mb-1">Description</p>
                                 <p class="text-sm text-gray-900">{{ $audit->description }}</p>
                             </div>
-                            @if($audit->model_type)
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <p class="text-xs text-gray-500 mb-1">Model Type</p>
-                                        <p class="text-sm font-medium text-gray-900">{{ $audit->model_type }}</p>
-                                    </div>
-                                    @if($audit->model_id)
-                                        <div>
-                                            <p class="text-xs text-gray-500 mb-1">Model ID</p>
-                                            <p class="text-sm font-medium text-gray-900">{{ $audit->model_id }}</p>
-                                        </div>
-                                    @endif
-                                </div>
-                            @endif
+                    @if($audit->model_type)
+                        <div>
+                            <p class="text-xs text-gray-500 mb-1">Related To</p>
+                            <p class="text-sm font-medium text-gray-900">{{ $modelLabel ?? class_basename($audit->model_type) . ' #' . $audit->model_id }}</p>
+                        </div>
+                    @endif
                         </div>
                     </div>
 
@@ -120,9 +112,56 @@
                                     <code class="text-sm bg-white px-2 py-1 rounded border border-gray-200">{{ $audit->ip_address ?? 'N/A' }}</code>
                                 </div>
                                 @if($audit->user_agent)
+                                    @php
+                                        // Parse user agent for better display
+                                        $browser = 'Unknown Browser';
+                                        $os = 'Unknown OS';
+                                        $device = 'Desktop';
+                                        
+                                        // Detect Browser
+                                        if (str_contains($audit->user_agent, 'Chrome') && !str_contains($audit->user_agent, 'Edg')) {
+                                            preg_match('/Chrome\/([\d.]+)/', $audit->user_agent, $matches);
+                                            $browser = 'Chrome ' . ($matches[1] ?? '');
+                                        } elseif (str_contains($audit->user_agent, 'Edg')) {
+                                            preg_match('/Edg\/([\d.]+)/', $audit->user_agent, $matches);
+                                            $browser = 'Edge ' . ($matches[1] ?? '');
+                                        } elseif (str_contains($audit->user_agent, 'Firefox')) {
+                                            preg_match('/Firefox\/([\d.]+)/', $audit->user_agent, $matches);
+                                            $browser = 'Firefox ' . ($matches[1] ?? '');
+                                        } elseif (str_contains($audit->user_agent, 'Safari') && !str_contains($audit->user_agent, 'Chrome')) {
+                                            preg_match('/Version\/([\d.]+)/', $audit->user_agent, $matches);
+                                            $browser = 'Safari ' . ($matches[1] ?? '');
+                                        }
+                                        
+                                        // Detect OS
+                                        if (str_contains($audit->user_agent, 'Windows NT 10.0')) {
+                                            $os = 'Windows 10/11';
+                                        } elseif (str_contains($audit->user_agent, 'Windows NT')) {
+                                            $os = 'Windows';
+                                        } elseif (str_contains($audit->user_agent, 'Mac OS X')) {
+                                            preg_match('/Mac OS X ([\d_]+)/', $audit->user_agent, $matches);
+                                            $os = 'macOS ' . str_replace('_', '.', $matches[1] ?? '');
+                                        } elseif (str_contains($audit->user_agent, 'Android')) {
+                                            preg_match('/Android ([\d.]+)/', $audit->user_agent, $matches);
+                                            $os = 'Android ' . ($matches[1] ?? '');
+                                            $device = 'Mobile';
+                                        } elseif (str_contains($audit->user_agent, 'iPhone') || str_contains($audit->user_agent, 'iPad')) {
+                                            $os = 'iOS';
+                                            $device = str_contains($audit->user_agent, 'iPad') ? 'Tablet' : 'Mobile';
+                                        } elseif (str_contains($audit->user_agent, 'Linux')) {
+                                            $os = 'Linux';
+                                        }
+                                    @endphp
                                     <div>
-                                        <p class="text-xs text-gray-500 mb-1">User Agent</p>
-                                        <p class="text-xs text-gray-700 break-all">{{ $audit->user_agent }}</p>
+                                        <p class="text-xs text-gray-500 mb-1">Browser & Device</p>
+                                        <div class="space-y-1">
+                                            <p class="text-sm text-gray-900"><span class="font-medium">Browser:</span> {{ $browser }}</p>
+                                            <p class="text-sm text-gray-900"><span class="font-medium">OS:</span> {{ $os }} ({{ $device }})</p>
+                                        </div>
+                                        <details class="mt-2">
+                                            <summary class="text-xs text-gray-500 cursor-pointer hover:text-gray-700">View Raw User Agent</summary>
+                                            <p class="text-xs text-gray-600 mt-1 break-all bg-white p-2 rounded border border-gray-200">{{ $audit->user_agent }}</p>
+                                        </details>
                                     </div>
                                 @endif
                             </div>

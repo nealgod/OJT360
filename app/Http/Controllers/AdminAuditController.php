@@ -31,7 +31,7 @@ class AdminAuditController extends Controller
             if ($request->filled('role')) {
                 $query->whereHas('user', function ($q) use ($request) {
                     $q->where('role', $request->role);
-                });
+                })->whereNotNull('user_id'); // Exclude system logs when filtering by role
             }
 
             // Filter by date range with validation
@@ -85,7 +85,12 @@ class AdminAuditController extends Controller
             $logs = $query->paginate(20)->withQueryString();
 
             // Get filter options (optimized - limit users and cache)
-            $users = User::orderBy('name')->limit(500)->get(['id', 'name']); // Limit to prevent huge dropdowns
+            $usersQuery = User::orderBy('name');
+            if ($request->filled('role')) {
+                $usersQuery->where('role', $request->role);
+            }
+            $users = $usersQuery->limit(500)->get(['id', 'name']);
+
             $actions = AuditLog::distinct()->orderBy('action')->pluck('action');
             
             // Filter model types to show only common/relevant ones
@@ -103,12 +108,32 @@ class AdminAuditController extends Controller
             
             $roles = ['admin', 'coordinator', 'supervisor', 'intern'];
 
-            // Get statistics
+            // Get statistics (respecting current filters except dates)
+            $statsQuery = AuditLog::query();
+
+            if ($request->filled('user_id')) {
+                $statsQuery->where('user_id', $request->user_id);
+            }
+            if ($request->filled('action')) {
+                $statsQuery->where('action', $request->action);
+            }
+            if ($request->filled('model_type')) {
+                $statsQuery->where('model_type', $request->model_type);
+            }
+            if ($request->filled('role')) {
+                $statsQuery->whereHas('user', function ($q) use ($request) {
+                    $q->where('role', $request->role);
+                });
+            }
+            if ($request->filled('search')) {
+                $statsQuery->where('description', 'like', '%' . $request->search . '%');
+            }
+
             $stats = [
-                'total' => AuditLog::count(),
-                'today' => AuditLog::whereDate('created_at', today())->count(),
-                'this_week' => AuditLog::whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
-                'this_month' => AuditLog::whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count(),
+                'total' => (clone $statsQuery)->count(),
+                'today' => (clone $statsQuery)->whereDate('created_at', today())->count(),
+                'this_week' => (clone $statsQuery)->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
+                'this_month' => (clone $statsQuery)->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count(),
             ];
 
             return view('admin.audit.index', compact('logs', 'users', 'actions', 'modelTypes', 'roles', 'stats', 'sortBy', 'sortOrder'));
@@ -146,7 +171,72 @@ class AdminAuditController extends Controller
                 ->get();
         }
 
-        return view('admin.audit.show', compact('audit', 'relatedLogs'));
+        // Fetch the actual model record to show meaningful info
+        $modelRecord = null;
+        $modelLabel = null;
+        
+        if ($audit->model_type && $audit->model_id) {
+            try {
+                if (class_exists($audit->model_type)) {
+                    $modelRecord = $audit->model_type::find($audit->model_id);
+                    
+                    if ($modelRecord) {
+                        // Generate a human-readable label
+                        $modelLabel = $this->getModelLabel($modelRecord, $audit->model_type);
+                    } else {
+                        $modelLabel = class_basename($audit->model_type) . ' #' . $audit->model_id . ' (Deleted)';
+                    }
+                }
+            } catch (\Exception $e) {
+                $modelLabel = class_basename($audit->model_type) . ' #' . $audit->model_id;
+            }
+        }
+
+        return view('admin.audit.show', compact('audit', 'relatedLogs', 'modelLabel'));
+    }
+
+    /**
+     * Generate a human-readable label for a model record
+     */
+    private function getModelLabel($record, $modelType)
+    {
+        $basename = class_basename($modelType);
+        
+        switch ($basename) {
+            case 'User':
+                return "User: {$record->name} ({$record->email})";
+            
+            case 'WeeklyReport':
+                return "Weekly Report: {$record->week_label} - Student: {$record->student->name}";
+            
+            case 'MonthlyEvaluation':
+                return "Monthly Evaluation: {$record->getMonthYearLabel()} - Student: {$record->student->name}";
+            
+            case 'FinalEvaluation':
+                return "Final Evaluation: {$record->student->name}";
+            
+            case 'AttendanceLog':
+                return "Attendance: {$record->work_date->format('M d, Y')} - {$record->user->name}";
+            
+            case 'Company':
+                return "Company: {$record->name}";
+            
+            case 'Department':
+                return "Department: {$record->name}";
+            
+            case 'Program':
+                return "Program: {$record->name}";
+            
+            default:
+                // Generic fallback - try common attributes
+                if (isset($record->name)) {
+                    return "{$basename}: {$record->name}";
+                } elseif (isset($record->title)) {
+                    return "{$basename}: {$record->title}";
+                } else {
+                    return "{$basename} #{$record->id}";
+                }
+        }
     }
 
     public function export(Request $request)
@@ -289,17 +379,26 @@ class AdminAuditController extends Controller
                 'days' => 'required|integer|min:1|max:365'
             ]);
 
-            $date = now()->subDays($request->days);
-            $count = AuditLog::where('created_at', '<', $date)->delete();
+            // Calculate the cutoff date (X days ago from today)
+            $cutoffDate = now()->subDays($request->days);
+            
+            // Delete logs from the PAST X days (from today back to X days ago)
+            // This keeps OLDER logs and removes RECENT logs
+            $count = AuditLog::where('created_at', '>=', $cutoffDate)->delete();
 
-            return redirect()->route('admin.audit.index')
-                ->with('success', "Successfully deleted {$count} audit log(s) older than {$request->days} days.");
+            if ($count > 0) {
+                return redirect()->route('admin.audit.index')
+                    ->with('success', "Successfully deleted {$count} audit log(s) from the past {$request->days} days.");
+            } else {
+                return redirect()->route('admin.audit.index')
+                    ->with('error', "No audit logs found in the past {$request->days} days.");
+            }
         } catch (\Illuminate\Validation\ValidationException $e) {
             throw $e;
         } catch (\Exception $e) {
-            \Log::error('Delete old audit logs error: ' . $e->getMessage());
+            \Log::error('Delete audit logs error: ' . $e->getMessage());
             return redirect()->route('admin.audit.index')
-                ->with('error', 'Failed to delete old audit logs. Please try again.');
+                ->with('error', 'Failed to delete audit logs. Please try again.');
         }
     }
 }
