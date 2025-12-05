@@ -125,7 +125,6 @@
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Program</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Supervisor</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -150,18 +149,10 @@
                                                 <div class="ml-4">
                                                     <div class="text-sm font-medium text-gray-900">
                                                         {{ $student->name }}
-                                                        @if($student->pending_recoveries_count > 0)
-                                                            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
-                                                                {{ $student->pending_recoveries_count }} pending
-                                                            </span>
-                                                        @endif
                                                     </div>
                                                     <div class="text-sm text-gray-500">{{ $student->studentProfile?->student_id ?? 'No ID' }}</div>
                                                 </div>
                                             </div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm text-gray-900">{{ $student->studentProfile?->course ?? 'N/A' }}</div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             @php
