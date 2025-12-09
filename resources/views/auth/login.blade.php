@@ -65,16 +65,8 @@
             <x-input-error :messages="$errors->get('password')" class="mt-2 text-ojt-danger text-sm" />
         </div>
 
-        <!-- Remember Me & Forgot Password -->
-        <div class="flex items-center justify-between">
-            <label for="remember_me" class="flex items-center">
-                <input id="remember_me" 
-                       type="checkbox" 
-                       name="remember"
-                       class="h-4 w-4 text-ojt-primary focus:ring-ojt-primary border-gray-300 rounded">
-                <span class="ml-2 text-sm text-gray-600">Remember me</span>
-            </label>
-
+        <!-- Forgot Password -->
+        <div class="flex items-center justify-end">
             @if (Route::has('password.request'))
                 <a href="{{ route('password.request') }}" 
                    class="text-sm text-ojt-primary hover:text-ojt-secondary transition-colors duration-200">

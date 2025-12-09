@@ -41,8 +41,8 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        // Use the remember parameter correctly
-        $remember = $this->boolean('remember');
+        // Force remember to false to prevent ghost sessions on shared computers
+        $remember = false;
 
         if (! Auth::attempt($this->only('email', 'password'), $remember)) {
             RateLimiter::hit($this->throttleKey());
