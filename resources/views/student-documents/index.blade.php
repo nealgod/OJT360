@@ -82,8 +82,8 @@
                                                 </svg>
                                             </div>
                                             <div>
-                                                <div class="flex items-center space-x-2">
-                                                    <h3 class="font-medium text-ojt-dark">Resume #{{ $resumes->count() - $index }}</h3>
+                                                <div class="flex flex-wrap items-center gap-2">
+                                                    <h3 class="font-medium text-ojt-dark break-words text-sm sm:text-base">Resume #{{ $resumes->count() - $index }}</h3>
                                                     @if($resume->submitted_to_documents)
                                                         <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                                             <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -93,12 +93,12 @@
                                                         </span>
                                                     @endif
                                                 </div>
-                                                <p class="text-sm text-gray-500">Created {{ $resume->created_at->format('M d, Y \a\t g:i A') }}</p>
+                                                <p class="text-xs sm:text-sm text-gray-500 break-words">Created {{ $resume->created_at->format('M d, Y') }}</p>
                                                 @if($resume->submitted_to_documents && $resume->submitted_at)
                                                     <p class="text-xs text-green-600 mt-1">Submitted {{ $resume->submitted_at->diffForHumans() }}</p>
                                                 @endif
                                                 @if($resume->personal_info && isset($resume->personal_info['job_title']) && $resume->personal_info['job_title'])
-                                                    <p class="text-xs text-gray-400 mt-1">{{ $resume->personal_info['job_title'] }}</p>
+                                                    <p class="text-xs text-gray-400 mt-1 truncate max-w-full">{{ $resume->personal_info['job_title'] }}</p>
                                                 @endif
                                             </div>
                                         </div>
@@ -175,8 +175,8 @@
                                                 </svg>
                                             </div>
                                             <div>
-                                                <div class="flex items-center space-x-2">
-                                                    <h3 class="font-medium text-ojt-dark">Application Letter #{{ $applicationLetters->count() - $index }}</h3>
+                                                <div class="flex flex-wrap items-center gap-2">
+                                                    <h3 class="font-medium text-ojt-dark break-words text-sm sm:text-base">Application Letter #{{ $applicationLetters->count() - $index }}</h3>
                                                     @if($letter->submitted_to_documents)
                                                         <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                                             <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -186,11 +186,11 @@
                                                         </span>
                                                     @endif
                                                 </div>
-                                                <p class="text-sm text-gray-500">Created {{ $letter->created_at->format('M d, Y \a\t g:i A') }}</p>
+                                                <p class="text-xs sm:text-sm text-gray-500 break-words">Created {{ $letter->created_at->format('M d, Y') }}</p>
                                                 @if($letter->submitted_to_documents && $letter->submitted_at)
                                                     <p class="text-xs text-green-600 mt-1">Submitted {{ $letter->submitted_at->diffForHumans() }}</p>
                                                 @endif
-                                                <p class="text-xs text-gray-400 mt-1">{{ Str::limit($letter->content, 60) }}</p>
+                                                <p class="text-xs text-gray-400 mt-1 line-clamp-2">{{ Str::limit($letter->content, 80) }}</p>
                                             </div>
                                         </div>
                                         <div class="flex flex-wrap items-center gap-2 justify-end">

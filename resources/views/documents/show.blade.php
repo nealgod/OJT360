@@ -68,17 +68,17 @@
                                 <div>
                                     <h3 class="font-medium text-gray-700 mb-2">File Details</h3>
                                     <div class="space-y-2 text-sm">
-                                        <div class="flex justify-between">
+                                        <div class="flex flex-col sm:flex-row sm:justify-between gap-1">
                                             <span class="text-gray-600">Filename:</span>
-                                            <span class="font-medium">{{ $sub->original_filename }}</span>
+                                            <span class="font-medium break-all text-xs sm:text-sm">{{ $sub->original_filename }}</span>
                                         </div>
-                                        <div class="flex justify-between">
+                                        <div class="flex flex-col sm:flex-row sm:justify-between gap-1">
                                             <span class="text-gray-600">Size:</span>
                                             <span class="font-medium">{{ $sub->file_size_formatted }}</span>
                                         </div>
-                                        <div class="flex justify-between">
+                                        <div class="flex flex-col sm:flex-row sm:justify-between gap-1">
                                             <span class="text-gray-600">Submitted:</span>
-                                            <span class="font-medium">{{ $sub->created_at->format('M d, Y g:i A') }}</span>
+                                            <span class="font-medium text-xs sm:text-sm break-words">{{ $sub->created_at->format('M d, Y g:i A') }}</span>
                                         </div>
                                     </div>
                                 </div>
