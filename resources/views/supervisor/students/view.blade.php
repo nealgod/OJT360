@@ -71,6 +71,16 @@
                                     </span>
                                 @endif
                                 
+                                {{-- OJT Status Badge --}}
+                                @if($student->studentProfile?->ojt_status === 'completed')
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        Completed
+                                    </span>
+                                @endif
+                                
                                 <!-- Pending Attendance Button -->
                                 @if($pendingLogsCount > 0)
                                     <button onclick="document.getElementById('attendanceModal').classList.remove('hidden')" 

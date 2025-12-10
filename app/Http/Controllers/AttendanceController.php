@@ -34,6 +34,11 @@ class AttendanceController extends Controller
 
             $user = Auth::user();
 
+            // Check if student has completed their OJT
+            if ($user->studentProfile?->ojt_status === 'completed') {
+                return back()->with('error', 'You have completed your OJT. Attendance logging is disabled.');
+            }
+
             if (! $user->hasActiveOJT()) {
                 return back()->with('error', 'You must have an active OJT status to use attendance. Please contact your coordinator.');
             }
@@ -278,6 +283,15 @@ class AttendanceController extends Controller
             ]);
 
             $user = Auth::user();
+            
+            // Check if student has completed their OJT
+            if ($user->studentProfile?->ojt_status === 'completed') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You have completed your OJT. Attendance recovery is disabled.',
+                ]);
+            }
+            
             if (! $user->hasActiveOJT()) {
                 return response()->json([
                     'success' => false,

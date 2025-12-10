@@ -906,8 +906,8 @@
                                         </svg>
                                         Create Documents
                                     </a>
-                                    @if(Auth::user()->studentProfile && Auth::user()->studentProfile->ojt_status === 'active')
-                                        <!-- Active OJT Actions -->
+                                    @if(Auth::user()->studentProfile && (Auth::user()->studentProfile->ojt_status === 'active' || Auth::user()->studentProfile->ojt_status === 'completed'))
+                                        <!-- Active/Completed OJT Actions -->
                                         <a href="{{ route('attendance.index') }}" class="w-full bg-ojt-primary text-white py-3 px-4 rounded-lg font-medium hover:bg-maroon-700 transition-colors duration-200 flex items-center justify-center">
                                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />

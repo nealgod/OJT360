@@ -27,6 +27,28 @@
                     </div>
                 </div>
             @endif
+
+            {{-- OJT Completed Notice --}}
+            @if(auth()->user()->studentProfile?->ojt_status === 'completed')
+                <div class="mb-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg shadow-sm">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-6 w-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-3 flex-1">
+                            <h3 class="text-base font-semibold text-blue-800">OJT Completed</h3>
+                            <p class="text-sm text-blue-700 mt-1">
+                                Congratulations! You have completed your OJT. Attendance logging is now disabled.
+                            </p>
+                            <p class="text-xs text-blue-600 mt-2">
+                                You can still view your past attendance records below.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            @endif
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6 mb-6">
                 <!-- Current Time Display -->
                 <div class="text-center mb-6">
@@ -40,6 +62,8 @@
                 </div>
 
 
+                @if(auth()->user()->studentProfile?->ojt_status !== 'completed')
+                {{-- Only show camera if NOT completed --}}
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                     <div>
                         <h3 class="font-semibold text-ojt-dark mb-2">Time In (Camera)</h3>
@@ -164,6 +188,8 @@
                     </div>
                 </div>
             </div>
+            @endif
+            {{-- End camera section for completed students --}}
 
             <script>
                 (function() {

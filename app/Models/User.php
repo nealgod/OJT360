@@ -144,7 +144,10 @@ class User extends Authenticatable implements MustVerifyEmail
             return false;
         }
 
-        return $this->studentProfile->preplacement_complete || $this->studentProfile->ojt_status === 'active';
+        // Completed students should still have access to the system (just not attendance logging)
+        return $this->studentProfile->preplacement_complete 
+            || $this->studentProfile->ojt_status === 'active' 
+            || $this->studentProfile->ojt_status === 'completed';
     }
 
     // Check if user completed their profile (aligned with CheckProfileCompletion)
