@@ -288,9 +288,9 @@
                          class="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-auto overflow-hidden">
                         
                         <!-- Success Icon Header -->
-                        <div class="bg-gradient-to-r from-green-500 to-emerald-500 px-6 py-8 text-center">
+                        <div class="bg-gradient-to-r from-ojt-primary to-maroon-700 px-6 py-8 text-center">
                             <div class="mx-auto w-20 h-20 bg-white rounded-full flex items-center justify-center mb-4 animate-bounce">
-                                <svg class="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-12 h-12 text-ojt-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
                                 </svg>
                             </div>
@@ -303,35 +303,24 @@
                         </div>
 
                         <!-- Content -->
-                        <div class="px-6 py-6 space-y-4">
-                            <div class="flex items-start space-x-3 bg-green-50 p-4 rounded-lg">
-                                <svg class="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <div>
-                                    <p class="text-sm font-semibold text-green-900">All Online Documents Submitted!</p>
-                                    <p class="text-xs text-green-700 mt-1">Great job completing all required pre-placement documents online.</p>
-                                </div>
-                            </div>
+                        <div class="px-6 py-6 text-center space-y-6">
+                            <p class="text-gray-600">
+                                You have successfully submitted all required pre-placement documents online.
+                            </p>
 
-                            <div class="flex items-start space-x-3 bg-yellow-50 border-2 border-yellow-400 p-4 rounded-lg">
-                                <svg class="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <div>
-                                    <p class="text-sm font-bold text-yellow-900">📄 IMPORTANT NEXT STEP:</p>
-                                    <p class="text-sm text-yellow-800 mt-2">
-                                        Please submit the <strong>hard copies (printed versions)</strong> of your documents to your department coordinator for final verification.
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div class="flex items-start space-x-3 bg-blue-50 p-4 rounded-lg">
-                                <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <div class="text-xs text-blue-800">
-                                    <p><strong>💡 Tip:</strong> Bring all physical documents to your coordinator's office during their consultation hours.</p>
+                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-left">
+                                <div class="flex">
+                                    <div class="flex-shrink-0">
+                                        <svg class="h-5 w-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                        </svg>
+                                    </div>
+                                    <div class="ml-3">
+                                        <h3 class="text-sm font-medium text-yellow-800">Next Step Required</h3>
+                                        <div class="mt-2 text-sm text-yellow-700">
+                                            <p>Please submit the <strong>hard copies</strong> (printed versions) of your documents to your department coordinator for final verification.</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -339,7 +328,7 @@
                         <!-- Footer -->
                         <div class="px-6 py-4 bg-gray-50 flex flex-col sm:flex-row gap-3">
                             <button @click="show = false" 
-                                    class="flex-1 px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-200 shadow-md hover:shadow-lg">
+                                    class="flex-1 px-4 py-3 bg-ojt-primary text-white font-semibold rounded-lg hover:bg-maroon-700 transition-all duration-200 shadow-md hover:shadow-lg">
                                 Got it, thanks!
                             </button>
                             <a href="{{ route('notifications.index') }}" 
