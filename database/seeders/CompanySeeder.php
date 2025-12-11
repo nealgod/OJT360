@@ -45,9 +45,18 @@ class CompanySeeder extends Seeder
             'status' => 'active',
         ]);
 
-        Company::firstOrCreate(['name' => 'Planet Ocean'], [
+        Company::firstOrCreate(['name' => 'Planet PC'], [
             'department' => $deptIt?->name ?? 'Department of Computer Studies',
             'address' => 'Real St, Ormoc City, Leyte 6541 Philippines',
+            'contact_person' => null,
+            'contact_email' => null,
+            'contact_phone' => null,
+            'status' => 'active',
+        ]);
+
+        Company::firstOrCreate(['name' => 'E-Garage'], [
+            'department' => $deptIt?->name ?? 'Department of Computer Studies',
+            'address' => '12J Navarro Str., Ormoc City, Philippines',
             'contact_person' => null,
             'contact_email' => null,
             'contact_phone' => null,
