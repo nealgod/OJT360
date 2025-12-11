@@ -717,15 +717,9 @@
                                         @elseif($log->is_recovered && $log->recovery_approved === true)
                                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Approved</span>
                                         @elseif($log->is_recovered && $log->recovery_approved === false)
-                                            <div class="flex flex-col gap-1">
-                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">Rejected</span>
-                                                <button onclick="openRecoveryModal({{ $log->id }}, '{{ $log->work_date->format('M d, Y') }}')" class="text-xs text-ojt-primary hover:text-maroon-700 underline">Try Again</button>
-                                            </div>
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">Rejected</span>
                                         @elseif((! $log->time_out || ! $log->minutes_worked) && $log->work_date->lt(now()->startOfDay()))
-                                            <div class="flex flex-col gap-1">
-                                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-600">Incomplete</span>
-                                                 <button onclick="openRecoveryModal({{ $log->id }}, '{{ $log->work_date->format('M d, Y') }}')" class="text-xs text-ojt-primary hover:text-maroon-700 underline">Recover</button>
-                                            </div>
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-600">Incomplete</span>
                                         @elseif(! $log->time_out || ! $log->minutes_worked)
                                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">In Progress</span>
                                         @elseif($log->status === 'approved')
@@ -797,13 +791,13 @@
     </script>
 </x-app-layout>
 
-<!-- Recovery Request Modal -->
+<!-- Recovery Request Modal (Dashboard Style) -->
 <div id="recoveryModal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
     <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onclick="closeRecoveryModal()"></div>
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
         <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-            <form id="recoveryForm" onsubmit="submitRecovery(event)">
+            <form id="recoveryForm">
                 @csrf
                 <input type="hidden" id="recoveryLogId" name="log_id">
                 
@@ -820,28 +814,52 @@
                             </h3>
                             <div class="mt-2">
                                 <p class="text-sm text-gray-500 mb-4">
-                                    Submit a request to recover hours for <span id="recoveryDate" class="font-medium text-gray-900"></span>.
+                                     Recover hours for <span id="recoveryDate" class="font-medium text-gray-900"></span>.
+                                     <br>Time In was: <span id="recoveryTimeIn" class="font-medium text-gray-900"></span>
                                 </p>
                                 
                                 <div class="space-y-4">
                                     <div>
-                                        <label for="time_out" class="block text-sm font-medium text-gray-700">Time Out</label>
+                                        <label for="time_out" class="block text-sm font-medium text-gray-700">Actual Time Out</label>
                                         <input type="time" name="time_out" id="time_out" required
                                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-ojt-primary focus:border-ojt-primary sm:text-sm">
                                     </div>
                                     
                                     <div>
-                                        <label for="reason" class="block text-sm font-medium text-gray-700">Reason for Recovery</label>
+                                        <label for="reason" class="block text-sm font-medium text-gray-700">Reason for Missing Log</label>
                                         <textarea name="reason" id="reason" rows="3" required
                                                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-ojt-primary focus:border-ojt-primary sm:text-sm"
-                                                  placeholder="Explain why you missed logging out..."></textarea>
+                                                  placeholder="E.g. I forgot to time out because of urgent task..."></textarea>
                                     </div>
 
                                     <div>
-                                        <label for="photo_out" class="block text-sm font-medium text-gray-700">Proof of Attendance</label>
-                                        <p class="text-xs text-gray-500 mb-2">Upload a photo, screenshot, or document proving you were present (JPG, PNG).</p>
-                                        <input type="file" name="photo_out" id="photo_out" accept="image/jpeg,image/png" required
-                                               class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Proof of Attendance</label>
+                                        
+                                        <!-- Photo Upload Area -->
+                                        <div id="photoUploadArea" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-blue-400 cursor-pointer bg-gray-50 transition-colors">
+                                            <div class="space-y-1 text-center">
+                                                <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                                </svg>
+                                                <div class="flex text-sm text-gray-600">
+                                                    <span class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                                                        <span>Upload a photo</span>
+                                                    </span>
+                                                    <p class="pl-1">or drag and drop</p>
+                                                </div>
+                                                <p class="text-xs text-gray-500">PNG, JPG up to 5MB</p>
+                                            </div>
+                                        </div>
+                                        <input type="file" name="photo_out" id="recoveryPhoto" accept="image/jpeg,image/png" class="hidden">
+                                        
+                                        <!-- Preview Area -->
+                                        <div id="photoPreview" class="hidden mt-2 relative">
+                                            <img id="previewImage" src="" alt="Proof Preview" class="max-h-48 rounded-md mx-auto shadow-sm">
+                                            <button type="button" onclick="document.getElementById('photoUploadArea').click()" class="absolute top-2 right-2 bg-gray-800 bg-opacity-70 text-white p-1 rounded-full hover:bg-opacity-100">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                                            </button>
+                                        </div>
+                                        <p id="photoError" class="hidden text-xs text-red-600 mt-1">⚠ Proof photo is required.</p>
                                     </div>
                                 </div>
                             </div>
@@ -849,9 +867,9 @@
                     </div>
                 </div>
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                    <button type="submit" id="submitRecoveryBtn"
+                    <button type="submit"
                             class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-ojt-primary text-base font-medium text-white hover:bg-maroon-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ojt-primary sm:ml-3 sm:w-auto sm:text-sm">
-                        Submit Request
+                        <span id="submitText">Submit Request</span>
                     </button>
                     <button type="button" onclick="closeRecoveryModal()"
                             class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
@@ -864,54 +882,116 @@
 </div>
 
 <script>
+    let currentLogId = null;
+    
+    // Updated function signature to match Dashboard
     function openRecoveryModal(logId, dateStr) {
-        document.getElementById('recoveryLogId').value = logId;
-        document.getElementById('recoveryDate').textContent = dateStr;
+        currentLogId = logId;
+        
+        // Parse date string carefully since we passed a combined string from the blade template
+        // We passed: 'Y-m-d (Time In)'
+        // Let's just display it directly as it's already formatted nicely in the blade loop
+        document.getElementById('recoveryDate').textContent = dateStr; 
+        document.getElementById('recoveryTimeIn').textContent = ''; // Cleared as it is combined in dateStr
+        
         document.getElementById('recoveryModal').classList.remove('hidden');
+        document.getElementById('recoveryLogId').value = logId;
+        
+        // Reset form
+        document.getElementById('recoveryForm').reset();
+        document.getElementById('photoPreview').classList.add('hidden');
+        document.getElementById('photoError').classList.add('hidden');
+        document.getElementById('photoUploadArea').classList.remove('hidden');
     }
 
     function closeRecoveryModal() {
         document.getElementById('recoveryModal').classList.add('hidden');
-        document.getElementById('recoveryForm').reset();
+        currentLogId = null;
     }
+    
+    // Photo upload handling (Same as Dashboard)
+    document.getElementById('recoveryPhoto').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('previewImage').src = e.target.result;
+                document.getElementById('photoPreview').classList.remove('hidden');
+                document.getElementById('photoUploadArea').classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    document.getElementById('photoUploadArea').addEventListener('click', function() {
+        document.getElementById('recoveryPhoto').click();
+    });
 
-    async function submitRecovery(e) {
+    document.getElementById('recoveryForm').addEventListener('submit', function(e) {
         e.preventDefault();
-        const btn = document.getElementById('submitRecoveryBtn');
-        const originalText = btn.textContent;
         
-        try {
-            btn.disabled = true;
-            btn.textContent = 'Submitting...';
+        const formData = new FormData(this);
+        // Ensure log_id is appended if not in form
+        if(!formData.get('log_id')) {
+             formData.append('log_id', document.getElementById('recoveryLogId').value);
+        }
+        
+        // Validate
+        if (!formData.get('time_out')) {
+            alert('⚠ Please enter the exact time you left work.');
+            return;
+        }
+        if (!formData.get('reason') || formData.get('reason').trim() === '') {
+            alert('⚠ Please provide a reason.');
+            return;
+        }
+        if (!formData.get('photo_out') || formData.get('photo_out').size === 0) {
+            document.getElementById('photoError').classList.remove('hidden');
+            alert('⚠ Proof photo is required.');
+            return;
+        }
+        
+        if (confirm('Submit this recovery request?')) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const submitText = document.getElementById('submitText');
+            const originalText = submitText.textContent;
             
-            const formData = new FormData(e.target);
+            submitText.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Uploading...';
+            submitBtn.disabled = true;
             
-            const response = await fetch("{{ route('attendance.recovery') }}", {
+            fetch("{{ route('attendance.recovery') }}", {
                 method: 'POST',
                 body: formData,
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
                     'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
                 }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                    submitText.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred.');
+                submitText.innerHTML = originalText;
+                submitBtn.disabled = false;
             });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                alert('Recovery request submitted successfully!');
-                location.reload();
-            } else {
-                alert(data.message || 'Failed to submit recovery request.');
-                btn.disabled = false;
-                btn.textContent = originalText;
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('An error occurred. Please try again.');
-            btn.disabled = false;
-            btn.textContent = originalText;
         }
-    }
+    });
+
+    // Close on click outside
+    document.getElementById('recoveryModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeRecoveryModal();
+        }
+    });
 </script>
 
 
