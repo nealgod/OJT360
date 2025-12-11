@@ -16,7 +16,7 @@ class SupervisorAttendanceController extends Controller
 
         // Verify supervisor owns this student
         $student = $log->student;
-        if (!$student || !$student->studentProfile || $student->studentProfile->supervisor_id !== $user->id) {
+        if (!$student || !$student->studentProfile || (int) $student->studentProfile->supervisor_id !== (int) $user->id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized action.',
@@ -33,7 +33,7 @@ class SupervisorAttendanceController extends Controller
 
         // Calculate overtime for recovered attendance
         $overtimeMinutes = 0;
-        $acceptance = $student->acceptanceLetter()->latest()->first();
+        $acceptance = $student->acceptanceLetters()->latest()->first();
         
         if ($acceptance && isset($acceptance->work_schedule['shift_start']) && isset($acceptance->work_schedule['shift_end'])) {
             try {
@@ -84,7 +84,7 @@ class SupervisorAttendanceController extends Controller
 
         // Verify supervisor owns this student
         $student = $log->student;
-        if (!$student || !$student->studentProfile || $student->studentProfile->supervisor_id !== $user->id) {
+        if (!$student || !$student->studentProfile || (int) $student->studentProfile->supervisor_id !== (int) $user->id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized action.',

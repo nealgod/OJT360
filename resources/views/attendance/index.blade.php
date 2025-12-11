@@ -717,9 +717,17 @@
                                         @elseif($log->is_recovered && $log->recovery_approved === true)
                                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Approved</span>
                                         @elseif($log->is_recovered && $log->recovery_approved === false)
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">Rejected</span>
+                                            <div class="flex flex-col gap-1">
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">Rejected</span>
+                                                <button onclick="openRecoveryModal({{ $log->id }}, '{{ $log->work_date->format('M d, Y') }}')" class="text-xs text-ojt-primary hover:text-maroon-700 underline">Try Again</button>
+                                            </div>
+                                        @elseif((! $log->time_out || ! $log->minutes_worked) && $log->work_date->lt(now()->startOfDay()))
+                                            <div class="flex flex-col gap-1">
+                                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-600">Incomplete</span>
+                                                 <button onclick="openRecoveryModal({{ $log->id }}, '{{ $log->work_date->format('M d, Y') }}')" class="text-xs text-ojt-primary hover:text-maroon-700 underline">Recover</button>
+                                            </div>
                                         @elseif(! $log->time_out || ! $log->minutes_worked)
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">In Progress</span>
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">In Progress</span>
                                         @elseif($log->status === 'approved')
                                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Complete</span>
                                         @else
@@ -788,5 +796,122 @@
         });
     </script>
 </x-app-layout>
+
+<!-- Recovery Request Modal -->
+<div id="recoveryModal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onclick="closeRecoveryModal()"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <form id="recoveryForm" onsubmit="submitRecovery(event)">
+                @csrf
+                <input type="hidden" id="recoveryLogId" name="log_id">
+                
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
+                            <svg class="h-6 w-6 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                                Request Attendance Recovery
+                            </h3>
+                            <div class="mt-2">
+                                <p class="text-sm text-gray-500 mb-4">
+                                    Submit a request to recover hours for <span id="recoveryDate" class="font-medium text-gray-900"></span>.
+                                </p>
+                                
+                                <div class="space-y-4">
+                                    <div>
+                                        <label for="time_out" class="block text-sm font-medium text-gray-700">Time Out</label>
+                                        <input type="time" name="time_out" id="time_out" required
+                                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-ojt-primary focus:border-ojt-primary sm:text-sm">
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="reason" class="block text-sm font-medium text-gray-700">Reason for Recovery</label>
+                                        <textarea name="reason" id="reason" rows="3" required
+                                                  class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-ojt-primary focus:border-ojt-primary sm:text-sm"
+                                                  placeholder="Explain why you missed logging out..."></textarea>
+                                    </div>
+
+                                    <div>
+                                        <label for="photo_out" class="block text-sm font-medium text-gray-700">Proof of Attendance</label>
+                                        <p class="text-xs text-gray-500 mb-2">Upload a photo, screenshot, or document proving you were present (JPG, PNG).</p>
+                                        <input type="file" name="photo_out" id="photo_out" accept="image/jpeg,image/png" required
+                                               class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="submit" id="submitRecoveryBtn"
+                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-ojt-primary text-base font-medium text-white hover:bg-maroon-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ojt-primary sm:ml-3 sm:w-auto sm:text-sm">
+                        Submit Request
+                    </button>
+                    <button type="button" onclick="closeRecoveryModal()"
+                            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openRecoveryModal(logId, dateStr) {
+        document.getElementById('recoveryLogId').value = logId;
+        document.getElementById('recoveryDate').textContent = dateStr;
+        document.getElementById('recoveryModal').classList.remove('hidden');
+    }
+
+    function closeRecoveryModal() {
+        document.getElementById('recoveryModal').classList.add('hidden');
+        document.getElementById('recoveryForm').reset();
+    }
+
+    async function submitRecovery(e) {
+        e.preventDefault();
+        const btn = document.getElementById('submitRecoveryBtn');
+        const originalText = btn.textContent;
+        
+        try {
+            btn.disabled = true;
+            btn.textContent = 'Submitting...';
+            
+            const formData = new FormData(e.target);
+            
+            const response = await fetch("{{ route('attendance.recovery') }}", {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                alert('Recovery request submitted successfully!');
+                location.reload();
+            } else {
+                alert(data.message || 'Failed to submit recovery request.');
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    }
+</script>
 
 

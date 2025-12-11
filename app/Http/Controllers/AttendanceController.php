@@ -296,8 +296,15 @@ class AttendanceController extends Controller
                 'log_id' => 'required|exists:attendance_logs,id',
                 'time_out' => 'required|date_format:H:i',
                 'reason' => 'required|string|max:500',
-                'photo_out' => 'required|image|mimes:jpg,jpeg,png|max:5120',
+                'photo_out' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
             ]);
+
+            if (!$request->hasFile('photo_out')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Please upload a photo proof to complete your recovery request.',
+                ]);
+            }
 
             $user = Auth::user();
             

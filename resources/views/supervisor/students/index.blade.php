@@ -102,12 +102,24 @@
                             $profile = $student->studentProfile;
                             $company = $profile?->company;
                             $latestLetter = $student->acceptanceLetters->first();
-                            $completedMinutes = $student->attendanceLogs()->sum('minutes_worked');
+                            $completedMinutes = $student->attendanceLogs()
+                                ->where(function($q) {
+                                    $q->where('is_recovered', false)
+                                      ->orWhere(function($subQ) {
+                                          $subQ->where('is_recovered', true)
+                                               ->where('recovery_approved', true);
+                                      });
+                                })
+                                ->sum('minutes_worked');
                             $completedHours = round(($completedMinutes ?? 0) / 60, 1);
                             $requiredHours = $latestLetter?->total_hours ?? $profile?->required_hours ?? $student->getRequiredHours();
                             $percentage = $requiredHours > 0 ? round(($completedHours / $requiredHours) * 100, 1) : 0;
                             $weeklyReportsCount = $student->weeklyReports()->count();
                             $evaluationsCount = $student->monthlyEvaluations()->count();
+                            $pendingRecoveryCount = $student->attendanceLogs()
+                                ->where('is_recovered', true)
+                                ->whereNull('recovery_approved')
+                                ->count();
                         @endphp
                         <div class="student-card bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:border-ojt-primary/50 transition-colors" 
                              data-name="{{ strtolower($student->name) }}" 
@@ -163,9 +175,9 @@
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                 </svg>
                                                 <span class="text-gray-700"><strong>{{ number_format($completedHours, 1) }}</strong> hours</span>
-                                                @if($student->pending_recovery_count > 0)
-                                                    <span class="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-600 rounded-full animate-pulse">
-                                                        {{ $student->pending_recovery_count }}
+                                                @if($pendingRecoveryCount > 0)
+                                                    <span class="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-600 rounded-full animate-pulse" title="{{ $pendingRecoveryCount }} pending recovery requests">
+                                                        {{ $pendingRecoveryCount }}
                                                     </span>
                                                 @endif
                                             </div>
