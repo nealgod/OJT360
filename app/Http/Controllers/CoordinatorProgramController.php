@@ -40,7 +40,7 @@ class CoordinatorProgramController extends Controller
         }
 
         $request->validate([
-            'required_hours' => ['required', 'integer', 'min:200', 'max:1000'],
+            'required_hours' => ['required', 'integer', 'min:1', 'max:2000'],
         ]);
 
         $oldHours = $program->required_hours;
