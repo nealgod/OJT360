@@ -37,10 +37,17 @@ class SupervisorAttendanceController extends Controller
         
         if ($acceptance && isset($acceptance->work_schedule['shift_start']) && isset($acceptance->work_schedule['shift_end'])) {
             try {
-                $shiftStart = \Carbon\Carbon::createFromFormat('H:i', $acceptance->work_schedule['shift_start']);
-                $shiftEnd = \Carbon\Carbon::createFromFormat('H:i', $acceptance->work_schedule['shift_end']);
+                // Use parse() for robustness against varying time formats (H:i vs H:i:s)
+                $shiftStart = \Carbon\Carbon::parse($acceptance->work_schedule['shift_start']);
+                $shiftEnd = \Carbon\Carbon::parse($acceptance->work_schedule['shift_end']);
+                
                 $scheduledBreakMinutes = $acceptance->work_schedule['break_minutes'] ?? config('timezone.default_break_duration', 60);
-                $expectedMinutes = $shiftStart->diffInMinutes($shiftEnd) - $scheduledBreakMinutes;
+                
+                // Calculate expected minutes (Shift Duration - Break)
+                $shiftDuration = $shiftStart->diffInMinutes($shiftEnd);
+                $expectedMinutes = max(0, $shiftDuration - $scheduledBreakMinutes);
+                
+                // Calculate overtime
                 $overtimeMinutes = max(0, ($log->minutes_worked ?? 0) - $expectedMinutes);
             } catch (\Exception $e) {
                 \Log::warning('Overtime calculation error for recovery', [

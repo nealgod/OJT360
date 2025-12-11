@@ -527,13 +527,20 @@
                                         </div>
                                         <div>
                                             <p class="text-xs text-gray-500 mb-1">Hours Worked</p>
-                                            <p class="text-2xl font-bold text-ojt-primary">{{ $log->hours_worked_formatted }}</p>
+                                            <div class="flex flex-col items-start">
+                                                <p class="text-2xl font-bold text-ojt-primary">{{ $log->hours_worked_formatted }}h</p>
+                                                @if($log->overtime_minutes && $log->overtime_minutes > 0)
+                                                    <span class="inline-flex items-center text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded mt-1">
+                                                        +{{ number_format($log->overtime_minutes / 60, 2) }}h OT
+                                                    </span>
+                                                @endif
+                                            </div>
                                         </div>
                                     </div>
 
                                     <!-- Action Button -->
                                     @if($log->is_recovered && is_null($log->recovery_approved))
-                                        <button onclick="openRecoveryModal({{ $log->id }}, '{{ $log->work_date->format('M d, Y') }}', '{{ $log->hours_worked_formatted }}', '{{ addslashes($log->recovery_reason ?? '') }}', '{{ $log->photo_out_path ? Storage::url($log->photo_out_path) : '' }}')" 
+                                        <button onclick="openRecoveryModal({{ $log->id }}, '{{ $log->work_date->format('M d, Y') }}', '{{ $log->hours_worked_formatted }}h', '{{ $log->overtime_minutes > 0 ? '+'.number_format($log->overtime_minutes/60, 2).'h OT' : '' }}', '{{ addslashes($log->recovery_reason ?? '') }}', '{{ $log->photo_out_path ? Storage::url($log->photo_out_path) : '' }}')" 
                                                 class="w-full mt-2 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
                                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -585,8 +592,11 @@
                                     <span class="text-sm font-medium text-gray-900" id="modalDate"></span>
                                 </div>
                                 <div class="flex justify-between border-b border-gray-100 pb-2">
-                                    <span class="text-sm text-gray-500">Hours Claimed:</span>
-                                    <span class="text-sm font-bold text-ojt-primary" id="modalHours"></span>
+                                    <span class="text-sm text-gray-500">Total Hours / OT:</span>
+                                    <div class="text-right">
+                                        <span class="text-sm font-bold text-ojt-primary" id="modalHours"></span>
+                                        <span class="text-xs font-bold text-green-600 block" id="modalOvertime" style="display:none"></span>
+                                    </div>
                                 </div>
                                 
                                 <div class="bg-gray-50 p-3 rounded-lg">
@@ -624,10 +634,19 @@
     <script>
         let currentLogId = null;
 
-        function openRecoveryModal(id, date, hours, reason, photoUrl) {
+        function openRecoveryModal(id, date, hours, overtime, reason, photoUrl) {
             currentLogId = id;
             document.getElementById('modalDate').textContent = date;
             document.getElementById('modalHours').textContent = hours;
+            
+            const otEl = document.getElementById('modalOvertime');
+            if(overtime) {
+                otEl.textContent = overtime;
+                otEl.style.display = 'block';
+            } else {
+                otEl.style.display = 'none';
+            }
+
             document.getElementById('modalReason').textContent = reason;
             
             const photoContainer = document.getElementById('modalPhotoContainer');

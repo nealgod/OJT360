@@ -271,7 +271,11 @@ class SupervisorAcceptanceController extends Controller
             'start_date' => $validated['effective_date'],
             'end_date' => null,
             'total_hours' => $validated['total_hours'],
-            'work_schedule' => $validated['work_schedule'],
+            'work_schedule' => array_merge($validated['work_schedule'], [
+                'shift_start' => $validated['shift_start'],
+                'shift_end' => $validated['shift_end'],
+                'break_minutes' => $validated['break_minutes'] ?? 60,
+            ]),
             'signature_type' => $validated['signature_type'],
             'signature_data' => $validated['signature_data'] ?? null,
             'additional_notes' => $validated['additional_notes'] ?? null,

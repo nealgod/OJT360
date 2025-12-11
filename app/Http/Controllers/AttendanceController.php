@@ -227,9 +227,12 @@ class AttendanceController extends Controller
             $overtimeMinutes = 0;
             if ($acceptance && isset($acceptance->work_schedule['shift_start']) && isset($acceptance->work_schedule['shift_end'])) {
                 try {
-                    $shiftStart = \Carbon\Carbon::createFromFormat('H:i', $acceptance->work_schedule['shift_start']);
-                    $shiftEnd = \Carbon\Carbon::createFromFormat('H:i', $acceptance->work_schedule['shift_end']);
-                    $expectedMinutes = $shiftStart->diffInMinutes($shiftEnd) - $scheduledBreakMinutes;
+                    // Use parse() for robustness
+                    $shiftStart = \Carbon\Carbon::parse($acceptance->work_schedule['shift_start']);
+                    $shiftEnd = \Carbon\Carbon::parse($acceptance->work_schedule['shift_end']);
+                    
+                    $shiftDuration = $shiftStart->diffInMinutes($shiftEnd);
+                    $expectedMinutes = max(0, $shiftDuration - $scheduledBreakMinutes);
                     $overtimeMinutes = max(0, $minutes - $expectedMinutes);
                 } catch (\Exception $e) {
                     \Log::warning('Overtime calculation error', [
@@ -406,11 +409,40 @@ class AttendanceController extends Controller
 
             $minutes = max(0, $totalMinutes - $scheduledBreakMinutes);
 
+            // Calculate overtime based on expected daily hours from acceptance letter
+            $overtimeMinutes = 0;
+            if ($acceptance && isset($acceptance->work_schedule['shift_start']) && isset($acceptance->work_schedule['shift_end'])) {
+                try {
+                    // Use parse() instead of createFromFormat() to handle "10:00", "10:00:00" etc automatically
+                    $shiftStart = \Carbon\Carbon::parse($acceptance->work_schedule['shift_start']);
+                    $shiftEnd = \Carbon\Carbon::parse($acceptance->work_schedule['shift_end']);
+                    
+                    // Ensure break minutes is set
+                    $scheduledBreakMinutes = isset($acceptance->work_schedule['break_minutes']) 
+                        ? (int)$acceptance->work_schedule['break_minutes'] 
+                        : 60; // Default to 60 if not set
+
+                    // Calculate expected minutes (Shift Duration - Break)
+                    $shiftDuration = $shiftStart->diffInMinutes($shiftEnd);
+                    $expectedMinutes = max(0, $shiftDuration - $scheduledBreakMinutes);
+                    
+                    // Overtime is Actual Minutes Worked - Expected Minutes
+                    $overtimeMinutes = max(0, $minutes - $expectedMinutes);
+                    
+                } catch (\Exception $e) {
+                    \Log::warning('Recovery overtime calculation error', [
+                        'user_id' => $user->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
             // Update the attendance log - set as pending until coordinator approves
             $log->update([
                 'time_out' => $request->time_out,
                 'photo_out_path' => $photoPath,
                 'minutes_worked' => $minutes,
+                'overtime_minutes' => $overtimeMinutes,
                 'status' => 'pending', // Pending supervisor approval
                 'is_recovered' => true,
                 'recovery_reason' => $request->reason,

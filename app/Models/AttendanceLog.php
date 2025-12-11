@@ -19,6 +19,7 @@ class AttendanceLog extends Model
         'photo_in_path',
         'photo_out_path',
         'minutes_worked',
+        'overtime_minutes',
         'status',
         'is_recovered',
         'recovery_reason',
