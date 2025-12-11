@@ -296,7 +296,16 @@ class DocumentController extends Controller
             abort(404, 'File not found');
         }
 
-        return Storage::disk('public')->download($submission->file_path, $submission->original_filename);
+        try {
+            return Storage::disk('public')->download($submission->file_path, $submission->original_filename);
+        } catch (\Exception $e) {
+            \Log::error('Document download error', [
+                'submission_id' => $submission->id,
+                'file_path' => $submission->file_path,
+                'error' => $e->getMessage()
+            ]);
+            abort(500, 'Error downloading document');
+        }
     }
 
     public function stream(StudentDocumentSubmission $submission)
@@ -319,14 +328,31 @@ class DocumentController extends Controller
             abort(404, 'File not found');
         }
 
-        $relative = str_starts_with($submission->file_path, 'public/') ? substr($submission->file_path, 7) : $submission->file_path;
-        $absolute = storage_path('app/public/'.$relative);
-        $mime = $submission->mime_type ?: mime_content_type($absolute);
+        try {
+            // Get the actual file path
+            $filePath = Storage::disk('public')->path($submission->file_path);
+            
+            // Use stored mime_type or fallback to extension-based detection
+            $mime = $submission->mime_type;
+            if (!$mime && file_exists($filePath)) {
+                $mime = mime_content_type($filePath) ?: 'application/octet-stream';
+            }
+            if (!$mime) {
+                $mime = 'application/octet-stream';
+            }
 
-        return response()->file($absolute, [
-            'Content-Type' => $mime,
-            'Content-Disposition' => 'inline; filename="'.$submission->original_filename.'"',
-        ]);
+            return response()->file($filePath, [
+                'Content-Type' => $mime,
+                'Content-Disposition' => 'inline; filename="'.$submission->original_filename.'"',
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Document stream error', [
+                'submission_id' => $submission->id,
+                'file_path' => $submission->file_path,
+                'error' => $e->getMessage()
+            ]);
+            abort(500, 'Error loading document');
+        }
     }
 
     // Coordinator document review (approve/reject) has been retired.
