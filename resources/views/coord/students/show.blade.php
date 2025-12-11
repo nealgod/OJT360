@@ -116,19 +116,6 @@
                         @endif
                     </div>
                 </div>
-                
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mt-2 text-xs text-gray-500">
-                    <span>{{ number_format($requiredHours - $completedHours, 1) }} hours remaining</span>
-                    @if($progressPercentage >= 100)
-                        <span class="text-green-600 font-semibold">✓ Completed!</span>
-                    @elseif($progressPercentage >= 75)
-                        <span class="text-blue-600 font-semibold">Almost there!</span>
-                    @elseif($progressPercentage >= 50)
-                        <span class="text-yellow-600 font-semibold">Halfway done</span>
-                    @else
-                        <span class="text-gray-600">Keep going!</span>
-                    @endif
-                </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
@@ -183,6 +170,7 @@
                                             <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Time In</th>
                                             <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Time Out</th>
                                             <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Hours</th>
+                                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Overtime</th>
                                             <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Photos</th>
                                             <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Status</th>
                                         </tr>
@@ -200,6 +188,28 @@
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                                         </svg>
                                                         {{ round($log->minutes_worked / 60, 1) }}h
+                                                    </span>
+                                                @else
+                                                    <span class="text-gray-400 text-sm">—</span>
+                                                @endif
+                                            </td>
+                                            <td class="px-3 py-2">
+                                                @if($log->overtime_minutes && $log->overtime_minutes > 0)
+                                                    @php
+                                                        $otHours = floor($log->overtime_minutes / 60);
+                                                        $otMins = $log->overtime_minutes % 60;
+                                                    @endphp
+                                                    <span class="inline-flex items-center gap-1 text-sm font-semibold text-green-600">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                        </svg>
+                                                        @if($otHours > 0 && $otMins > 0)
+                                                            +{{ $otHours }}h {{ $otMins }}m
+                                                        @elseif($otHours > 0)
+                                                            +{{ $otHours }}h
+                                                        @else
+                                                            +{{ $otMins }}m
+                                                        @endif
                                                     </span>
                                                 @else
                                                     <span class="text-gray-400 text-sm">—</span>
@@ -478,6 +488,29 @@
                                         @endif
                                     </span>
                                 </div>
+                                @if($acceptance && isset($acceptance->work_schedule['shift_start']) && isset($acceptance->work_schedule['shift_end']))
+                                    @php
+                                        $expectedDaily = 0;
+                                        try {
+                                            $shiftStart = \Carbon\Carbon::createFromFormat('H:i', $acceptance->work_schedule['shift_start']);
+                                            $shiftEnd = \Carbon\Carbon::createFromFormat('H:i', $acceptance->work_schedule['shift_end']);
+                                            $totalMinutes = $shiftStart->diffInMinutes($shiftEnd);
+                                            $breakMinutes = $acceptance->work_schedule['break_minutes'] ?? 60;
+                                            $workMinutes = $totalMinutes - $breakMinutes;
+                                            $expectedDaily = round($workMinutes / 60, 1);
+                                        } catch (\Exception $e) {
+                                            $expectedDaily = 0;
+                                        }
+                                    @endphp
+                                    @if($expectedDaily > 0)
+                                        <div class="flex items-center justify-between">
+                                            <span class="uppercase tracking-wide">Expected Per Day</span>
+                                            <span class="text-sm text-ojt-primary font-semibold">
+                                                {{ $expectedDaily }} hrs
+                                            </span>
+                                        </div>
+                                    @endif
+                                @endif
                                 <div class="flex items-center justify-between">
                                     <span class="uppercase tracking-wide">Activation</span>
                                     <span class="text-sm text-ojt-dark font-semibold">

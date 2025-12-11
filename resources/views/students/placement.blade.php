@@ -242,6 +242,31 @@
                                     </p>
                                 </div>
                                 <div>
+                                    <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Expected Hours Per Day</p>
+                                    @php
+                                        $expectedDaily = 0;
+                                        if (isset($schedule['shift_start']) && isset($schedule['shift_end'])) {
+                                            try {
+                                                $shiftStart = \Carbon\Carbon::createFromFormat('H:i', $schedule['shift_start']);
+                                                $shiftEnd = \Carbon\Carbon::createFromFormat('H:i', $schedule['shift_end']);
+                                                $totalMinutes = $shiftStart->diffInMinutes($shiftEnd);
+                                                $breakMinutes = $schedule['break_minutes'] ?? 0;
+                                                $workMinutes = $totalMinutes - $breakMinutes;
+                                                $expectedDaily = round($workMinutes / 60, 1);
+                                            } catch (\Exception $e) {
+                                                $expectedDaily = 0;
+                                            }
+                                        }
+                                    @endphp
+                                    <p class="text-base font-medium text-ojt-primary">
+                                        @if($expectedDaily > 0)
+                                            {{ $expectedDaily }} hours
+                                        @else
+                                            Not calculated
+                                        @endif
+                                    </p>
+                                </div>
+                                <div>
                                     <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Total Hours Required</p>
                                     <p class="text-base font-medium">{{ $acceptance->total_hours ?? 'Not specified' }} hours</p>
                                 </div>
