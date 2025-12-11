@@ -43,10 +43,9 @@
                                    value="{{ old('required_hours', $program->required_hours) }}" 
                                    min="200" 
                                    max="1000" 
-                                   step="10"
                                    required
                                    class="block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-ojt-primary focus:border-ojt-primary">
-                            <p class="mt-1 text-xs text-gray-500">Range: 200-1000 hours</p>
+                            <p class="mt-1 text-xs text-gray-500">Enter any value between 200-1000 hours</p>
                             @error('required_hours')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
