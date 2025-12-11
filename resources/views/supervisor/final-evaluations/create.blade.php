@@ -243,7 +243,7 @@
                     total += value;
                 });
 
-                totalRatingDisplay.textContent = total.toFixed(2) + '%';
+                totalRatingDisplay.textContent = (total % 1 === 0 ? total.toFixed(0) : total.toFixed(2)) + '%';
                 
                 // Change total color if exceeds 95%
                 if (total > 95) {

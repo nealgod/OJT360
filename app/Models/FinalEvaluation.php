@@ -59,15 +59,18 @@ class FinalEvaluation extends Model
         return sprintf('FE-%s-%d', $studentId, $year);
     }
 
-    public function calculateTotalRating(): float
+    public function calculateTotalRating()
     {
-        return ($this->rating_quality_thoroughness ?? 0) +
+        $sum = ($this->rating_quality_thoroughness ?? 0) +
                ($this->rating_dependability ?? 0) +
                ($this->rating_quality_completion ?? 0) +
                ($this->rating_attendance ?? 0) +
                ($this->rating_cooperation ?? 0) +
                ($this->rating_judgement ?? 0) +
                ($this->rating_personality ?? 0);
+               
+        // If whole number, format without decimals, otherwise max 2 decimals
+        return fmod($sum, 1) == 0 ? number_format($sum, 0) : number_format($sum, 2);
     }
 
     public function canBeSubmitted(): bool

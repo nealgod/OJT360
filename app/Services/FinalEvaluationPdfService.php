@@ -54,12 +54,14 @@ class FinalEvaluationPdfService extends BasePdfService
 
         foreach ($ratings as $rating) {
             if ($rating['value']) {
-                $this->writeText($pdf, 5.70, $rating['y'], number_format($rating['value'], 2), 11, 'B', self::LEFT_MARGIN, self::TOP_MARGIN);
+                $formattedValue = (fmod($rating['value'], 1) == 0 ? number_format($rating['value'], 0) : number_format($rating['value'], 2)) . '%';
+                $this->writeText($pdf, 5.70, $rating['y'], $formattedValue, 11, 'B', self::LEFT_MARGIN, self::TOP_MARGIN);
             }
         }
 
         // Total Rating - X: 5.70", Y: 9.51"
-        $this->writeText($pdf, 5.70, 9.51, number_format($evaluation->total_rating, 2), 11, 'B', self::LEFT_MARGIN, self::TOP_MARGIN);
+        $formattedTotal = (fmod($evaluation->total_rating, 1) == 0 ? number_format($evaluation->total_rating, 0) : number_format($evaluation->total_rating, 2)) . '%';
+        $this->writeText($pdf, 5.70, 9.51, $formattedTotal, 11, 'B', self::LEFT_MARGIN, self::TOP_MARGIN);
 
         // Comments Section (multi-line) - X: 0.10" for all lines
         if ($evaluation->comments_recommendations) {

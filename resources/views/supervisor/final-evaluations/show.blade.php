@@ -93,7 +93,9 @@
                                         <div class="w-32 bg-gray-200 rounded-full h-2">
                                             <div class="bg-ojt-primary h-2 rounded-full" style="width: {{ ($criterion['value'] / $criterion['max']) * 100 }}%"></div>
                                         </div>
-                                        <span class="text-lg font-bold text-ojt-primary w-16 text-right">{{ number_format($criterion['value'], 2) }}%</span>
+                                        <span class="text-lg font-bold text-ojt-primary w-16 text-right">
+                                            {{ fmod($criterion['value'], 1) == 0 ? number_format($criterion['value'], 0) : number_format($criterion['value'], 2) }}%
+                                        </span>
                                         <span class="text-xs text-gray-500">/ {{ $criterion['max'] }}%</span>
                                     </div>
                                 </div>
@@ -103,7 +105,9 @@
                             <div class="mt-4 p-4 bg-ojt-primary/10 border border-ojt-primary/20 rounded-lg">
                                 <div class="flex items-center justify-between">
                                     <span class="text-base font-semibold text-ojt-dark">Total Rating</span>
-                                    <span class="text-2xl font-bold text-ojt-primary">{{ number_format($evaluation->total_rating, 2) }}%</span>
+                                    <span class="text-2xl font-bold text-ojt-primary">
+                                        {{ fmod($evaluation->total_rating, 1) == 0 ? number_format($evaluation->total_rating, 0) : number_format($evaluation->total_rating, 2) }}%
+                                    </span>
                                 </div>
                                 <p class="text-xs text-gray-600 mt-1">Maximum: 95%</p>
                             </div>
