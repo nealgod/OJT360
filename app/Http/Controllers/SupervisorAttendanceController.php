@@ -31,11 +31,31 @@ class SupervisorAttendanceController extends Controller
             ], 400);
         }
 
+        // Calculate overtime for recovered attendance
+        $overtimeMinutes = 0;
+        $acceptance = $student->acceptanceLetter()->latest()->first();
+        
+        if ($acceptance && isset($acceptance->work_schedule['shift_start']) && isset($acceptance->work_schedule['shift_end'])) {
+            try {
+                $shiftStart = \Carbon\Carbon::createFromFormat('H:i', $acceptance->work_schedule['shift_start']);
+                $shiftEnd = \Carbon\Carbon::createFromFormat('H:i', $acceptance->work_schedule['shift_end']);
+                $scheduledBreakMinutes = $acceptance->work_schedule['break_minutes'] ?? config('timezone.default_break_duration', 60);
+                $expectedMinutes = $shiftStart->diffInMinutes($shiftEnd) - $scheduledBreakMinutes;
+                $overtimeMinutes = max(0, ($log->minutes_worked ?? 0) - $expectedMinutes);
+            } catch (\Exception $e) {
+                \Log::warning('Overtime calculation error for recovery', [
+                    'log_id' => $log->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
         // Approve the recovery
         $log->update([
             'recovery_approved' => true,
             'recovery_approved_at' => now(),
             'recovery_approved_by' => $user->id,
+            'overtime_minutes' => $overtimeMinutes,
             'status' => 'approved',
         ]);
 

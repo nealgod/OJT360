@@ -664,7 +664,24 @@
                                     <td class="px-4 py-3 text-gray-700">{{ $log->time_out_formatted ?? '—' }}</td>
                                     <td class="px-4 py-3">
                                         @if($log->minutes_worked)
-                                            <span class="font-semibold text-ojt-primary">{{ round($log->minutes_worked / 60, 1) }}h</span>
+                                            <div class="flex flex-col">
+                                                <span class="font-semibold text-ojt-primary">{{ round($log->minutes_worked / 60, 1) }}h</span>
+                                                @if($log->overtime_minutes > 0)
+                                                    @php
+                                                        $otHours = floor($log->overtime_minutes / 60);
+                                                        $otMins = $log->overtime_minutes % 60;
+                                                    @endphp
+                                                    <span class="text-xs text-green-600 font-medium">
+                                                        @if($otHours > 0 && $otMins > 0)
+                                                            +{{ $otHours }}h {{ $otMins }}m OT
+                                                        @elseif($otHours > 0)
+                                                            +{{ $otHours }}h OT
+                                                        @else
+                                                            +{{ $otMins }}m OT
+                                                        @endif
+                                                    </span>
+                                                @endif
+                                            </div>
                                         @else
                                             <span class="text-gray-400">—</span>
                                         @endif

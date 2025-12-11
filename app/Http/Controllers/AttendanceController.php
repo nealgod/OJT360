@@ -223,10 +223,27 @@ class AttendanceController extends Controller
             // Compute productive minutes = total - scheduled break (never below zero)
             $minutes = max(0, $totalMinutes - $scheduledBreakMinutes);
 
+            // Calculate overtime based on expected daily hours from acceptance letter
+            $overtimeMinutes = 0;
+            if ($acceptance && isset($acceptance->work_schedule['shift_start']) && isset($acceptance->work_schedule['shift_end'])) {
+                try {
+                    $shiftStart = \Carbon\Carbon::createFromFormat('H:i', $acceptance->work_schedule['shift_start']);
+                    $shiftEnd = \Carbon\Carbon::createFromFormat('H:i', $acceptance->work_schedule['shift_end']);
+                    $expectedMinutes = $shiftStart->diffInMinutes($shiftEnd) - $scheduledBreakMinutes;
+                    $overtimeMinutes = max(0, $minutes - $expectedMinutes);
+                } catch (\Exception $e) {
+                    \Log::warning('Overtime calculation error', [
+                        'user_id' => $user->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
             $log->update([
                 'time_out' => $timeOut->format('H:i:s'), // Store in 24-hour format for database
                 'photo_out_path' => $path,
                 'minutes_worked' => $minutes,
+                'overtime_minutes' => $overtimeMinutes,
                 'status' => 'approved',
                 'lat_out' => $request->input('lat_out'),
                 'lng_out' => $request->input('lng_out'),
