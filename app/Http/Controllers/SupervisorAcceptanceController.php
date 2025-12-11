@@ -323,11 +323,13 @@ class SupervisorAcceptanceController extends Controller
         }
 
         // Send notification to student
+        /*
         try {
             $student->notify(new \App\Notifications\AcceptanceLetterGenerated($letter));
         } catch (\Exception $e) {
             \Log::error('Failed to send email notification: '.$e->getMessage());
         }
+        */
 
         // Create in-app notification for student
         \App\Models\Notification::create([
@@ -358,11 +360,13 @@ class SupervisorAcceptanceController extends Controller
             })->first();
 
             if ($coordinator) {
+                /*
                 try {
                     $coordinator->notify(new \App\Notifications\AcceptanceLetterGenerated($letter));
                 } catch (\Exception $e) {
                     \Log::error('Failed to send email notification to coordinator: '.$e->getMessage());
                 }
+                */
 
                 \App\Models\Notification::create([
                     'user_id' => $coordinator->id,
