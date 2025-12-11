@@ -411,7 +411,7 @@ class AttendanceController extends Controller
                 'time_out' => $request->time_out,
                 'photo_out_path' => $photoPath,
                 'minutes_worked' => $minutes,
-                'status' => 'pending', // Pending coordinator approval
+                'status' => 'pending', // Pending supervisor approval
                 'is_recovered' => true,
                 'recovery_reason' => $request->reason,
                 'recovery_approved' => null, // Waiting for approval
@@ -436,7 +436,7 @@ class AttendanceController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Recovery submitted successfully! Your attendance is now pending coordinator approval.',
+                'message' => 'Recovery submitted successfully! Your attendance is now pending supervisor approval.',
                 'minutes_worked' => $minutes,
                 'hours_worked' => round($minutes / 60, 1),
             ]);
