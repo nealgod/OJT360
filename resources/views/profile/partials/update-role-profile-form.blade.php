@@ -94,14 +94,6 @@
             <!-- Coordinator Profile Fields -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                    <x-input-label for="employee_id" :value="__('Employee ID')" />
-                    <x-text-input id="employee_id" type="text" class="mt-1 block w-full bg-gray-50" 
-                        :value="old('employee_id', $profile->employee_id ?? '')" disabled />
-                    <input type="hidden" name="employee_id" value="{{ old('employee_id', $profile->employee_id ?? '') }}" />
-                    <x-input-error class="mt-2" :messages="$errors->get('employee_id')" />
-                </div>
-
-                <div>
                     <x-input-label :value="__('Department')" />
                     <div class="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
                         {{ optional($profile->department)->name ?? ($profile->department ?? '—') }}

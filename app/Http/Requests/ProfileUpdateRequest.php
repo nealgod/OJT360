@@ -39,7 +39,6 @@ class ProfileUpdateRequest extends FormRequest
         // Add coordinator-specific validation rules
         if ($this->user()->isCoordinator()) {
             $rules = array_merge($rules, [
-                'employee_id' => ['required', 'string', 'max:255', 'unique:coordinator_profiles,employee_id,'.($this->user()->coordinatorProfile->id ?? 'NULL')],
                 // Department and program are fixed by admin; display-only
                 'phone' => ['nullable', 'string', 'max:20'],
                 'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],

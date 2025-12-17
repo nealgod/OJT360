@@ -294,7 +294,6 @@ class ActivationController extends Controller
         $validated = $request->validate([
             'token' => ['required', 'string'],
             'name' => ['required', 'string', 'max:255'],
-            'employee_id' => ['required', 'string', 'max:255', 'unique:coordinator_profiles,employee_id'],
             'phone' => ['required', 'string', 'max:20'],
             'password' => ['required', 'confirmed', 'min:8'],
         ]);
@@ -332,7 +331,6 @@ class ActivationController extends Controller
                 'department_id' => $invite->department_id,
                 'program_id' => $invite->program_id,
                 'department' => $invite->department?->name,
-                'employee_id' => $validated['employee_id'],
                 'phone' => $validated['phone'],
                 'status' => 'active',
             ]

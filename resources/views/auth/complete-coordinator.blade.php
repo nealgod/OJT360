@@ -40,11 +40,6 @@
 		</div>
 
 		<div>
-			<label for="employee_id" class="block text-sm font-medium text-gray-700">Employee ID</label>
-			<input id="employee_id" type="text" name="employee_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required />
-		</div>
-
-		<div>
 			<label for="phone" class="block text-sm font-medium text-gray-700">Phone Number</label>
 			<input id="phone" type="tel" name="phone" placeholder="+63 912 345 6789" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required />
 		</div>

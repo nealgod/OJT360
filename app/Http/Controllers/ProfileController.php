@@ -121,7 +121,7 @@ class ProfileController extends Controller
      */
     private function updateCoordinatorProfile(ProfileUpdateRequest $request, $user)
     {
-        $profileData = $request->only(['employee_id', 'phone']);
+        $profileData = $request->only(['phone']);
 
         // Handle profile image upload
         if ($request->hasFile('profile_image')) {

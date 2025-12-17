@@ -161,7 +161,7 @@ class User extends Authenticatable implements MustVerifyEmail
         if ($this->isCoordinator()) {
             $profile = $this->coordinatorProfile;
 
-            return (bool) ($profile && $profile->employee_id && $profile->department);
+            return (bool) ($profile && $profile->department);
         }
         if ($this->isSupervisor()) {
             $profile = $this->supervisorProfile;
