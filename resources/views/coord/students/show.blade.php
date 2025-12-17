@@ -95,8 +95,13 @@
                 ];
                 @endphp
 
-            <!-- OJT Hours Progress Bar -->
-            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
+            <!-- Progress Bars Section -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <!-- Document Progress -->
+                <x-document-progress :student-id="$student->id" class="shadow-sm border border-gray-200" />
+                
+                <!-- OJT Hours Progress -->
+                <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4"> <!-- standardized padding to match component -->
                 
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                     <h3 class="text-sm font-semibold text-gray-700">OJT Hours Progress</h3>
@@ -116,6 +121,7 @@
                         @endif
                     </div>
                 </div>
+            </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">

@@ -15,63 +15,8 @@
                 <p class="text-gray-600">Submit your required documents for OJT</p>
             </div>
 
-            <!-- Pre‑requirements Checklist & Progress -->
-            <div class="bg-white rounded-lg border border-gray-200 p-4 mb-6">
-                @php
-                    // Compute overall progress
-                    $totalRequired = $prePlacement->where('is_required', true)->count() + 
-                                     $postPlacement->where('is_required', true)->count() + 
-                                     $ongoing->where('is_required', true)->count();
-                    $submittedRequired = 0;
-                    foreach([$prePlacement, $postPlacement, $ongoing] as $group) {
-                        foreach($group->where('is_required', true) as $req) {
-                            if(($submissions[$req->id] ?? collect())->count() > 0) {
-                                $submittedRequired++;
-                            }
-                        }
-                    }
-                    $progressPercentage = $totalRequired > 0 ? round(($submittedRequired / $totalRequired) * 100) : 0;
-
-                    // Pre‑placement checklist counts (Approved gating)
-                    $preTotal = $prePlacement->where('is_required', true)->count();
-                    $preApproved = 0;
-                    $prePendingList = [];
-                    foreach($prePlacement as $req) {
-                        if(!$req->is_required) {
-                            continue;
-                        }
-                        $first = ($submissions[$req->id] ?? collect())->first();
-                        if($first && in_array($first->status, ['submitted', 'approved'])) {
-                            $preApproved++;
-                        } else {
-                            $prePendingList[] = $req->name;
-                        }
-                    }
-                @endphp
-                <div class="flex items-center justify-between mb-2">
-                    <span class="text-sm font-medium text-gray-700">Overall Progress</span>
-                    <span class="text-sm text-gray-600">{{ $submittedRequired }}/{{ $totalRequired }} completed</span>
-                </div>
-                <div class="w-full bg-gray-200 rounded-full h-2 mb-4">
-                    <div class="bg-ojt-primary h-2 rounded-full transition-all duration-300" style="width: {{ $progressPercentage }}%"></div>
-                </div>
-
-                <div class="flex items-center justify-between">
-                    <div class="text-sm text-gray-700">
-                        <span class="font-medium">Pre‑requirements:</span>
-                        <span>{{ $preApproved }} of {{ $preTotal }} submitted</span>
-                    </div>
-                    @if($preTotal > 0 && $preApproved === $preTotal)
-                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Everything unlocked</span>
-                    @else
-                        @if(count($prePendingList))
-                            <div class="text-xs text-gray-500">
-                                Missing: {{ implode(', ', array_map(fn($n)=>Str::limit($n, 20), $prePendingList)) }}
-                            </div>
-                        @endif
-                    @endif
-                </div>
-            </div>
+            <!-- Document Progress Component -->
+            <x-document-progress class="mb-6" />
 
             <!-- Search and Filters -->
             <div class="bg-white rounded-lg border border-gray-200 p-4 mb-6">
@@ -186,7 +131,9 @@
                                  data-name="{{ strtolower($requirement->name) }}">
                                 <div class="flex items-start justify-between mb-4">
                                     <div class="flex-1">
-                                        <h3 class="font-semibold text-gray-900 text-sm leading-tight mb-2">{{ Str::limit($requirement->name, 35) }}</h3>
+                                        <h3 class="font-semibold text-gray-900 text-sm leading-tight mb-2">
+                                            {{ Str::limit($requirement->name === "Supervisor's Evaluation Form" ? "Final Evaluation" : $requirement->name, 35) }}
+                                        </h3>
                                         @if($requirement->is_required)
                                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">Required</span>
                                         @else
@@ -228,10 +175,39 @@
                                         @endif
                                     </div>
                                     
-                                    <a href="{{ route('documents.show', $requirement) }}" 
-                                       class="block w-full text-center px-4 py-2 text-sm font-medium text-white bg-ojt-primary rounded-lg hover:bg-maroon-700 transition-colors">
-                                        {{ $submission ? 'View Details' : 'Submit Now' }}
-                                    </a>
+                                    @php
+                                        // Define exempted ongoing documents
+                                        $allowedKeywords = ['weekly', 'photo documentation'];
+                                        $isExempt = \Illuminate\Support\Str::contains(strtolower($requirement->name), $allowedKeywords);
+
+                                        // Status Check
+                                        $status = Auth::user()->studentProfile->ojt_status;
+
+                                        if ($status === 'pending') {
+                                            // PENDING: Block ALL post-placement documents (no exceptions)
+                                            $isRestricted = true;
+                                        } elseif ($status === 'active') {
+                                            // ACTIVE: Block post-placement EXCEPT ongoing ones
+                                            $isRestricted = !$isExempt;
+                                        } else {
+                                            // COMPLETED: Open
+                                            $isRestricted = false;
+                                        }
+
+                                        // Apply common conditions
+                                        $isRestricted = $isRestricted && !$submission;
+                                    @endphp
+
+                                    @if($isRestricted)
+                                        <button disabled class="block w-full text-center px-4 py-2 text-xs font-medium text-gray-500 bg-gray-50 rounded-lg cursor-not-allowed border border-gray-200" title="This requirement will unlock after you complete your OJT hours.">
+                                            Available after OJT Completion
+                                        </button>
+                                    @else
+                                        <a href="{{ route('documents.show', $requirement) }}" 
+                                           class="block w-full text-center px-4 py-2 text-sm font-medium text-white bg-ojt-primary rounded-lg hover:bg-maroon-700 transition-colors">
+                                            {{ $submission ? 'View Details' : 'Submit Now' }}
+                                        </a>
+                                    @endif
                                 </div>
                             </div>
                         @endforeach

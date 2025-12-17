@@ -188,6 +188,36 @@ class SupervisorFinalEvaluationController extends Controller
             ]);
         }
 
+        // AUTO-SYNC: Create Document Submission for "Final Evaluation"
+        try {
+            $requirement = \App\Models\DocumentRequirement::where('name', 'LIKE', '%Final Evaluation%')
+                ->orWhere('name', 'LIKE', '%Supervisor\'s Evaluation%')
+                ->first();
+
+            if ($requirement) {
+                // Generate PDF
+                $pdfService = app(FinalEvaluationPdfService::class);
+                $pdfContent = $pdfService->generate($evaluation);
+                
+                $fileName = 'final_evaluation_' . $student->id . '_' . time() . '.pdf';
+                $filePath = 'document-submissions/' . $fileName;
+                \Illuminate\Support\Facades\Storage::disk('public')->put($filePath, $pdfContent);
+
+                \App\Models\StudentDocumentSubmission::create([
+                    'student_user_id' => $student->id,
+                    'document_requirement_id' => $requirement->id,
+                    'file_path' => $filePath,
+                    'original_filename' => 'Final_Evaluation_Official.pdf',
+                    'file_size' => strlen($pdfContent),
+                    'mime_type' => 'application/pdf',
+                    'status' => 'submitted', // Coordinator will review it
+                ]);
+            }
+        } catch (\Exception $e) {
+            // Silently fail sync to not break the flow, but log it
+            \Illuminate\Support\Facades\Log::error('Failed to sync final evaluation to documents: ' . $e->getMessage());
+        }
+
         return redirect()->route('supervisor.students.view', $student)
             ->with('success', 'Final evaluation submitted successfully!');
     }

@@ -135,6 +135,22 @@ class DocumentController extends Controller
         $user = Auth::user();
         abort_unless($user->isStudent(), 403);
 
+        // RESTRICTION: Logic based on OJT Status
+        $status = $user->studentProfile?->ojt_status;
+        
+        $allowedKeywords = ['weekly', 'photo documentation'];
+        $isExempt = \Illuminate\Support\Str::contains(strtolower($requirement->name), $allowedKeywords);
+
+        if ($requirement->type === 'post_placement') {
+            if ($status === 'pending') {
+                 // Pending: Block ALL post-placement documents (no exceptions)
+                 return back()->with('error', 'You cannot submit post-placement documents while your OJT status is pending.');
+            } elseif ($status === 'active' && !$isExempt) {
+                 // Active: Block post-placement EXCEPT ongoing ones
+                 return back()->with('error', 'You cannot submit post-placement documents while your OJT status is active.');
+            }
+        }
+
         // Get the dynamic max files limit for this requirement
         $maxFiles = $requirement->max_files_per_submission ?? 1;
 
@@ -274,6 +290,13 @@ class DocumentController extends Controller
 
         if ($user->isStudent() && (int) $submission->student_user_id === (int) $user->id) {
             $canDownload = true;
+            
+            // Exception: Students cannot download "Final Evaluation" or "Supervisor's Evaluation Form"
+            $reqName = strtolower($submission->requirement->name ?? '');
+            if (str_contains($reqName, 'final evaluation') || str_contains($reqName, 'supervisor\'s evaluation')) {
+                 $canDownload = false;
+                 abort(403, 'You are not allowed to view the content of the Final Evaluation.');
+            }
         } elseif ($user->isSupervisor()) {
             // Check if this supervisor supervises this student
             $student = \App\Models\User::find($submission->student_user_id);
@@ -314,6 +337,13 @@ class DocumentController extends Controller
 
         if ($user->isStudent() && (int) $submission->student_user_id !== (int) $user->id) {
             abort(403);
+        }
+
+        if ($user->isStudent()) {
+             $reqName = strtolower($submission->requirement->name ?? '');
+             if (str_contains($reqName, 'final evaluation') || str_contains($reqName, 'supervisor\'s evaluation')) {
+                 abort(403, 'You are not allowed to view the content of the Final Evaluation.');
+             }
         }
 
         if ($user->isCoordinator()) {

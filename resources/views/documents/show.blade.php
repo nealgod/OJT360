@@ -111,12 +111,26 @@
                                         </div>
                                     @endif
                                     <div class="flex space-x-3">
-                                        <a href="{{ route('documents.download', $sub) }}" class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
-                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                            </svg>
-                                            Download File
-                                        </a>
+                                        @php
+                                            $reqName = strtolower($requirement->name);
+                                            $isFinalEval = str_contains($reqName, 'final evaluation') || str_contains($reqName, 'supervisor\'s evaluation');
+                                        @endphp
+
+                                        @if(!$isFinalEval)
+                                            <a href="{{ route('documents.download', $sub) }}" class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
+                                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                </svg>
+                                                Download File
+                                            </a>
+                                        @else
+                                            <span class="inline-flex items-center px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg border border-blue-200 cursor-default">
+                                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                </svg>
+                                                Supervisor has submitted this evaluation. Currently under review.
+                                            </span>
+                                        @endif
                                         @if($sub->status === 'submitted')
                                             <form method="POST" action="{{ route('documents.cancel', $sub) }}" class="inline" onsubmit="return confirm('Are you sure you want to cancel this submission? This action cannot be undone.')">
                                                 @csrf
@@ -183,10 +197,10 @@
                             </p>
                         </div>
                     </div>
-                @elseif($requirement->name === "Supervisor's Evaluation Form")
+                @elseif($requirement->name === "Supervisor's Evaluation Form" || str_contains(strtolower($requirement->name), 'final evaluation'))
                     <!-- Supervisor's Evaluation Form - System Generated -->
                     <div class="bg-white rounded-lg border border-gray-200 p-6">
-                        <h2 class="text-lg font-semibold text-ojt-dark mb-4">Supervisor's Evaluation Form</h2>
+                        <h2 class="text-lg font-semibold text-ojt-dark mb-4">Final Evaluation</h2>
                         
                         <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
                             <div class="flex items-start">

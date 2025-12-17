@@ -87,7 +87,6 @@
             <!-- Tabs and Filters -->
             <div class="bg-white rounded-lg border border-gray-200 p-4 mb-6">
                 <div class="flex flex-wrap items-center gap-2 mb-4">
-                    <button class="px-4 py-2 rounded-lg text-sm font-medium bg-ojt-primary text-white hover:bg-maroon-700 transition-colors" id="tabQueue">Latest Submissions</button>
                     <button class="px-4 py-2 rounded-lg text-sm font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors" id="tabAll">All Submissions</button>
                     <button class="px-4 py-2 rounded-lg text-sm font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors" id="tabPerReq">Per‑Requirement</button>
                     <button class="px-4 py-2 rounded-lg text-sm font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors" id="tabByStudent">By Student</button>
@@ -96,17 +95,6 @@
                 <div class="grid grid-cols-1 gap-6 mt-4">
                     <div class="space-y-4">
                         <!-- Latest / All submissions containers -->
-                        <div id="queueContainer">
-                            <div class="bg-white shadow sm:rounded-lg p-4 sm:p-6">
-                                <div class="mb-4">
-                                    <h3 class="text-lg font-medium text-gray-900">Latest Submissions</h3>
-                                    <p class="text-sm text-gray-500">Most recent document uploads from your students</p>
-                                    </div>
-                                <div class="max-h-[640px] overflow-y-auto border border-gray-200 rounded-lg">
-                                    <div id="queueList" class="divide-y divide-gray-200"></div>
-                                </div>
-                            </div>
-                        </div>
                         <div id="allContainer" class="hidden">
                             <div class="bg-white shadow sm:rounded-lg p-4 sm:p-6">
                                 <div class="mb-4">
@@ -312,7 +300,7 @@
         let allStudents = @json($students);
         let allRequirements = @json($requirements);
         const storageBase = "{{ \Illuminate\Support\Facades\Storage::url('') }}";
-        let currentTab = 'queue';
+        let currentTab = 'all';
         let selectedStudentId = null;
 
         // Flatten submissions for filters
@@ -324,9 +312,7 @@
             });
         });
 
-        const queueList = document.getElementById('queueList');
         const allList = document.getElementById('allList');
-        const queueContainer = document.getElementById('queueContainer');
         const allContainer = document.getElementById('allContainer');
         const perReqGrid = document.getElementById('perReqGrid');
         const sidebar = document.getElementById('studentSidebar');
@@ -334,7 +320,6 @@
         const sidebarChecklist = document.getElementById('sidebarChecklist');
 
         // Tabs
-        document.getElementById('tabQueue').addEventListener('click', () => setTab('queue'));
         document.getElementById('tabAll').addEventListener('click', () => setTab('all'));
         document.getElementById('tabPerReq').addEventListener('click', () => setTab('per'));
         document.getElementById('tabByStudent').addEventListener('click', () => setTab('student'));
@@ -344,11 +329,9 @@
             const activeClass = 'px-4 py-2 rounded-lg text-sm font-medium bg-ojt-primary text-white hover:bg-maroon-700 transition-colors';
             const inactiveClass = 'px-4 py-2 rounded-lg text-sm font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors';
             
-            document.getElementById('tabQueue').className = tab==='queue' ? activeClass : inactiveClass;
             document.getElementById('tabAll').className = tab==='all' ? activeClass : inactiveClass;
             document.getElementById('tabPerReq').className = tab==='per' ? activeClass : inactiveClass;
             document.getElementById('tabByStudent').className = tab==='student' ? activeClass : inactiveClass;
-            queueContainer.classList.toggle('hidden', tab!=='queue');
             allContainer.classList.toggle('hidden', tab!=='all');
             perReqGrid.classList.toggle('hidden', tab!=='per');
             document.getElementById('byStudentPane').classList.toggle('hidden', tab!=='student');
@@ -375,22 +358,10 @@
             const status = '';
             const type = '';
 
-            if (currentTab === 'queue' || currentTab === 'all') {
+            if (currentTab === 'all') {
                 const filtered = allSubmissions;
-
-                if (currentTab === 'queue') {
-                    // Latest submissions: most recent first, limited to keep list compact
-                    const queue = filtered
-                        .slice()
-                        .sort((a,b)=> new Date(b.submission.created_at) - new Date(a.submission.created_at))
-                        .slice(0, 50);
-                    queueList.innerHTML = queue.length ? queue.map(renderRow).join('') : emptyState('No recent submissions');
-                    allList.innerHTML = '';
-                } else {
-                    const allSorted = filtered.slice().sort((a,b)=> new Date(b.submission.created_at) - new Date(a.submission.created_at));
-                    allList.innerHTML = allSorted.length ? allSorted.map(renderRow).join('') : emptyState('No submissions found');
-                    queueList.innerHTML = '';
-                }
+                const allSorted = filtered.slice().sort((a,b)=> new Date(b.submission.created_at) - new Date(a.submission.created_at));
+                allList.innerHTML = allSorted.length ? allSorted.map(renderRow).join('') : emptyState('No submissions found');
             } else if (currentTab === 'per') {
                 // Per‑Requirement tab now uses the server-rendered grid layout;
                 // no dynamic re-render is needed here.
@@ -1049,7 +1020,26 @@
         }
 
         // Init
-        setTab('queue');
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlStudentId = urlParams.get('student_id');
+
+        if (urlStudentId) {
+            setTab('student');
+            // Give time for the tab to switch and picker to populate
+            setTimeout(() => {
+                const picker = document.getElementById('studentPicker');
+                if (picker) {
+                    // Check if student exists
+                    const studentExists = allStudents.some(s => s.id == urlStudentId);
+                    if (studentExists) {
+                        picker.value = urlStudentId;
+                        picker.dispatchEvent(new Event('change'));
+                    }
+                }
+            }, 100);
+        } else {
+            setTab('all');
+        }
 
         // Close modals when clicking outside
         document.getElementById('documentModal').addEventListener('click', function(e) {
