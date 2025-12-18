@@ -242,7 +242,6 @@ class SupervisorAcceptanceController extends Controller
             'work_schedule' => 'required|array',
             'shift_start' => 'required',
             'shift_end' => 'required',
-            'break_minutes' => 'nullable|integer|min:0',
             'signature_type' => 'required|in:typed,uploaded',
             'signature_data' => 'nullable|string',
             'additional_notes' => 'nullable|string',
@@ -251,7 +250,7 @@ class SupervisorAcceptanceController extends Controller
         // Add shift times and break minutes to work schedule
         $validated['work_schedule']['shift_start'] = $validated['shift_start'];
         $validated['work_schedule']['shift_end'] = $validated['shift_end'];
-        $validated['work_schedule']['break_minutes'] = $validated['break_minutes'] ?? 0;
+        $validated['work_schedule']['break_minutes'] = 0;
 
         // Generate document ID
         $documentId = 'ACC-'.date('Y').'-'.str_pad(AcceptanceLetter::count() + 1, 6, '0', STR_PAD_LEFT);
@@ -274,7 +273,7 @@ class SupervisorAcceptanceController extends Controller
             'work_schedule' => array_merge($validated['work_schedule'], [
                 'shift_start' => $validated['shift_start'],
                 'shift_end' => $validated['shift_end'],
-                'break_minutes' => $validated['break_minutes'] ?? 60,
+                'break_minutes' => 0,
             ]),
             'signature_type' => $validated['signature_type'],
             'signature_data' => $validated['signature_data'] ?? null,

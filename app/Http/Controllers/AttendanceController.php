@@ -34,98 +34,75 @@ class AttendanceController extends Controller
 
             $user = Auth::user();
 
-            // Check if student has completed their OJT
             if ($user->studentProfile?->ojt_status === 'completed') {
                 return back()->with('error', 'You have completed your OJT. Attendance logging is disabled.');
             }
 
             if (! $user->hasActiveOJT()) {
-                return back()->with('error', 'You must have an active OJT status to use attendance. Please contact your coordinator.');
+                return back()->with('error', 'You must have an active OJT status to use attendance.');
             }
 
+            // Check Start Date
             $acceptance = \App\Models\AcceptanceLetter::where('student_user_id', $user->id)
                 ->latest('start_date')
                 ->first();
 
             if ($acceptance && $acceptance->start_date) {
-                $startDate = $acceptance->start_date->startOfDay();
-                if (now()->startOfDay()->lt($startDate)) {
-                    $message = 'Your OJT schedule begins on '.$acceptance->start_date->format('F j, Y').'. Time in will be available on that date.';
-                    if ($request->ajax()) {
-                        return response()->json([
-                            'success' => false,
-                            'message' => $message,
-                        ], 422);
-                    }
-
-                    return back()->with('error', $message);
+                if (now()->startOfDay()->lt($acceptance->start_date->startOfDay())) {
+                    return back()->with('error', 'Your OJT schedule begins on '.$acceptance->start_date->format('F j, Y').'.');
                 }
             }
 
             $today = now()->toDateString();
-
-            // Check if already timed in today
-            $existingLog = AttendanceLog::where('student_user_id', $user->id)
-                ->where('work_date', $today)
-                ->whereNotNull('time_in')
-                ->first();
-
-            if ($existingLog) {
-                return back()->with('error', 'Already timed in for today.');
-            }
-
-            // Get existing log or create new one
+            
+            // Get existing log
             $log = AttendanceLog::where('student_user_id', $user->id)
                 ->where('work_date', $today)
                 ->first();
 
+            $path = $request->file('photo_in')->store('attendance-photos', 'public');
+            $currentTime = now()->setTimezone(config('timezone.default', 'Asia/Manila'))->format('H:i:s');
+
+            // --- Logic for AM IN vs PM IN ---
             if (! $log) {
+                // Case 1: AM IN (First punch of the day)
                 $log = AttendanceLog::create([
                     'student_user_id' => $user->id,
                     'work_date' => $today,
                     'company_id' => $user->studentProfile?->assigned_company_id,
+                    'am_in_time' => $currentTime,
+                    'am_in_photo' => $path,
+                    'am_in_lat' => $request->input('lat_in'),
+                    'am_in_lng' => $request->input('lng_in'),
+                    'status' => 'approved', // In Progress (morning)
                 ]);
+                $msg = 'Timed In (Morning) successfully.';
+            } elseif ($log->am_out_time && ! $log->pm_in_time) {
+                // Case 2: PM IN (After lunch)
+                $log->update([
+                    'pm_in_time' => $currentTime,
+                    'pm_in_photo' => $path,
+                    'pm_in_lat' => $request->input('lat_in'),
+                    'pm_in_lng' => $request->input('lng_in'),
+                    'status' => 'approved', // Continue In Progress
+                ]);
+                $msg = 'Timed In (Afternoon) successfully.';
+            } else {
+                 if ($log->am_in_time && !$log->am_out_time) {
+                     return back()->with('error', 'You are currently timed in for Morning. Please Time Out first.');
+                 }
+                return back()->with('error', 'Invalid punch sequence. Please check your status.');
             }
 
-            $path = $request->file('photo_in')->store('attendance-photos', 'public');
-
-            // Ensure consistent timezone handling
-            $timeIn = now()->setTimezone(config('timezone.default', 'Asia/Manila'));
-
-            $log->update([
-                'time_in' => $timeIn->format('H:i:s'), // Store in 24-hour format for database
-                'photo_in_path' => $path,
-                // Keep status as 'approved' to match existing database enum/constraints;
-                // the UI already shows "In Progress" based on missing time_out/minutes.
-                'status' => 'approved',
-                'lat_in' => $request->input('lat_in'),
-                'lng_in' => $request->input('lng_in'),
-            ]);
-
-            // Check if this is an AJAX request
             if (request()->ajax()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Timed in successfully.',
-                    'time_in' => $log->time_in,
-                ]);
+                return response()->json(['success' => true, 'message' => $msg]);
             }
+            return back()->with('success', $msg);
 
-            return back()->with('success', 'Timed in successfully.');
         } catch (\Exception $e) {
-            \Log::error('Time in error: '.$e->getMessage(), [
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            // Check if this is an AJAX request
-            if (request()->ajax()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Failed to time in: '.$e->getMessage(),
-                ], 400);
-            }
-
-            return back()->with('error', 'Failed to time in: '.$e->getMessage());
+            \Log::error('Time in error: '.$e->getMessage());
+            if (request()->ajax()) return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+            return back()->with('error', 'Error: '.$e->getMessage());
         }
     }
 
@@ -165,130 +142,74 @@ class AttendanceController extends Controller
                 ->where('work_date', $today)
                 ->first();
 
-            if (! $log || ! $log->time_in) {
-                return back()->with('error', 'Please time in first.');
-            }
-            if ($log->time_out) {
-                return back()->with('error', 'Already timed out.');
+            if (! $log) {
+                return back()->with('error', 'No attendance record found for today.');
             }
 
             $path = $request->file('photo_out')->store('attendance-photos', 'public');
+            $currentTime = now()->setTimezone(config('timezone.default', 'Asia/Manila'))->format('H:i:s');
 
-            // Parse the stored time_in string with proper timezone handling
-            try {
-                $timeIn = $log->work_date->setTimeFromTimeString($log->time_in)->setTimezone('Asia/Manila');
-            } catch (\Exception $e) {
-                \Log::error('Time parsing error', [
-                    'user_id' => $user->id,
-                    'work_date' => $log->work_date,
-                    'time_in' => $log->time_in,
-                    'error' => $e->getMessage(),
+            // --- Logic for AM OUT vs PM OUT ---
+            if ($log->am_in_time && ! $log->am_out_time) {
+                // Case 1: AM OUT (Lunch break / Half Day)
+                
+                // Calculate AM Duration
+                $amStart = \Carbon\Carbon::parse($log->am_in_time);
+                $amEnd = \Carbon\Carbon::parse($currentTime);
+                $amMinutes = max(0, $amStart->diffInMinutes($amEnd));
+                
+                // Update log with AM Out time AND calculated minutes
+                $log->update([
+                    'am_out_time' => $currentTime,
+                    'am_out_photo' => $path,
+                    'am_out_lat' => $request->input('lat_out'),
+                    'am_out_lng' => $request->input('lng_out'),
+                    'minutes_worked' => $amMinutes, // Bank these minutes immediately
                 ]);
+                
+                $msg = 'Timed Out (Morning) successfully.';
 
-                return back()->with('error', 'Invalid time in record. Please contact your coordinator.');
-            }
+            } elseif ($log->pm_in_time && ! $log->pm_out_time) {
+                // Case 2: PM OUT (End of day)
+                
+                // Recalculate AM Duration
+                $amStart = \Carbon\Carbon::parse($log->am_in_time);
+                $amEnd = \Carbon\Carbon::parse($log->am_out_time);
+                $amMinutes = max(0, $amStart->diffInMinutes($amEnd));
 
-            // Ensure consistent timezone for time out
-            $timeOut = now()->setTimezone(config('timezone.default', 'Asia/Manila'));
+                // Calculate PM Duration
+                $pmStart = \Carbon\Carbon::parse($log->pm_in_time);
+                $pmEnd = \Carbon\Carbon::parse($currentTime);
+                $pmMinutes = max(0, $pmStart->diffInMinutes($pmEnd));
 
-            // Validate time out is after time in
-            if ($timeOut->lt($timeIn)) {
-                \Log::warning('Time out before time in', [
-                    'user_id' => $user->id,
-                    'time_in' => $timeIn->format('H:i:s'),
-                    'time_out' => $timeOut->format('H:i:s'),
+                $totalMinutes = $amMinutes + $pmMinutes;
+
+                $log->update([
+                    'pm_out_time' => $currentTime,
+                    'pm_out_photo' => $path,
+                    'pm_out_lat' => $request->input('lat_out'),
+                    'pm_out_lng' => $request->input('lng_out'),
+                    'minutes_worked' => $totalMinutes,
+                    'overtime_minutes' => max(0, $totalMinutes - 480), 
+                    'status' => 'approved' 
                 ]);
+                
+                $this->checkAndUpdateCompletionStatus($user); // Auto-complete check
 
-                return back()->with('error', 'Time out cannot be before time in. Please check your device clock.');
+                $msg = 'Timed Out (Afternoon) successfully. Day Complete.';
+            } else {
+                return back()->with('error', 'Invalid punch sequence. check status.');
             }
 
-            $totalMinutes = $timeIn->diffInMinutes($timeOut);
-
-            $acceptance = $acceptance ?? \App\Models\AcceptanceLetter::where('student_user_id', $user->id)
-                ->latest()
-                ->first();
-            $scheduledBreakMinutes = $acceptance?->work_schedule['break_minutes'] ?? config('timezone.default_break_duration', 60);
-            if (! is_numeric($scheduledBreakMinutes)) {
-                $scheduledBreakMinutes = config('timezone.default_break_duration', 60);
-            }
-            $scheduledBreakMinutes = (int) $scheduledBreakMinutes;
-            if ($scheduledBreakMinutes > config('timezone.max_break_duration', 240)) {
-                \Log::warning('Excessive break time', [
-                    'user_id' => $user->id,
-                    'break_minutes' => $scheduledBreakMinutes,
-                ]);
-                $scheduledBreakMinutes = config('timezone.default_break_duration', 60);
-            }
-
-            // Compute productive minutes = total - scheduled break (never below zero)
-            $minutes = max(0, $totalMinutes - $scheduledBreakMinutes);
-
-            // Calculate overtime based on expected daily hours from acceptance letter
-            $overtimeMinutes = 0;
-            if ($acceptance && isset($acceptance->work_schedule['shift_start']) && isset($acceptance->work_schedule['shift_end'])) {
-                try {
-                    // Use parse() for robustness
-                    $shiftStart = \Carbon\Carbon::parse($acceptance->work_schedule['shift_start']);
-                    $shiftEnd = \Carbon\Carbon::parse($acceptance->work_schedule['shift_end']);
-                    
-                    $shiftDuration = $shiftStart->diffInMinutes($shiftEnd);
-                    $expectedMinutes = max(0, $shiftDuration - $scheduledBreakMinutes);
-                    $overtimeMinutes = max(0, $minutes - $expectedMinutes);
-                } catch (\Exception $e) {
-                    \Log::warning('Overtime calculation error', [
-                        'user_id' => $user->id,
-                        'error' => $e->getMessage(),
-                    ]);
-                }
-            }
-
-            $log->update([
-                'time_out' => $timeOut->format('H:i:s'), // Store in 24-hour format for database
-                'photo_out_path' => $path,
-                'minutes_worked' => $minutes,
-                'overtime_minutes' => $overtimeMinutes,
-                'status' => 'approved',
-                'lat_out' => $request->input('lat_out'),
-                'lng_out' => $request->input('lng_out'),
-            ]);
-
-            \Log::info('Time out recorded', [
-                'user_id' => $user->id,
-                'work_date' => $today,
-                'time_in' => $timeIn->format('H:i:s'),
-                'time_out' => $timeOut->format('H:i:s'),
-                'total_minutes' => $totalMinutes,
-                'break_minutes' => $scheduledBreakMinutes,
-                'minutes_worked' => $minutes,
-                'timezone' => 'Asia/Manila',
-            ]);
-
-            // Check if student has completed required hours and auto-update status
-            $this->checkAndUpdateCompletionStatus($user);
-
-            // Check if this is an AJAX request
             if (request()->ajax()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Timed out successfully.',
-                    'time_out' => $log->time_out,
-                    'minutes_worked' => $minutes,
-                ]);
+                return response()->json(['success' => true, 'message' => $msg]);
             }
+            return back()->with('success', $msg);
 
-            return back()->with('success', 'Timed out successfully.');
         } catch (\Exception $e) {
             \Log::error('Time out error: '.$e->getMessage());
-
-            // Check if this is an AJAX request
-            if (request()->ajax()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Failed to time out: '.$e->getMessage(),
-                ], 400);
-            }
-
-            return back()->with('error', 'Failed to time out: '.$e->getMessage());
+            if (request()->ajax()) return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+            return back()->with('error', 'Error: '.$e->getMessage());
         }
     }
 
@@ -329,8 +250,9 @@ class AttendanceController extends Controller
             // Find the specific incomplete log
             $log = AttendanceLog::where('id', $request->log_id)
                 ->where('student_user_id', $user->id)
-                ->whereNotNull('time_in')
-                ->whereNull('time_out')
+                ->where(function($q) {
+                    $q->whereNull('am_out_time')->orWhereNull('pm_out_time');
+                })
                 ->first();
 
             if (! $log) {
@@ -343,124 +265,76 @@ class AttendanceController extends Controller
             // Store the proof photo
             $photoPath = $request->file('photo_out')->store('attendance-photos', 'public');
 
-            // Parse time_in with proper timezone handling
-            try {
-                $timeIn = $log->work_date->setTimeFromTimeString($log->time_in)->setTimezone('Asia/Manila');
-            } catch (\Exception $e) {
-                \Log::error('Recovery time parsing error', [
-                    'user_id' => $user->id,
-                    'work_date' => $log->work_date,
-                    'time_in' => $log->time_in,
-                    'error' => $e->getMessage(),
-                ]);
-
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid time in record. Please contact your coordinator.',
-                ]);
-            }
-
-            // Parse recovery time out with timezone
-            $timeOut = $log->work_date->setTimeFromTimeString($request->time_out)->setTimezone('Asia/Manila');
-
-            // Validate time out is after time in
-            if ($timeOut->lt($timeIn)) {
-                \Log::warning('Recovery time out before time in', [
-                    'user_id' => $user->id,
-                    'time_in' => $timeIn->format('H:i:s'),
-                    'time_out' => $timeOut->format('H:i:s'),
-                ]);
-
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Time out cannot be before time in. Please enter a valid time.',
-                ]);
-            }
-
-            $totalMinutes = $timeIn->diffInMinutes($timeOut);
-
-            // Validate reasonable work duration (not more than 16 hours)
-            // Removed hard cap on recovery duration per updated requirements
-
-            // Load acceptance letter schedule with validation
-            $acceptance = \App\Models\AcceptanceLetter::where('student_user_id', $user->id)
-                ->latest()
-                ->first();
-
-            if (! $acceptance) {
-                \Log::warning('Recovery no acceptance letter found', ['user_id' => $user->id]);
-
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No acceptance letter found. Please contact your coordinator.',
-                ]);
-            }
-
-            $scheduledBreakMinutes = isset($acceptance->work_schedule['break_minutes']) ? (int) $acceptance->work_schedule['break_minutes'] : 0;
-
-            // Validate break time is reasonable (0-4 hours)
-            if ($scheduledBreakMinutes > 240) { // 4 hours
-                \Log::warning('Recovery excessive break time', [
-                    'user_id' => $user->id,
-                    'break_minutes' => $scheduledBreakMinutes,
-                ]);
-                $scheduledBreakMinutes = 60; // Default to 1 hour
-            }
-
-            $minutes = max(0, $totalMinutes - $scheduledBreakMinutes);
-
-            // Calculate overtime based on expected daily hours from acceptance letter
-            $overtimeMinutes = 0;
-            if ($acceptance && isset($acceptance->work_schedule['shift_start']) && isset($acceptance->work_schedule['shift_end'])) {
-                try {
-                    // Use parse() instead of createFromFormat() to handle "10:00", "10:00:00" etc automatically
-                    $shiftStart = \Carbon\Carbon::parse($acceptance->work_schedule['shift_start']);
-                    $shiftEnd = \Carbon\Carbon::parse($acceptance->work_schedule['shift_end']);
-                    
-                    // Ensure break minutes is set
-                    $scheduledBreakMinutes = isset($acceptance->work_schedule['break_minutes']) 
-                        ? (int)$acceptance->work_schedule['break_minutes'] 
-                        : 60; // Default to 60 if not set
-
-                    // Calculate expected minutes (Shift Duration - Break)
-                    $shiftDuration = $shiftStart->diffInMinutes($shiftEnd);
-                    $expectedMinutes = max(0, $shiftDuration - $scheduledBreakMinutes);
-                    
-                    // Overtime is Actual Minutes Worked - Expected Minutes
-                    $overtimeMinutes = max(0, $minutes - $expectedMinutes);
-                    
-                } catch (\Exception $e) {
-                    \Log::warning('Recovery overtime calculation error', [
-                        'user_id' => $user->id,
-                        'error' => $e->getMessage(),
-                    ]);
+            // Determine recovery type: "AM Out" recovery or "PM Out" recovery
+            $isAmRecovery = $log->am_in_time && !$log->am_out_time;
+            
+            if ($isAmRecovery) {
+                // Recovering the Morning Shift
+                $timeIn = $log->work_date->setTimeFromTimeString($log->am_in_time)->setTimezone('Asia/Manila');
+                $timeOut = $log->work_date->setTimeFromTimeString($request->time_out)->setTimezone('Asia/Manila');
+                
+                if ($timeOut->lt($timeIn)) {
+                     return response()->json(['success' => false, 'message' => 'Time out cannot be before Time in.']);
                 }
-            }
 
-            // Update the attendance log - set as pending until coordinator approves
-            $log->update([
-                'time_out' => $request->time_out,
-                'photo_out_path' => $photoPath,
-                'minutes_worked' => $minutes,
-                'overtime_minutes' => $overtimeMinutes,
-                'status' => 'pending', // Pending supervisor approval
-                'is_recovered' => true,
-                'recovery_reason' => $request->reason,
-                'recovery_approved' => null, // Waiting for approval
-            ]);
+                $minutes = max(0, $timeIn->diffInMinutes($timeOut));
+                
+                $log->update([
+                    'am_out_time' => $request->time_out,
+                    'am_out_photo' => $photoPath,
+                    'minutes_worked' => $minutes, 
+                    'status' => 'pending',
+                    'is_recovered' => true,
+                    'recovery_reason' => $request->reason,
+                    'recovery_approved' => null,
+                ]);
+            } else {
+                // Recovering PM Shift (Missing PM OUT)
+                $timeInStr = $log->pm_in_time;
+                if (!$timeInStr) {
+                    return response()->json(['success' => false, 'message' => 'Cannot recover PM time without a PM Time In.']);
+                }
+                
+                $timeIn = $log->work_date->setTimeFromTimeString($timeInStr)->setTimezone('Asia/Manila');
+                $timeOut = $log->work_date->setTimeFromTimeString($request->time_out)->setTimezone('Asia/Manila');
+
+                if ($timeOut->lt($timeIn)) {
+                     return response()->json(['success' => false, 'message' => 'Time out cannot be before Time in.']);
+                }
+                
+                $pmMinutes = max(0, $timeIn->diffInMinutes($timeOut));
+                
+                // Add AM shift if it exists
+                $amMinutes = 0;
+                if ($log->am_in_time && $log->am_out_time) {
+                    $amStart = \Carbon\Carbon::parse($log->am_in_time);
+                    $amEnd = \Carbon\Carbon::parse($log->am_out_time);
+                    $amMinutes = max(0, $amStart->diffInMinutes($amEnd));
+                }
+                
+                $totalMinutes = $amMinutes + $pmMinutes;
+                
+                $log->update([
+                    'pm_out_time' => $request->time_out,
+                    'pm_out_photo' => $photoPath,
+                    'minutes_worked' => $totalMinutes,
+                    'overtime_minutes' => max(0, $totalMinutes - 480),
+                    'status' => 'pending',
+                    'is_recovered' => true,
+                    'recovery_reason' => $request->reason,
+                    'recovery_approved' => null,
+                ]);
+                
+                $minutes = $totalMinutes; 
+            }
 
             // Log the recovery action for audit purposes
             \Log::info('Attendance recovery completed', [
                 'user_id' => $user->id,
                 'log_id' => $log->id,
-                'work_date' => $log->work_date,
-                'time_in' => $timeIn->format('H:i:s'),
-                'time_out' => $timeOut->format('H:i:s'),
-                'total_minutes' => $totalMinutes,
-                'break_minutes' => $scheduledBreakMinutes,
+                'type' => $isAmRecovery ? 'AM_RECOVERY' : 'PM_RECOVERY',
                 'minutes_worked' => $minutes,
                 'reason' => $request->reason,
-                'timezone' => 'Asia/Manila',
             ]);
 
             // Check if student has completed required hours and auto-update status

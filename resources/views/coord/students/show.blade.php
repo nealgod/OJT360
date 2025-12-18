@@ -168,118 +168,139 @@
                             </div>
                         </div>
                         <div class="overflow-x-auto border border-gray-200 rounded-lg">
-                            <div class="h-48 overflow-y-auto">
+                            <div class="h-96 overflow-y-auto">
                                 <table class="min-w-full divide-y divide-gray-200 text-sm">
                                     <thead class="bg-gray-50 sticky top-0">
                                         <tr>
-                                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Date</th>
-                                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Time In</th>
-                                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Time Out</th>
-                                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Hours</th>
-                                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Overtime</th>
-                                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Photos</th>
-                                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wide">Status</th>
+                                            <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wide text-xs">Date</th>
+                                            <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wide text-xs">Schedule</th>
+                                            <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wide text-xs">Duration</th>
+                                            <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wide text-xs">Photos</th>
+                                            <th class="px-3 py-3 text-right font-medium text-gray-500 uppercase tracking-wide text-xs">Status</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-gray-100">
                                         @forelse($student->attendanceLogs as $log)
-                                        <tr>
-                                            <td class="px-3 py-2 text-gray-900">{{ $log->work_date?->format('M d, Y') ?? '—' }}</td>
-                                            <td class="px-3 py-2 text-gray-700">{{ $log->time_in_formatted ?? '—' }}</td>
-                                            <td class="px-3 py-2 text-gray-700">{{ $log->time_out_formatted ?? '—' }}</td>
-                                            <td class="px-3 py-2">
-                                                @if($log->minutes_worked)
-                                                    <span class="inline-flex items-center gap-1 text-sm font-semibold text-ojt-primary">
-                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                                        </svg>
-                                                        {{ round($log->minutes_worked / 60, 1) }}h
-                                                    </span>
-                                                @else
-                                                    <span class="text-gray-400 text-sm">—</span>
-                                                @endif
+                                        <tr class="hover:bg-gray-50 group">
+                                            <td class="px-3 py-2 text-gray-900 whitespace-nowrap text-sm font-medium">
+                                                {{ $log->work_date?->format('M d') ?? '—' }}
                                             </td>
-                                            <td class="px-3 py-2">
-                                                @if($log->overtime_minutes && $log->overtime_minutes > 0)
-                                                    @php
-                                                        $otHours = floor($log->overtime_minutes / 60);
-                                                        $otMins = $log->overtime_minutes % 60;
-                                                    @endphp
-                                                    <span class="inline-flex items-center gap-1 text-sm font-semibold text-green-600">
-                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                                        </svg>
-                                                        @if($otHours > 0 && $otMins > 0)
-                                                            +{{ $otHours }}h {{ $otMins }}m
-                                                        @elseif($otHours > 0)
-                                                            +{{ $otHours }}h
+                                            <td class="px-3 py-2 text-gray-700 text-xs">
+                                                <div class="flex flex-col gap-1">
+                                                    <!-- AM -->
+                                                    <div class="flex items-center gap-2">
+                                                        <span class="text-gray-400 font-bold w-6">AM</span>
+                                                        @if($log->am_in_time)
+                                                            <span>{{ \Carbon\Carbon::parse($log->am_in_time)->format('g:i a') }}</span>
+                                                            <span class="text-gray-300">-</span>
+                                                            <span>{{ $log->am_out_time ? \Carbon\Carbon::parse($log->am_out_time)->format('g:i a') : '...' }}</span>
                                                         @else
-                                                            +{{ $otMins }}m
+                                                            <span class="text-gray-300">—</span>
                                                         @endif
-                                                    </span>
-                                                @else
-                                                    <span class="text-gray-400 text-sm">—</span>
-                                                @endif
+                                                    </div>
+                                                    <!-- PM -->
+                                                    <div class="flex items-center gap-2">
+                                                        <span class="text-gray-400 font-bold w-6">PM</span>
+                                                        @if($log->pm_in_time)
+                                                            <span>{{ \Carbon\Carbon::parse($log->pm_in_time)->format('g:i a') }}</span>
+                                                            <span class="text-gray-300">-</span>
+                                                            <span>{{ $log->pm_out_time ? \Carbon\Carbon::parse($log->pm_out_time)->format('g:i a') : '...' }}</span>
+                                                        @else
+                                                            <span class="text-gray-300">—</span>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-3 py-2 text-xs">
+                                                <div class="flex flex-col gap-1">
+                                                    <div class="flex justify-between w-24">
+                                                        <span class="text-gray-500">Work:</span>
+                                                        <span class="font-bold text-gray-900">{{ $log->minutes_worked ? round($log->minutes_worked / 60, 1).'h' : '—' }}</span>
+                                                    </div>
+                                                    <div class="flex justify-between w-24">
+                                                        <span class="text-gray-500">Break:</span>
+                                                        <span class="text-gray-700">
+                                                            @if($log->am_out_time && $log->pm_in_time)
+                                                                {{ \Carbon\Carbon::parse($log->am_out_time)->diff(\Carbon\Carbon::parse($log->pm_in_time))->format('%hh %im') }}
+                                                            @elseif($log->break_minutes)
+                                                                {{ floor($log->break_minutes / 60) }}h {{ $log->break_minutes % 60 }}m
+                                                            @else
+                                                                —
+                                                            @endif
+                                                        </span>
+                                                    </div>
+                                                    @if($log->overtime_minutes > 0)
+                                                        <div class="flex justify-end mt-1">
+                                                            <span class="bg-green-100 text-green-700 border border-green-200 px-1.5 py-0.5 rounded text-[10px] font-bold">
+                                                                +{{ round($log->overtime_minutes / 60, 1) }}h OT
+                                                            </span>
+                                                        </div>
+                                                    @endif
+                                                </div>
                                             </td>
                                             <td class="px-3 py-2">
-                                                <div class="flex flex-wrap items-center gap-2 justify-end">
-                                                    @if($log->photo_in_path)
-                                                        <a href="{{ Storage::url($log->photo_in_path) }}" target="_blank" class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors">
-                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                                            </svg>
-                                                            In
-                                                        </a>
-                                                    @endif
-                                                    @if($log->photo_out_path)
-                                                        <a href="{{ Storage::url($log->photo_out_path) }}" target="_blank" class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium bg-green-50 text-green-700 border border-green-200 rounded-md hover:bg-green-100 transition-colors">
-                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                                            </svg>
-                                                            Out
-                                                        </a>
-                                                    @endif
-                                                    @if(!$log->photo_in_path && !$log->photo_out_path)
-                                                        <span class="text-xs text-gray-400">No photos</span>
-                                                    @endif
-                                            </div>
+                                                <div class="flex items-center gap-1">
+                                                    @foreach(['am_in', 'am_out', 'pm_in', 'pm_out'] as $type)
+                                                        @php
+                                                            $photoCol = $type.'_photo';
+                                                            $latCol = $type.'_lat';
+                                                            $lngCol = $type.'_lng';
+                                                            
+                                                            $hasPhoto = $log->$photoCol;
+                                                            $lat = $log->$latCol;
+                                                            $lng = $log->$lngCol;
+                                                        @endphp
+                                                        @if($hasPhoto)
+                                                            <button 
+                                                                onclick="showPhotoMap('{{ Storage::url($hasPhoto) }}', '{{ $lat }}', '{{ $lng }}', '{{ strtoupper(str_replace('_', ' ', $type)) }}')"
+                                                                class="w-6 h-6 rounded flex items-center justify-center transition-all bg-blue-100 text-blue-600 hover:bg-blue-200 focus:outline-none"
+                                                                title="{{ strtoupper(str_replace('_', ' ', $type)) }}"
+                                                            >
+                                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                                            </button>
+                                                        @else
+                                                            <div class="w-6 h-6 rounded flex items-center justify-center bg-gray-100 text-gray-300 cursor-default" title="No Photo">
+                                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                                            </div>
+                                                        @endif
+                                                    @endforeach
+                                                </div>
                                             </td>
-                                            <td class="px-3 py-2">
-                                                @if(!$log->time_in)
-                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">Missing Time-In</span>
-                                                @elseif(!$log->time_out)
-                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">Needs Time-Out</span>
-                                                @elseif($log->is_recovered && $log->recovery_approved === null)
-                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 cursor-help" title="Pending Supervisor Approval">
-                                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                                        </svg>
-                                                        Pending Approval
-                                                    </span>
-                                                @elseif($log->is_recovered && $log->recovery_approved === true)
-                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
-                                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                                                        </svg>
-                                                        Approved
+                                            <td class="px-3 py-2 text-right">
+                                                @if($log->is_recovered && $log->recovery_approved === true)
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                        Recovered
                                                     </span>
                                                 @elseif($log->is_recovered && $log->recovery_approved === false)
-                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
-                                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-                                                        </svg>
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                        Recovery Rejected
+                                                    </span>
+                                                @elseif($log->is_recovered && is_null($log->recovery_approved))
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 animate-pulse">
+                                                        Pending Recovery
+                                                    </span>
+                                                @elseif($log->status === 'approved')
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                        Completed
+                                                    </span>
+                                                @elseif($log->status === 'pending')
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                        Pending Review
+                                                    </span>
+                                                @elseif($log->status === 'rejected')
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
                                                         Rejected
                                                     </span>
                                                 @else
-                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Complete</span>
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                        In Progress
+                                                    </span>
                                                 @endif
                                             </td>
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="6" class="px-3 py-4 text-center text-sm text-gray-500">No attendance logs yet.</td>
+                                            <td colspan="5" class="px-3 py-4 text-center text-sm text-gray-500">No attendance logs yet.</td>
                                         </tr>
                                         @endforelse
                                     </tbody>
@@ -648,6 +669,77 @@
         </div>
     </div>
 
+<!-- Photo & Map Modal -->
+<div id="photoMapModal" class="fixed inset-0 z-50 hidden overflow-y-auto" onclick="closePhotoMap()">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+            <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+        </div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full" onclick="event.stopPropagation()">
+            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div class="flex justify-between items-start mb-4">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900" id="photoMapTitle">Attendance Logic</h3>
+                    <button type="button" onclick="closePhotoMap()" class="text-gray-400 hover:text-gray-500">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Photo Column -->
+                    <div class="bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center h-full min-h-[300px]">
+                        <img id="modalPhoto" src="" alt="Attendance Photo" class="max-w-full max-h-[500px] object-contain">
+                    </div>
+                    <!-- Map Column -->
+                    <div class="bg-gray-100 rounded-lg overflow-hidden h-[300px] md:h-auto relative">
+                        <div id="noMapMessage" class="hidden absolute inset-0 flex items-center justify-center text-gray-500 text-sm">
+                            No location data available
+                        </div>
+                        <iframe id="googleMap" class="w-full h-full" frameborder="0" style="border:0" allowfullscreen loading="lazy" src=""></iframe>
+                    </div>
+                </div>
+                <!-- External Link -->
+                <div class="mt-4 text-right">
+                    <a id="externalMapLink" href="#" target="_blank" class="text-sm text-blue-600 hover:text-blue-800 font-medium inline-flex items-center">
+                        Open in Google Maps
+                        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showPhotoMap(photoUrl, lat, lng, title) {
+        document.getElementById('photoMapTitle').textContent = title;
+        document.getElementById('modalPhoto').src = photoUrl;
+        
+        const mapFrame = document.getElementById('googleMap');
+        const mapLink = document.getElementById('externalMapLink');
+        const noMap = document.getElementById('noMapMessage');
+        
+        if (lat && lng && lat != 'null' && lng != 'null') {
+            const mapUrl = `https://maps.google.com/maps?q=${lat},${lng}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+            mapFrame.src = mapUrl;
+            mapFrame.classList.remove('hidden');
+            noMap.classList.add('hidden');
+            
+            mapLink.href = `https://www.google.com/maps?q=${lat},${lng}`;
+            mapLink.style.display = 'inline-flex';
+        } else {
+            mapFrame.classList.add('hidden');
+            noMap.classList.remove('hidden');
+            mapLink.style.display = 'none';
+        }
+
+        document.getElementById('photoMapModal').classList.remove('hidden');
+    }
+
+    function closePhotoMap() {
+        document.getElementById('photoMapModal').classList.add('hidden');
+        document.getElementById('googleMap').src = ''; // Clear source to stop loading
+    }
+</script>
 </x-app-layout>
 
 

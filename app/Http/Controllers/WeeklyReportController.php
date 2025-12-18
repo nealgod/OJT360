@@ -103,7 +103,9 @@ class WeeklyReportController extends Controller
             // Check if student had attendance during overlap
             $hasAttendance = AttendanceLog::where('student_user_id', Auth::id())
                 ->whereBetween('work_date', [$overlapStart->toDateString(), $overlapEnd->toDateString()])
-                ->whereNotNull('time_in')
+                ->where(function($q) {
+                    $q->whereNotNull('am_in_time')->orWhereNotNull('pm_in_time');
+                })
                 ->exists();
 
             if ($hasAttendance) {
@@ -112,11 +114,16 @@ class WeeklyReportController extends Controller
             }
         }
 
-        // Check for incomplete attendance (time_in without time_out)
+        // Check for incomplete attendance (missing any checkout)
         $incompleteAttendance = AttendanceLog::where('student_user_id', Auth::id())
             ->whereBetween('work_date', [$weekStart->toDateString(), $weekEnd->toDateString()])
-            ->whereNotNull('time_in')
-            ->whereNull('time_out')
+            ->where(function($q) {
+                $q->where(function($am) {
+                    $am->whereNotNull('am_in_time')->whereNull('am_out_time');
+                })->orWhere(function($pm) {
+                    $pm->whereNotNull('pm_in_time')->whereNull('pm_out_time');
+                });
+            })
             ->get();
 
         if ($incompleteAttendance->isNotEmpty()) {
@@ -220,7 +227,9 @@ class WeeklyReportController extends Controller
             // Check if student had attendance during overlap
             $hasAttendance = AttendanceLog::where('student_user_id', Auth::id())
                 ->whereBetween('work_date', [$overlapStart->toDateString(), $overlapEnd->toDateString()])
-                ->whereNotNull('time_in')
+                ->where(function($q) {
+                    $q->whereNotNull('am_in_time')->orWhereNotNull('pm_in_time');
+                })
                 ->exists();
 
             if ($hasAttendance) {
@@ -229,11 +238,16 @@ class WeeklyReportController extends Controller
             }
         }
 
-        // Check for incomplete attendance (time_in without time_out)
+        // Check for incomplete attendance (missing any checkout)
         $incompleteAttendance = AttendanceLog::where('student_user_id', Auth::id())
             ->whereBetween('work_date', [$weekStart->toDateString(), $weekEnd->toDateString()])
-            ->whereNotNull('time_in')
-            ->whereNull('time_out')
+            ->where(function($q) {
+                $q->where(function($am) {
+                    $am->whereNotNull('am_in_time')->whereNull('am_out_time');
+                })->orWhere(function($pm) {
+                    $pm->whereNotNull('pm_in_time')->whereNull('pm_out_time');
+                });
+            })
             ->get();
 
         if ($incompleteAttendance->isNotEmpty()) {
@@ -367,9 +381,9 @@ class WeeklyReportController extends Controller
             $hoursByDate[$dateKey] = round(($log->minutes_worked ?? 0) / 60, 2);
         }
 
-        // Count days with attendance (any log with time_in or hours worked)
+        // Count days with attendance (any log with any time punch or hours worked)
         $daysPresent = $logs->filter(function ($log) {
-            return $log->time_in !== null || ($log->minutes_worked ?? 0) > 0;
+            return $log->am_in_time !== null || $log->pm_in_time !== null || ($log->minutes_worked ?? 0) > 0;
         })->count();
 
         $daysLate = $logs->where('status', 'late')->count();

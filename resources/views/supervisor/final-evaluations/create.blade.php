@@ -8,8 +8,11 @@
                 <p class="text-sm text-gray-500">{{ $student->name }} - Final OJT Performance Evaluation</p>
             </div>
             <a href="{{ route('supervisor.students.view', $student) }}" 
-               class="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                ← Back
+               class="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm bg-white shadow-sm">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7 7-7" />
+                </svg>
+                Back to Student
             </a>
         </div>
     </x-slot>

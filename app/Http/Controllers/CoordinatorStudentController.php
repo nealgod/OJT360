@@ -170,8 +170,20 @@ class CoordinatorStudentController extends Controller
 
         $attendanceStats = [
             'total_days' => $student->attendanceLogs()->count(),
-            'completed_days' => $student->attendanceLogs()->whereNotNull('time_in')->whereNotNull('time_out')->count(),
-            'missing_checkout' => $student->attendanceLogs()->whereNotNull('time_in')->whereNull('time_out')->count(),
+            'completed_days' => $student->attendanceLogs()->where(function($q) {
+                $q->where(function($am) {
+                    $am->whereNotNull('am_in_time')->whereNotNull('am_out_time');
+                })->orWhere(function($pm) {
+                    $pm->whereNotNull('pm_in_time')->whereNotNull('pm_out_time');
+                })->orWhere('minutes_worked', '>', 0);
+            })->count(),
+            'missing_checkout' => $student->attendanceLogs()->where(function($q) {
+                $q->where(function($am) {
+                    $am->whereNotNull('am_in_time')->whereNull('am_out_time');
+                })->orWhere(function($pm) {
+                    $pm->whereNotNull('pm_in_time')->whereNull('pm_out_time');
+                });
+            })->count(),
         ];
 
         $reportStats = [

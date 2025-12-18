@@ -221,52 +221,6 @@
                                     <p class="text-base font-medium">{{ isset($schedule['shift_start']) ? $formatTime($schedule['shift_start']) : '—' }} – {{ isset($schedule['shift_end']) ? $formatTime($schedule['shift_end']) : '—' }}</p>
                                 </div>
                                 <div>
-                                    <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Break Time</p>
-                                    <p class="text-base font-medium">
-                                        @if(isset($schedule['break_minutes']) && $schedule['break_minutes'] > 0)
-                                            @php
-                                                $breakMinutes = $schedule['break_minutes'];
-                                                $hours = floor($breakMinutes / 60);
-                                                $mins = $breakMinutes % 60;
-                                            @endphp
-                                            @if($hours > 0 && $mins > 0)
-                                                {{ $hours }} {{ $hours == 1 ? 'hour' : 'hours' }} {{ $mins }} {{ $mins == 1 ? 'minute' : 'minutes' }}
-                                            @elseif($hours > 0)
-                                                {{ $hours }} {{ $hours == 1 ? 'hour' : 'hours' }}
-                                            @else
-                                                {{ $mins }} {{ $mins == 1 ? 'minute' : 'minutes' }}
-                                            @endif
-                                        @else
-                                            No break
-                                        @endif
-                                    </p>
-                                </div>
-                                <div>
-                                    <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Expected Hours Per Day</p>
-                                    @php
-                                        $expectedDaily = 0;
-                                        if (isset($schedule['shift_start']) && isset($schedule['shift_end'])) {
-                                            try {
-                                                $shiftStart = \Carbon\Carbon::createFromFormat('H:i', $schedule['shift_start']);
-                                                $shiftEnd = \Carbon\Carbon::createFromFormat('H:i', $schedule['shift_end']);
-                                                $totalMinutes = $shiftStart->diffInMinutes($shiftEnd);
-                                                $breakMinutes = $schedule['break_minutes'] ?? 0;
-                                                $workMinutes = $totalMinutes - $breakMinutes;
-                                                $expectedDaily = round($workMinutes / 60, 1);
-                                            } catch (\Exception $e) {
-                                                $expectedDaily = 0;
-                                            }
-                                        }
-                                    @endphp
-                                    <p class="text-base font-medium text-ojt-primary">
-                                        @if($expectedDaily > 0)
-                                            {{ $expectedDaily }} hours
-                                        @else
-                                            Not calculated
-                                        @endif
-                                    </p>
-                                </div>
-                                <div>
                                     <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Total Hours Required</p>
                                     <p class="text-base font-medium">{{ $acceptance->total_hours ?? 'Not specified' }} hours</p>
                                 </div>

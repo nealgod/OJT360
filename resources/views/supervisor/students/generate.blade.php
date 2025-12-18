@@ -185,19 +185,6 @@
                                     <input type="time" name="shift_end" id="shift_end" value="{{ old('shift_end', '17:00') }}" required
                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ojt-primary focus:border-ojt-primary">
                                 </div>
-                                <div>
-                                    <label for="break_minutes" class="block text-sm text-gray-600 mb-1">Break Time (minutes) *</label>
-                                    <input type="number" name="break_minutes" id="break_minutes" value="{{ old('break_minutes', 60) }}" required min="0" max="240"
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ojt-primary focus:border-ojt-primary"
-                                           placeholder="60">
-                                    <p class="mt-1 text-xs text-gray-500">e.g., 60 for 1 hour</p>
-                                </div>
-                                <div>
-                                    <label class="block text-sm text-gray-600 mb-1">Hours per Day</label>
-                                    <div id="hours_per_day" class="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-700 font-medium">
-                                        9 hours
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -238,62 +225,8 @@
     </div>
 
     <script>
-        (function() {
-            const shiftStart = document.getElementById('shift_start');
-            const shiftEnd = document.getElementById('shift_end');
-            const breakMinutes = document.getElementById('break_minutes');
-            const hoursPerDayDisplay = document.getElementById('hours_per_day');
-
-            function calculateHoursPerDay() {
-                // Get shift times
-                const start = shiftStart.value;
-                const end = shiftEnd.value;
-                const breakTime = parseInt(breakMinutes.value) || 0;
-
-                if (!start || !end) {
-                    hoursPerDayDisplay.textContent = '— hours';
-                    return;
-                }
-
-                // Calculate total shift minutes
-                const [startHour, startMin] = start.split(':').map(Number);
-                const [endHour, endMin] = end.split(':').map(Number);
-                
-                const startMinutes = startHour * 60 + startMin;
-                const endMinutes = endHour * 60 + endMin;
-                let totalMinutes = endMinutes - startMinutes;
-                
-                if (totalMinutes <= 0) {
-                    hoursPerDayDisplay.textContent = '0 hours';
-                    return;
-                }
-                
-                // Subtract break time
-                totalMinutes = totalMinutes - breakTime;
-                
-                if (totalMinutes <= 0) {
-                    hoursPerDayDisplay.textContent = '0 hours';
-                    return;
-                }
-                
-                // Convert to hours with decimal
-                const totalHours = totalMinutes / 60;
-                
-                // Display with 1 decimal place if needed
-                if (totalHours % 1 === 0) {
-                    hoursPerDayDisplay.textContent = `${totalHours} hours`;
-                } else {
-                    hoursPerDayDisplay.textContent = `${totalHours.toFixed(1)} hours`;
-                }
-            }
-
-            // Add event listeners
-            shiftStart.addEventListener('change', calculateHoursPerDay);
-            shiftEnd.addEventListener('change', calculateHoursPerDay);
-            breakMinutes.addEventListener('input', calculateHoursPerDay);
-            breakMinutes.addEventListener('change', calculateHoursPerDay);
-            shiftStart.addEventListener('input', calculateHoursPerDay);
-            shiftEnd.addEventListener('input', calculateHoursPerDay);
+        // No calculation needed anymore
+    </script>
 
             // Calculate on page load
             calculateHoursPerDay();

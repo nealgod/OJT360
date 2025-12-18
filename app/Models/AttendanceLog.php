@@ -13,11 +13,7 @@ class AttendanceLog extends Model
         'student_user_id',
         'company_id',
         'work_date',
-        'time_in',
-        'time_out',
         'break_minutes',
-        'photo_in_path',
-        'photo_out_path',
         'minutes_worked',
         'overtime_minutes',
         'status',
@@ -26,16 +22,19 @@ class AttendanceLog extends Model
         'recovery_approved',
         'recovery_approved_at',
         'recovery_approved_by',
-        'lat_in',
-        'lng_in',
-        'lat_out',
-        'lng_out',
+        // Quad-Logging Fields
+        'am_in_time', 'am_out_time', 'pm_in_time', 'pm_out_time',
+        'am_in_lat', 'am_in_lng', 'am_out_lat', 'am_out_lng',
+        'pm_in_lat', 'pm_in_lng', 'pm_out_lat', 'pm_out_lng',
+        'am_in_photo', 'am_out_photo', 'pm_in_photo', 'pm_out_photo',
     ];
 
     protected $casts = [
         'work_date' => 'date',
-        'time_in' => 'string',
-        'time_out' => 'string',
+        'am_in_time' => 'string',
+        'am_out_time' => 'string',
+        'pm_in_time' => 'string',
+        'pm_out_time' => 'string',
         'is_recovered' => 'boolean',
         'recovery_approved' => 'boolean',
         'recovery_approved_at' => 'datetime',
@@ -65,33 +64,29 @@ class AttendanceLog extends Model
     // Helper methods for time formatting
     public function getTimeInFormattedAttribute()
     {
-        if (! $this->time_in) {
+        $timeIn = $this->am_in_time ?? $this->pm_in_time;
+        if (! $timeIn) {
             return '—';
         }
         try {
-            // Create a Carbon instance from the time string and format it properly
-            $time = \Carbon\Carbon::createFromFormat('H:i:s', $this->time_in);
-
+            $time = \Carbon\Carbon::parse($timeIn);
             return $time->format('g:i A');
         } catch (\Exception $e) {
-            // Fallback if time format is different
-            return $this->time_in;
+            return $timeIn;
         }
     }
 
     public function getTimeOutFormattedAttribute()
     {
-        if (! $this->time_out) {
+        $timeOut = $this->pm_out_time ?? $this->am_out_time;
+        if (! $timeOut) {
             return '—';
         }
         try {
-            // Create a Carbon instance from the time string and format it properly
-            $time = \Carbon\Carbon::createFromFormat('H:i:s', $this->time_out);
-
+            $time = \Carbon\Carbon::parse($timeOut);
             return $time->format('g:i A');
         } catch (\Exception $e) {
-            // Fallback if time format is different
-            return $this->time_out;
+            return $timeOut;
         }
     }
 

@@ -154,6 +154,7 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time In</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time Out</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hours</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Photos</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                             </tr>
                         </thead>
@@ -189,13 +190,45 @@
                                         <span class="text-sm font-semibold text-ojt-primary">{{ number_format(($log->minutes_worked ?? 0) / 60, 1) }}h</span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        @if($log->is_recovered)
-                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                                        <div class="flex items-center gap-1">
+                                            @foreach(['am_in', 'am_out', 'pm_in', 'pm_out'] as $type)
+                                                @php
+                                                    $photoCol = $type.'_photo';
+                                                    $latCol = $type.'_lat';
+                                                    $lngCol = $type.'_lng';
+                                                    
+                                                    $hasPhoto = $log->$photoCol;
+                                                    $lat = $log->$latCol;
+                                                    $lng = $log->$lngCol;
+                                                @endphp
+                                                @if($hasPhoto)
+                                                    <button 
+                                                        onclick="showPhotoMap('{{ Storage::url($hasPhoto) }}', '{{ $lat }}', '{{ $lng }}', '{{ strtoupper(str_replace('_', ' ', $type)) }}')"
+                                                        class="w-6 h-6 rounded flex items-center justify-center transition-all bg-blue-100 text-blue-600 hover:bg-blue-200 focus:outline-none"
+                                                        title="{{ strtoupper(str_replace('_', ' ', $type)) }}"
+                                                    >
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                                    </button>
+                                                @endif
+                                            @endforeach
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        @if($log->is_recovered && $log->recovery_approved === true)
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
                                                 Recovered
                                             </span>
-                                        @elseif($log->time_out)
+                                        @elseif($log->is_recovered && $log->recovery_approved === false)
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
+                                                Recovery Rejected
+                                            </span>
+                                        @elseif($log->is_recovered && is_null($log->recovery_approved))
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800 animate-pulse">
+                                                Pending Recovery
+                                            </span>
+                                        @elseif($log->status === 'approved' || $log->time_out_formatted)
                                             <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                                                Complete
+                                                Completed
                                             </span>
                                         @else
                                             <span class="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
@@ -225,4 +258,75 @@
             </div>
         </div>
     </div>
+    <!-- Photo & Map Modal -->
+    <div id="photoMapModal" class="fixed inset-0 z-50 hidden overflow-y-auto" onclick="closePhotoMap()">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full" onclick="event.stopPropagation()">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="photoMapTitle">Attendance Logic</h3>
+                        <button type="button" onclick="closePhotoMap()" class="text-gray-400 hover:text-gray-500">
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Photo Column -->
+                        <div class="bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center h-full min-h-[300px]">
+                            <img id="modalPhoto" src="" alt="Attendance Photo" class="max-w-full max-h-[500px] object-contain">
+                        </div>
+                        <!-- Map Column -->
+                        <div class="bg-gray-100 rounded-lg overflow-hidden h-[300px] md:h-auto relative">
+                            <div id="noMapMessage" class="hidden absolute inset-0 flex items-center justify-center text-gray-500 text-sm">
+                                No location data available
+                            </div>
+                            <iframe id="googleMap" class="w-full h-full" frameborder="0" style="border:0" allowfullscreen loading="lazy" src=""></iframe>
+                        </div>
+                    </div>
+                    <!-- External Link -->
+                    <div class="mt-4 text-right">
+                        <a id="externalMapLink" href="#" target="_blank" class="text-sm text-blue-600 hover:text-blue-800 font-medium inline-flex items-center">
+                            Open in Google Maps
+                            <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showPhotoMap(photoUrl, lat, lng, title) {
+            document.getElementById('photoMapTitle').textContent = title;
+            document.getElementById('modalPhoto').src = photoUrl;
+            
+            const mapFrame = document.getElementById('googleMap');
+            const mapLink = document.getElementById('externalMapLink');
+            const noMap = document.getElementById('noMapMessage');
+            
+            if (lat && lng && lat != 'null' && lng != 'null') {
+                const mapUrl = `https://maps.google.com/maps?q=${lat},${lng}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+                mapFrame.src = mapUrl;
+                mapFrame.classList.remove('hidden');
+                noMap.classList.add('hidden');
+                
+                mapLink.href = `https://www.google.com/maps?q=${lat},${lng}`;
+                mapLink.style.display = 'inline-flex';
+            } else {
+                mapFrame.classList.add('hidden');
+                noMap.classList.remove('hidden');
+                mapLink.style.display = 'none';
+            }
+
+            document.getElementById('photoMapModal').classList.remove('hidden');
+        }
+
+        function closePhotoMap() {
+            document.getElementById('photoMapModal').classList.add('hidden');
+            document.getElementById('googleMap').src = ''; // Clear source to stop loading
+        }
+    </script>
 </x-app-layout>

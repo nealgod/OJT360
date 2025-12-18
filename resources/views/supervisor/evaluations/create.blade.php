@@ -1,8 +1,17 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-ojt-dark leading-tight">
-            Create Monthly Evaluation
-        </h2>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <h2 class="font-semibold text-xl text-ojt-dark leading-tight">
+                Create Monthly Evaluation
+            </h2>
+            <a href="{{ route('supervisor.students.view', $student) }}" 
+               class="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm bg-white shadow-sm">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7 7-7" />
+                </svg>
+                Back to Student
+            </a>
+        </div>
     </x-slot>
 
     <div class="py-6 sm:py-10">

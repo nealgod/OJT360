@@ -83,12 +83,17 @@
                                 
                                 <!-- Pending Attendance Button -->
                                 @if($pendingLogsCount > 0)
-                                    <button onclick="document.getElementById('attendanceModal').classList.remove('hidden')" 
+                                    <button onclick="document.getElementById('recoveryReviewModal').classList.remove('hidden')" 
                                             class="inline-flex items-center px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-md hover:bg-red-700 transition-colors shadow-sm animate-pulse">
                                         <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                         </svg>
-                                        Pending Attendance Logs ({{ $pendingLogsCount }})
+                                        Review Pending Logs ({{ $pendingLogsCount }})
+                                    </button>
+                                @else
+                                    <button onclick="document.getElementById('attendanceModal').classList.remove('hidden')" 
+                                            class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-medium rounded-md hover:bg-gray-200 transition-colors border border-gray-300">
+                                        View Attendance History
                                     </button>
                                 @endif
                             </div>
@@ -129,7 +134,6 @@
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Required Documents for Review</h3>
                 
                 @php
-                    // Get specific documents: Application Letter, Resume/PDS, Recommendation Letter
                     $applicationLetter = $student->documentSubmissions->filter(function($sub) {
                         return $sub->requirement && str_contains(strtolower($sub->requirement->name), 'application');
                     })->first();
@@ -267,8 +271,6 @@
 
             @php
                 $isSupervised = $student->studentProfile && (int)$student->studentProfile->supervisor_id === (int)Auth::id();
-                // Use the variable passed from controller, or check if student has supervisor
-                $hasLetter = $hasAcceptanceLetter ?? false;
             @endphp
 
             @if($isSupervised)
@@ -331,8 +333,6 @@
                     </div>
                 @endif
 
-
-
                 <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-6">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-lg font-semibold text-gray-900">Monthly Progress Evaluations</h3>
@@ -357,7 +357,6 @@
                         $reviewed = $evaluations->whereNotNull('reviewed_at')->count();
                     @endphp
 
-                    <!-- Statistics -->
                     @if($totalEvals > 0)
                         <div class="grid grid-cols-3 gap-3 mb-4">
                             <div class="text-center p-3 rounded-lg bg-blue-50 border border-blue-200">
@@ -460,16 +459,141 @@
         </div>
     </div>
 
-    <!-- Attendance Logs Modal -->
+    @php
+        $allLogs = \App\Models\AttendanceLog::where('student_user_id', $student->id)
+            ->orderBy('work_date', 'desc')
+            ->get();
+            
+        $pendingLogs = $allLogs->filter(function($log) {
+            return $log->is_recovered && is_null($log->recovery_approved);
+        });
+    @endphp
+
+    <!-- Recovery Review Modal (PENDING only) -->
+    <div id="recoveryReviewModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-start justify-center min-h-screen p-4 pt-10">
+            <!-- Background overlay -->
+            <div class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity" aria-hidden="true" onclick="document.getElementById('recoveryReviewModal').classList.add('hidden')"></div>
+
+            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+                <div class="bg-red-800 px-4 pt-5 pb-4 sm:p-6 border-b border-red-700 rounded-t-lg">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg leading-6 font-bold text-white flex items-center" id="modal-title">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            Review Pending Recoveries
+                        </h3>
+                        <button onclick="document.getElementById('recoveryReviewModal').classList.add('hidden')" class="text-white/80 hover:text-white">
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4 bg-gray-50">
+                    @if($pendingLogs->count() > 0)
+                        @foreach($pendingLogs as $log)
+                            <div id="review-card-{{ $log->id }}" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                                <div class="p-5">
+                                    <div class="flex justify-between items-start mb-4">
+                                        <div>
+                                            <span class="inline-block px-2 py-1 mb-1 text-xs font-bold tracking-wide uppercase text-red-600 bg-red-50 rounded-sm">Shift Date</span>
+                                            <h4 class="text-lg font-bold text-gray-900">{{ $log->work_date->format('M d, Y') }} <span class="text-gray-400 font-normal">({{ $log->work_date->format('l') }})</span></h4>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="block text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-0.5">Hours Claimed</span>
+                                            <div class="text-2xl font-bold text-ojt-primary leading-none">{{ $log->hours_worked_formatted }}<span class="text-sm text-gray-500 font-medium ml-1">hrs</span></div>
+                                            @if($log->overtime_minutes > 0)
+                                                <span class="inline-block mt-1 text-xs font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded border border-green-100">+{{ number_format($log->overtime_minutes/60, 2) }}h OT</span>
+                                            @endif
+                                        </div>
+                                    </div>
+
+                                    <div class="grid grid-cols-2 gap-4 mb-4">
+                                        <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                            @if($log->am_in_time && !$log->am_out_time)
+                                                <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Original AM Time In</p>
+                                                <p class="text-sm font-semibold text-gray-900">{{ \Carbon\Carbon::parse($log->am_in_time)->format('g:i A') }}</p>
+                                            @else
+                                                <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Original PM Time In</p>
+                                                <p class="text-sm font-semibold text-gray-900">{{ $log->pm_in_time ? \Carbon\Carbon::parse($log->pm_in_time)->format('g:i A') : 'N/A' }}</p>
+                                            @endif
+                                        </div>
+                                        <div class="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                                            <p class="text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-1">New Requested Out</p>
+                                            @php
+                                                $requestedOut = $log->am_out_time ?? $log->pm_out_time;
+                                            @endphp
+                                            <p class="text-lg font-bold text-blue-900">{{ $requestedOut ? \Carbon\Carbon::parse($requestedOut)->format('g:i A') : 'N/A' }}</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Reason</p>
+                                        <div class="bg-gray-50 p-3 rounded-lg border border-gray-100 text-sm text-gray-700 italic border-l-2 border-l-gray-300 max-h-32 overflow-y-auto whitespace-pre-wrap break-words custom-scrollbar">
+                                            "{{ $log->recovery_reason ?? 'No reason provided.' }}"
+                                        </div>
+                                    </div>
+
+                                    @php
+                                        $recoveryPhoto = $log->am_out_photo ?? $log->pm_out_photo;
+                                    @endphp
+                                    @if($recoveryPhoto)
+                                        <div class="mb-5">
+                                            <div class="flex justify-between items-end mb-2">
+                                                 <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Proof Photo (Full View)</p>
+                                                 <span class="text-[10px] text-blue-600 cursor-pointer hover:underline flex items-center" onclick="window.open('{{ Storage::url($recoveryPhoto) }}', '_blank')">
+                                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 21h7a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v11m0 5l4.879-4.879m0 0a3 3 0 104.243-4.242 3 3 0 00-4.243 4.242z"/></svg>
+                                                    Open Original
+                                                 </span>
+                                            </div>
+                                            <!-- Enhanced Image Container -->
+                                            <div class="h-auto min-h-[250px] bg-black rounded-lg border border-gray-300 overflow-hidden relative group cursor-pointer shadow-inner" onclick="window.open('{{ Storage::url($recoveryPhoto) }}', '_blank')">
+                                                <img src="{{ Storage::url($recoveryPhoto) }}" class="w-full h-full object-contain max-h-[400px] mx-auto transition-transform duration-300">
+                                            </div>
+                                            <p class="text-[10px] text-gray-400 mt-1 italic text-center">Click image to view in full resolution</p>
+                                        </div>
+                                    @else
+                                        <div class="mb-5 p-4 bg-red-50 text-red-700 text-sm rounded-lg border border-red-200 flex items-center justify-center font-medium">
+                                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                            No proof photo provided.
+                                        </div>
+                                    @endif
+
+                                    <div class="flex gap-3 pt-3 border-t border-gray-100">
+                                        <button onclick="submitDecision(this, {{ $log->id }}, 'reject')" class="flex-1 py-2.5 bg-white border border-red-200 text-red-700 rounded-lg hover:bg-red-50 font-medium text-sm transition-colors">
+                                            Reject
+                                        </button>
+                                        <button onclick="submitDecision(this, {{ $log->id }}, 'approve')" class="flex-1 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold text-sm shadow-sm transition-colors flex items-center justify-center">
+                                            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                            Approve
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    @else
+                        <div class="text-center py-10">
+                            <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <p class="text-lg font-medium text-gray-500">All pending recoveries reviewed!</p>
+                            <button onclick="document.getElementById('recoveryReviewModal').classList.add('hidden')" class="mt-4 text-sm text-ojt-primary hover:underline">Close</button>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance Modal (History & Review) -->
     <div id="attendanceModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flex items-start justify-center min-h-screen p-4 pt-10">
             <!-- Background overlay -->
             <div class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity" aria-hidden="true" onclick="document.getElementById('attendanceModal').classList.add('hidden')"></div>
 
             <div class="relative bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-                <div class="bg-white px-4 pt-5 pb-4 sm:p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg leading-6 font-bold text-gray-900" id="modal-title">
                             Attendance Logs
                         </h3>
                         <button onclick="document.getElementById('attendanceModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-500">
@@ -478,90 +602,143 @@
                             </svg>
                         </button>
                     </div>
+                </div>
 
-                    @php
-                        $allLogs = \App\Models\AttendanceLog::where('student_user_id', $student->id)
-                            ->where('is_recovered', true)
-                            ->whereNull('recovery_approved')
-                            ->orderBy('work_date')
-                            ->get();
-                    @endphp
+                @php
+                    $allLogs = \App\Models\AttendanceLog::where('student_user_id', $student->id)
+                        ->orderBy('work_date', 'desc')
+                        ->get();
+                @endphp
 
+                <div class="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-3">
                     @if($allLogs->count() > 0)
-                        <div class="max-h-96 overflow-y-auto space-y-3">
-                            @foreach($allLogs as $log)
-                                <div class="border rounded-lg p-4 {{ $log->is_recovered && is_null($log->recovery_approved) ? 'bg-yellow-50 border-yellow-300' : 'bg-white border-gray-200' }}">
-                                    <!-- Date & Status Row -->
-                                    <div class="flex items-center justify-between mb-3">
-                                        <div class="flex items-center gap-2">
-                                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                            </svg>
-                                            <span class="text-sm font-semibold text-gray-900">{{ $log->work_date->format('M d, Y') }}</span>
-                                        </div>
-                                        @if($log->is_recovered)
-                                            @if($log->recovery_approved === true)
-                                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Recovered (Approved)</span>
-                                            @elseif($log->recovery_approved === false)
-                                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Recovery Rejected</span>
-                                            @else
-                                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 animate-pulse">Pending Recovery</span>
-                                            @endif
+                        @foreach($allLogs as $log)
+                            <div class="border rounded-lg p-4 {{ $log->is_recovered && is_null($log->recovery_approved) ? 'bg-yellow-50 border-yellow-200 border-2' : ($log->status === 'approved' ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-200') }}">
+                                <!-- Date & Status Row -->
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center gap-2">
+                                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                        <span class="text-sm font-semibold text-gray-900">{{ $log->work_date->format('M d, Y') }}</span>
+                                    </div>
+                                    @if($log->is_recovered)
+                                        @if($log->recovery_approved === true)
+                                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Recovered (Approved)</span>
+                                        @elseif($log->recovery_approved === false)
+                                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Recovery Rejected</span>
                                         @else
-                                            <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $log->status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
-                                                {{ ucfirst($log->status) }}
-                                            </span>
+                                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 animate-pulse">Pending Review</span>
                                         @endif
-                                    </div>
-
-                                    <!-- Time & Hours Row -->
-                                    <div class="grid grid-cols-2 gap-3 mb-3">
-                                        <div>
-                                            <p class="text-xs text-gray-500 mb-1">Time In/Out</p>
-                                            <p class="text-sm text-gray-900">
-                                                <span class="font-medium">In:</span> {{ $log->time_in ? \Carbon\Carbon::parse($log->time_in)->format('h:i A') : '--:--' }}
-                                            </p>
-                                            <p class="text-sm text-gray-900">
-                                                <span class="font-medium">Out:</span> {{ $log->time_out ? \Carbon\Carbon::parse($log->time_out)->format('h:i A') : '--:--' }}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <p class="text-xs text-gray-500 mb-1">Hours Worked</p>
-                                            <div class="flex flex-col items-start">
-                                                <p class="text-2xl font-bold text-ojt-primary">{{ $log->hours_worked_formatted }}h</p>
-                                                @if($log->overtime_minutes && $log->overtime_minutes > 0)
-                                                    <span class="inline-flex items-center text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded mt-1">
-                                                        +{{ number_format($log->overtime_minutes / 60, 2) }}h OT
-                                                    </span>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Action Button -->
-                                    @if($log->is_recovered && is_null($log->recovery_approved))
-                                        <button onclick="openRecoveryModal({{ $log->id }}, '{{ $log->work_date->format('M d, Y') }}', '{{ $log->hours_worked_formatted }}h', '{{ $log->overtime_minutes > 0 ? '+'.number_format($log->overtime_minutes/60, 2).'h OT' : '' }}', '{{ addslashes($log->recovery_reason ?? '') }}', '{{ $log->photo_out_path ? Storage::url($log->photo_out_path) : '' }}')" 
-                                                class="w-full mt-2 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
-                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                            </svg>
-                                            Review Request
-                                        </button>
+                                    @else
+                                        @if($log->status === 'approved')
+                                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Completed</span>
+                                        @else
+                                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">{{ ucfirst($log->status) }}</span>
+                                        @endif
                                     @endif
                                 </div>
-                            @endforeach
-                        </div>
+
+                                <!-- Time & Hours Row -->
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <p class="text-xs text-gray-500 mb-1">Time In/Out</p>
+                                        <p class="text-sm text-gray-900">
+                                            <span class="font-medium">In:</span> {{ $log->time_in_formatted }}
+                                        </p>
+                                        <p class="text-sm text-gray-900 has-tooltip">
+                                            <span class="font-medium">Out:</span> {{ $log->time_out_formatted }}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-500 mb-1">Hours Logged</p>
+                                        <div class="flex items-end gap-2">
+                                            <p class="text-lg font-bold text-gray-900">{{ $log->hours_worked_formatted }}h</p>
+                                            @if($log->overtime_minutes && $log->overtime_minutes > 0)
+                                                <span class="text-xs font-bold text-green-600 mb-1">
+                                                    +{{ number_format($log->overtime_minutes / 60, 2) }}h OT
+                                                </span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Inline Review -->
+                                @if($log->is_recovered && is_null($log->recovery_approved))
+                                    <button onclick="toggleReviewPanel({{ $log->id }})" id="review-btn-{{ $log->id }}"
+                                            class="w-full mt-4 inline-flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 font-bold text-sm shadow-sm">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                        </svg>
+                                        Review Recovery Request
+                                    </button>
+
+                                    <!-- Panel -->
+                                    <div id="review-panel-{{ $log->id }}" class="hidden mt-4 pt-4 border-t border-yellow-200 animate-fade-in-down">
+                                        <div class="grid grid-cols-2 gap-3 mb-4">
+                                            <div class="bg-white p-2.5 rounded border border-gray-100">
+                                                <span class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">Time In</span>
+                                                <span class="block text-gray-900 font-medium text-sm">
+                                                    {{ $log->time_in_formatted }}
+                                                </span>
+                                            </div>
+                                            <div class="bg-blue-50 p-2.5 rounded border border-blue-100">
+                                                <span class="block text-[10px] font-bold text-blue-600 uppercase tracking-wider">Requested Time Out</span>
+                                                @php
+                                                    $requestedOut = $log->am_out_time ?? $log->pm_out_time;
+                                                @endphp
+                                                <span class="block text-blue-900 font-bold text-lg">
+                                                    {{ $requestedOut ? \Carbon\Carbon::parse($requestedOut)->format('g:i A') : 'N/A' }}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-4">
+                                            <h4 class="text-xs font-bold text-gray-700 mb-1 uppercase tracking-wider">Reason</h4>
+                                            <div class="bg-white p-3 rounded border border-gray-100 italic text-gray-700 text-sm">
+                                                "{{ $log->recovery_reason ?? 'No reason provided' }}"
+                                            </div>
+                                        </div>
+
+                                        @php
+                                            $recoveryPhoto = $log->am_out_photo ?? $log->pm_out_photo;
+                                        @endphp
+                                        @if($recoveryPhoto)
+                                            <div class="mb-4">
+                                                <div class="flex justify-between items-end mb-1">
+                                                    <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider">Proof Photo</h4>
+                                                    <span class="text-[10px] text-blue-600 cursor-pointer hover:underline" onclick="window.open('{{ Storage::url($recoveryPhoto) }}', '_blank')">View Full Size</span>
+                                                </div>
+                                                <div class="relative h-32 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 group cursor-pointer" onclick="window.open('{{ Storage::url($recoveryPhoto) }}', '_blank')">
+                                                    <img src="{{ Storage::url($recoveryPhoto) }}" class="w-full h-full object-cover transition-transform group-hover:scale-110">
+                                                </div>
+                                            </div>
+                                        @else
+                                            <div class="mb-4 p-2 bg-red-50 text-red-600 text-xs rounded border border-red-100">
+                                                No proof photo attached.
+                                            </div>
+                                        @endif
+
+                                        <div class="flex gap-2">
+                                            <button onclick="submitDecision(this, {{ $log->id }}, 'reject')" class="flex-1 py-2 bg-white text-red-600 border border-red-200 rounded hover:bg-red-50 font-bold text-xs uppercase tracking-wide">
+                                                Reject
+                                            </button>
+                                            <button onclick="submitDecision(this, {{ $log->id }}, 'approve')" class="flex-1 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-bold text-xs uppercase tracking-wide shadow-sm">
+                                                Approve Recovery
+                                            </button>
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+                        @endforeach
                     @else
-                        <p class="text-gray-500 text-center py-8">No attendance logs found for this student.</p>
+                        <p class="text-gray-500 text-center py-8">No attendance history found.</p>
                     @endif
                 </div>
+                
                 <div class="bg-gray-50 px-4 py-3 border-t border-gray-200">
                     <button type="button" onclick="document.getElementById('attendanceModal').classList.add('hidden')"
                             class="w-full inline-flex justify-center items-center rounded-md border border-gray-300 shadow-sm px-4 py-3 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ojt-primary">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
                         Close
                     </button>
                 </div>
@@ -569,116 +746,41 @@
         </div>
     </div>
 
-    <!-- Review Modal -->
-    <div id="reviewModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flex items-start justify-center min-h-screen p-4 pt-10">
-            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onclick="closeRecoveryModal()"></div>
-
-            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <div class="sm:flex sm:items-start">
-                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
-                            <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                            <h3 class="text-lg leading-6 font-medium text-gray-900">
-                                Review Attendance Recovery
-                            </h3>
-                            <div class="mt-4 space-y-3">
-                                <div class="flex justify-between border-b border-gray-100 pb-2">
-                                    <span class="text-sm text-gray-500">Date:</span>
-                                    <span class="text-sm font-medium text-gray-900" id="modalDate"></span>
-                                </div>
-                                <div class="flex justify-between border-b border-gray-100 pb-2">
-                                    <span class="text-sm text-gray-500">Total Hours / OT:</span>
-                                    <div class="text-right">
-                                        <span class="text-sm font-bold text-ojt-primary" id="modalHours"></span>
-                                        <span class="text-xs font-bold text-green-600 block" id="modalOvertime" style="display:none"></span>
-                                    </div>
-                                </div>
-                                
-                                <div class="bg-gray-50 p-3 rounded-lg">
-                                    <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Reason</p>
-                                    <p class="text-sm text-gray-700 italic" id="modalReason"></p>
-                                </div>
-
-                                <div id="modalPhotoContainer" class="hidden mt-3">
-                                    <p class="text-xs text-gray-500 uppercase tracking-wide mb-2">Photo Proof</p>
-                                    <img id="modalPhoto" src="" alt="Proof" class="w-full h-48 object-cover rounded-lg border border-gray-200 cursor-pointer hover:opacity-90 transition-opacity" onclick="window.open(this.src, '_blank')">
-                                    <p class="text-xs text-center text-gray-400 mt-1">Click image to enlarge</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">
-                    <button type="button" onclick="submitDecision('approve')"
-                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm">
-                        Approve Request
-                    </button>
-                    <button type="button" onclick="submitDecision('reject')"
-                            class="mt-3 w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                        Reject
-                    </button>
-                    <button type="button" onclick="closeRecoveryModal()"
-                            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                        Cancel
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
+    <!-- Scripts -->
     <script>
-        let currentLogId = null;
-
-        function openRecoveryModal(id, date, hours, overtime, reason, photoUrl) {
-            currentLogId = id;
-            document.getElementById('modalDate').textContent = date;
-            document.getElementById('modalHours').textContent = hours;
+        function toggleReviewPanel(id) {
+            const panel = document.getElementById(`review-panel-${id}`);
+            const btn = document.getElementById(`review-btn-${id}`);
             
-            const otEl = document.getElementById('modalOvertime');
-            if(overtime) {
-                otEl.textContent = overtime;
-                otEl.style.display = 'block';
+            if (panel.classList.contains('hidden')) {
+                // Open
+                panel.classList.remove('hidden');
+                btn.classList.add('hidden'); // Hide the main review button when open to reduce clutter
             } else {
-                otEl.style.display = 'none';
+                // Close
+                panel.classList.add('hidden');
+                btn.classList.remove('hidden');
             }
-
-            document.getElementById('modalReason').textContent = reason;
-            
-            const photoContainer = document.getElementById('modalPhotoContainer');
-            const photoImg = document.getElementById('modalPhoto');
-            
-            if (photoUrl) {
-                photoImg.src = photoUrl;
-                photoContainer.classList.remove('hidden');
-            } else {
-                photoContainer.classList.add('hidden');
-            }
-            
-            document.getElementById('reviewModal').classList.remove('hidden');
         }
 
-        function closeRecoveryModal() {
-            document.getElementById('reviewModal').classList.add('hidden');
-            currentLogId = null;
-        }
-
-        async function submitDecision(decision) {
-            if (!currentLogId) return;
+        async function submitDecision(btn, logId, decision) {
+            if (!logId) return;
             
             const action = decision === 'approve' ? 'approve-recovery' : 'reject-recovery';
             const confirmMsg = decision === 'approve' 
-                ? 'Are you sure you want to APPROVE this request? The hours will be added to the student\'s total.' 
-                : 'Are you sure you want to REJECT this request?';
+                ? 'APPROVE this recovery? Hours will be added immediately.' 
+                : 'REJECT this recovery request?';
 
             if (!confirm(confirmMsg)) return;
 
+            const originalContent = btn.innerHTML;
+            
             try {
-                const response = await fetch(`/supervisor/attendance/${currentLogId}/${action}`, {
+                btn.disabled = true;
+                btn.innerHTML = '...';
+                btn.classList.add('opacity-75');
+
+                const response = await fetch(`/supervisor/attendance/${logId}/${action}`, {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -689,16 +791,21 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    closeRecoveryModal();
+                    // Refresh page to update stats
                     window.location.reload();
                 } else {
                     alert(data.message || 'Error processing request');
+                    btn.disabled = false;
+                    btn.innerHTML = originalContent;
+                    btn.classList.remove('opacity-75');
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('An error occurred');
+                alert('An error occurred.');
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+                btn.classList.remove('opacity-75');
             }
         }
     </script>
 </x-app-layout>
-

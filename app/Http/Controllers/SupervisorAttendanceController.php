@@ -58,13 +58,15 @@ class SupervisorAttendanceController extends Controller
         }
 
         // Approve the recovery
-        $log->update([
+        $updates = [
             'recovery_approved' => true,
             'recovery_approved_at' => now(),
             'recovery_approved_by' => $user->id,
             'overtime_minutes' => $overtimeMinutes,
             'status' => 'approved',
-        ]);
+        ];
+
+        $log->update($updates);
 
         // Check if student completed required hours after approval
         $this->checkAndUpdateCompletionStatus($student);

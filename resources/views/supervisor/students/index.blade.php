@@ -38,7 +38,10 @@
                     
                     @php
                         $studentIds = $students->pluck('id');
-                        $totalReports = \App\Models\WeeklyReport::whereIn('student_user_id', $studentIds)->count();
+                        $pendingRecoveries = \App\Models\AttendanceLog::whereIn('student_user_id', $studentIds)
+                            ->where('is_recovered', true)
+                            ->whereNull('recovery_approved')
+                            ->count();
                         $totalEvaluations = \App\Models\MonthlyEvaluation::whereIn('student_user_id', $studentIds)->count();
                         $pendingEvaluations = \App\Models\MonthlyEvaluation::whereIn('student_user_id', $studentIds)->whereNull('reviewed_at')->count();
                     @endphp
@@ -46,12 +49,12 @@
                     <div class="bg-white rounded-lg border border-gray-200 p-4">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm text-gray-600">Weekly Reports</p>
-                                <p class="text-2xl font-bold text-green-600">{{ $totalReports }}</p>
+                                <p class="text-sm text-gray-600">Pending Reviews</p>
+                                <p class="text-2xl font-bold text-red-600">{{ $pendingRecoveries }}</p>
                             </div>
-                            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                                <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             </div>
                         </div>
@@ -60,7 +63,7 @@
                     <div class="bg-white rounded-lg border border-gray-200 p-4">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm text-gray-600">Evaluations</p>
+                                <p class="text-sm text-gray-600">Total Evaluations</p>
                                 <p class="text-2xl font-bold text-purple-600">{{ $totalEvaluations }}</p>
                             </div>
                             <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -114,7 +117,6 @@
                             $completedHours = round(($completedMinutes ?? 0) / 60, 1);
                             $requiredHours = $latestLetter?->total_hours ?? $profile?->required_hours ?? $student->getRequiredHours();
                             $percentage = $requiredHours > 0 ? round(($completedHours / $requiredHours) * 100, 1) : 0;
-                            $weeklyReportsCount = $student->weeklyReports()->count();
                             $evaluationsCount = $student->monthlyEvaluations()->count();
                             $pendingRecoveryCount = $student->attendanceLogs()
                                 ->where('is_recovered', true)
@@ -158,12 +160,6 @@
                                         
                                         <!-- Quick Stats -->
                                         <div class="flex items-center gap-4 mt-3">
-                                            <div class="flex items-center text-sm">
-                                                <svg class="w-4 h-4 text-green-600 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                </svg>
-                                                <span class="text-gray-700"><strong>{{ $weeklyReportsCount }}</strong> reports</span>
-                                            </div>
                                             <div class="flex items-center text-sm">
                                                 <svg class="w-4 h-4 text-purple-600 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />

@@ -61,12 +61,60 @@
                     </div>
                 </div>
 
+                <!-- 4-Step Progress Indicator -->
+                <div class="relative mb-8 max-w-lg mx-auto">
+                    <div class="absolute top-1/2 left-0 w-full h-1 bg-gray-200 -z-10 transform -translate-y-1/2 rounded"></div>
+                    <div class="flex justify-between w-full px-2">
+                        <!-- Step 1: AM In -->
+                        <div class="flex flex-col items-center bg-white px-2">
+                            <div id="step1" class="w-8 h-8 rounded-full flex items-center justify-center border-2 border-gray-300 bg-white text-gray-500 font-bold text-xs transition-colors">
+                                IN
+                            </div>
+                            <span class="text-xs font-medium text-gray-500 mt-1 uppercase">Morning</span>
+                        </div>
+                        <!-- Step 2: AM Out -->
+                        <div class="flex flex-col items-center bg-white px-2">
+                            <div id="step2" class="w-8 h-8 rounded-full flex items-center justify-center border-2 border-gray-300 bg-white text-gray-500 font-bold text-xs transition-colors">
+                                OUT
+                            </div>
+                            <span class="text-xs font-medium text-gray-500 mt-1 uppercase">Lunch</span>
+                        </div>
+                        <!-- Step 3: PM In -->
+                        <div class="flex flex-col items-center bg-white px-2">
+                            <div id="step3" class="w-8 h-8 rounded-full flex items-center justify-center border-2 border-gray-300 bg-white text-gray-500 font-bold text-xs transition-colors">
+                                IN
+                            </div>
+                            <span class="text-xs font-medium text-gray-500 mt-1 uppercase">Afternoon</span>
+                        </div>
+                        <!-- Step 4: PM Out -->
+                        <div class="flex flex-col items-center bg-white px-2">
+                            <div id="step4" class="w-8 h-8 rounded-full flex items-center justify-center border-2 border-gray-300 bg-white text-gray-500 font-bold text-xs transition-colors">
+                                OUT
+                            </div>
+                            <span class="text-xs font-medium text-gray-500 mt-1 uppercase">Day End</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dynamic Status Banner -->
+                <div id="statusBanner" class="hidden mb-6 p-4 rounded-lg border flex items-start">
+                    <div class="flex-shrink-0">
+                        <svg id="statusIcon" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium" id="statusTitle">Attendance Status</h3>
+                        <div class="mt-1 text-sm" id="statusMessage"></div>
+                    </div>
+                </div>
+
 
                 @if(auth()->user()->studentProfile?->ojt_status !== 'completed')
                 {{-- Only show camera if NOT completed --}}
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                     <div>
-                        <h3 class="font-semibold text-ojt-dark mb-2">Time In (Camera)</h3>
+                        <h3 id="headerIn" class="font-semibold text-ojt-dark mb-2">Time In (Morning)</h3>
                         <div class="aspect-video bg-black rounded-lg overflow-hidden relative">
                             <video id="videoIn" autoplay playsinline class="w-full h-full object-contain"></video>
                             <canvas id="canvasIn" class="hidden"></canvas>
@@ -118,7 +166,7 @@
                         </div>
                     </div>
                     <div>
-                        <h3 class="font-semibold text-ojt-dark mb-2">Time Out (Camera)</h3>
+                        <h3 id="headerOut" class="font-semibold text-ojt-dark mb-2">Time Out (Morning)</h3>
                         <div class="aspect-video bg-black rounded-lg overflow-hidden relative">
                             <video id="videoOut" autoplay playsinline class="w-full h-full object-contain"></video>
                             <canvas id="canvasOut" class="hidden"></canvas>
@@ -200,35 +248,229 @@
 
                     // Check today's attendance status
                     const todayLog = @json($todayLog);
-                    const hasTimedIn = todayLog && todayLog.time_in;
-                    const hasTimedOut = todayLog && todayLog.time_out;
+                    
+                    const amIn = todayLog && todayLog.am_in_time;
+                    const amOut = todayLog && todayLog.am_out_time;
+                    const pmIn = todayLog && todayLog.pm_in_time;
+                    const pmOut = todayLog && todayLog.pm_out_time;
 
-                    // Disable buttons based on today's status
-                    if (hasTimedIn) {
-                        document.getElementById('captureIn').disabled = true;
-                        document.getElementById('captureIn').textContent = 'Already Timed In';
-                        document.getElementById('openCamIn').disabled = true;
+                    const btnIn = document.getElementById('captureIn');
+                    const btnOut = document.getElementById('captureOut');
+                    const camIn = document.getElementById('openCamIn');
+                    const camOut = document.getElementById('openCamOut');
+                    const headerIn = document.getElementById('headerIn');
+                    const headerOut = document.getElementById('headerOut');
+                    const containerIn = headerIn.parentElement;
+                    const containerOut = headerOut.parentElement;
+
+                    const steps = [
+                        document.getElementById('step1'),
+                        document.getElementById('step2'),
+                        document.getElementById('step3'),
+                        document.getElementById('step4')
+                    ];
+                    const banner = document.getElementById('statusBanner');
+                    const bannerTitle = document.getElementById('statusTitle');
+bannerMessage = document.getElementById('statusMessage');
+
+                    function updateStep(index, state) {
+                        const el = steps[index];
+                        el.className = "w-8 h-8 rounded-full flex items-center justify-center border-2 font-bold text-xs transition-colors";
+                        
+                        if (state === 'done') {
+                            el.classList.add('bg-green-500', 'border-green-500', 'text-white');
+                            el.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>';
+                        } else if (state === 'active') {
+                            el.classList.add('bg-white', 'border-blue-600', 'text-blue-600', 'shadow-md', 'scale-110');
+                        } else {
+                            el.classList.add('bg-white', 'border-gray-300', 'text-gray-400');
+                        }
+                    }
+
+                    function highlightCard(activeSide) {
+                        // Reset
+                        containerIn.classList.remove('ring-4', 'ring-blue-400', 'ring-opacity-50', 'bg-blue-50');
+                        containerOut.classList.remove('ring-4', 'ring-blue-400', 'ring-opacity-50', 'bg-blue-50');
+                        containerIn.classList.add('opacity-50', 'grayscale');
+                        containerOut.classList.add('opacity-50', 'grayscale');
+
+                        if (activeSide === 'in') {
+                            containerIn.classList.remove('opacity-50', 'grayscale');
+                            containerIn.classList.add('ring-4', 'ring-blue-400', 'ring-opacity-50', 'bg-blue-50', 'rounded-xl', 'p-2', 'transition-all');
+                        } else if (activeSide === 'out') {
+                            containerOut.classList.remove('opacity-50', 'grayscale');
+                            containerOut.classList.add('ring-4', 'ring-blue-400', 'ring-opacity-50', 'bg-blue-50', 'rounded-xl', 'p-2', 'transition-all');
+                        }
+                    }
+
+                    function showBanner(type, title, msg) {
+                        banner.classList.remove('hidden', 'bg-blue-50', 'border-blue-200', 'text-blue-800', 'bg-yellow-50', 'border-yellow-200', 'text-yellow-800', 'bg-green-50', 'border-green-200', 'text-green-800');
+                        
+                        if (type === 'info') {
+                            banner.classList.add('bg-blue-50', 'border-blue-200', 'text-blue-800');
+                        } else if (type === 'warning') {
+                            banner.classList.add('bg-yellow-50', 'border-yellow-200', 'text-yellow-800');
+                        } else if (type === 'success') {
+                            banner.classList.add('bg-green-50', 'border-green-200', 'text-green-800');
+                        }
+                        
+                        bannerTitle.textContent = title;
+                        bannerMessage.textContent = msg;
                     }
                     
-                    if (hasTimedOut) {
-                        document.getElementById('captureOut').disabled = true;
-                        document.getElementById('captureOut').textContent = 'Already Timed Out';
-                        document.getElementById('openCamOut').disabled = true;
+                    // Simple Break Calculation
+                    function getBreakDuration() {
+                        if (todayLog && todayLog.am_out_time && todayLog.pm_in_time) {
+                             const start = new Date("2000-01-01 " + todayLog.am_out_time);
+                             const end = new Date("2000-01-01 " + todayLog.pm_in_time);
+                             const diffMs = end - start;
+                             const diffMins = Math.round(diffMs / 60000);
+                             const h = Math.floor(diffMins / 60);
+                             const m = diffMins % 60;
+                             return `${h}h ${m}m`;
+                        }
+                        return '';
                     }
 
-                    // Live time update
-                    function updateTime() {
+
+                    // Reset all first
+                    steps.forEach(s => updateStep(steps.indexOf(s), 'pending'));
+                    btnIn.disabled = false;
+                    camIn.disabled = false;
+                    btnOut.disabled = true; // Default disabled until In is done
+                    camOut.disabled = true;
+
+                    // State Logic
+                    const isFullyDone = pmOut; // Check explicit PM Out (Day End)
+
+                    if (!amIn) {
+                        // STATE 1: Ready for AM IN
+                        updateStep(0, 'active');
+                        highlightCard('in');
+                        headerIn.textContent = "Time In (Morning)";
+                        headerOut.textContent = "Time Out (Morning)";
+                        showBanner('info', 'Good Morning!', 'Please Time In to start your morning shift.');
+                    } else if (isFullyDone) {
+                        // STATE 5: ALL DONE (Moved up priority to catch Recovered logs)
+                        updateStep(0, 'done');
+                        updateStep(1, 'done');
+                        updateStep(2, 'done');
+                        updateStep(3, 'done');
+                        highlightCard('none');
+                        headerIn.textContent = "Day Complete";
+                        headerOut.textContent = "Day Complete";
+                        
+                        btnIn.disabled = true;
+                        camIn.disabled = true;
+                        btnOut.disabled = true;
+                        camOut.disabled = true;
+                        btnIn.textContent = "Done";
+                        btnOut.textContent = "Done";
+                        
+                        const breakTime = getBreakDuration();
+                        const breakMsg = breakTime ? ' Total Break: ' + breakTime + '.' : '';
+                        showBanner('success', 'Day Complete', 'You have completed your attendance for today.' + breakMsg + ' Great job!');
+                        
+                    } else if (amIn && !amOut) {
+                        // STATE 2: AM IN Done -> Ready for AM OUT
+                        updateStep(0, 'done');
+                        updateStep(1, 'active');
+                        highlightCard('out');
+                        headerIn.textContent = "Morning In: " + formatTime(todayLog.am_in_time);
+                        headerOut.textContent = "Time Out (Morning)";
+                        
+                        // Disable In, Enable Out
+                        btnIn.disabled = true;
+                        camIn.disabled = true;
+                        btnIn.textContent = "Checked In (AM)";
+                        
+                        btnOut.disabled = false;
+                        camOut.disabled = false;
+                        
+                        showBanner('info', 'Morning Shift in Progress', 'Work hard! When you take your lunch break, please Time Out.');
+                    } else if (amOut && !pmIn) {
+                        // STATE 3: AM OUT Done -> Ready for PM IN
+                        updateStep(0, 'done');
+                        updateStep(1, 'done');
+                        updateStep(2, 'active');
+                        highlightCard('in');
+                        headerIn.textContent = "Time In (Afternoon)";
+                        headerOut.textContent = "Morning Out: " + formatTime(todayLog.am_out_time);
+                        
+                        // Enable In (for PM), Disable Out
+                        btnIn.disabled = false;
+                        camIn.disabled = false;
+                        btnIn.textContent = "Capture & Time In (PM)"; // Update button text
+                        
+                        btnOut.disabled = true;
+                        camOut.disabled = true;
+                        btnOut.textContent = "Checked Out (AM)";
+                        
+                        showBanner('warning', 'On Lunch Break', 'You are currently clocked out for lunch. Don\'t forget to Time In for the Afternoon!');
+                    } else if (pmIn && !isFullyDone) {
+                        // STATE 4: PM IN Done -> Ready for PM OUT
+                        updateStep(0, 'done');
+                        updateStep(1, 'done');
+                        updateStep(2, 'done');
+                        updateStep(3, 'active');
+                        highlightCard('out');
+                        headerIn.textContent = "Afternoon In: " + formatTime(todayLog.pm_in_time);
+                        headerOut.textContent = "Time Out (Afternoon)";
+                        
+                        // Disable In, Enable Out
+                        btnIn.disabled = true;
+                        camIn.disabled = true;
+                        btnIn.textContent = "Checked In (PM)";
+                        
+                        btnOut.disabled = false;
+                        camOut.disabled = false;
+                        btnOut.textContent = "Capture & Time Out (PM)";
+                        
+                        const breakTime = getBreakDuration();
+                        const breakMsg = breakTime ? ` (Break: ${breakTime})` : '';
+                        showBanner('info', 'Afternoon Shift in Progress', 'You are checked in for the afternoon' + breakMsg + '. Don\'t forget to Time Out when you finish!');
+                    }
+
+                    function formatTime(timeStr) {
+                        if(!timeStr) return '';
+                        // Simple parser for HH:MM:SS to H:MM A
+                        const [h, m] = timeStr.split(':');
+                        const hour = parseInt(h);
+                        const ampm = hour >= 12 ? 'PM' : 'AM';
+                        const hour12 = hour % 12 || 12;
+                        return `${hour12}:${m} ${ampm}`;
+                    }
+
+                    // Live time update & Break Timer
+                    setInterval(() => {
                         const now = new Date();
-                        const timeString = now.toLocaleTimeString('en-US', { 
-                            hour: 'numeric', 
-                            minute: '2-digit',
-                            hour12: true 
-                        });
-                        document.getElementById('currentTime').textContent = timeString;
-                    }
-                    
-                    // Update time every second
-                    setInterval(updateTime, 1000);
+                        document.getElementById('currentTime').textContent = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                        
+                        // Live Break Timer (If AM Out is done/exists but PM In is not)
+                        if (todayLog && todayLog.am_out_time && !todayLog.pm_in_time) {
+                            // Helper to parse "H:i:s" today
+                            const [h, m, s] = todayLog.am_out_time.split(':');
+                            const amOutDate = new Date();
+                            amOutDate.setHours(h, m, s || 0);
+                            
+                            const diffMs = now - amOutDate;
+                            if (diffMs > 0) {
+                                const diffMins = Math.floor(diffMs / 60000);
+                                const diffSecs = Math.floor((diffMs % 60000) / 1000);
+                                const hours = Math.floor(diffMins / 60);
+                                const mins = diffMins % 60;
+                                
+                                let durationStr = '';
+                                if (hours > 0) durationStr += `${hours}h `;
+                                durationStr += `${mins}m ${diffSecs}s`;
+                                
+                                const bannerMsg = document.getElementById('statusMessage');
+                                if (bannerMsg) {
+                                    bannerMsg.textContent = `You are currently clocked out for lunch. (Duration: ${durationStr}). Don't forget to Time In for the Afternoon!`;
+                                }
+                            }
+                        }
+                    }, 1000);
 
                     async function startCamera(videoEl, facingMode = 'user') {
                         try {
@@ -425,12 +667,16 @@
                             formData.append('photo_in', new File([capturedBlobIn], `photo_in-${Date.now()}.jpg`, { type: 'image/jpeg' }));
                             formData.append('_token', '{{ csrf_token() }}');
                             
-                            // Add location if available
+                            // REQUIRE Location (Mandatory)
                             const coords = await getLocationOrNull();
-                            if (coords) {
-                                formData.append('lat_in', coords.latitude);
-                                formData.append('lng_in', coords.longitude);
+                            if (!coords) {
+                                showError('Location access is required. Please enable GPS and Allow permissions.');
+                                button.textContent = originalText;
+                                button.disabled = false;
+                                return;
                             }
+                            formData.append('lat_in', coords.latitude);
+                            formData.append('lng_in', coords.longitude);
                             
                             // Submit using fetch
                             // Submitting time in request...
@@ -585,12 +831,16 @@
                             formData.append('photo_out', new File([capturedBlobOut], `photo_out-${Date.now()}.jpg`, { type: 'image/jpeg' }));
                             formData.append('_token', '{{ csrf_token() }}');
                             
-                            // Add location if available
+                            // REQUIRE Location (Mandatory)
                             const coords = await getLocationOrNull();
-                            if (coords) {
-                                formData.append('lat_out', coords.latitude);
-                                formData.append('lng_out', coords.longitude);
+                            if (!coords) {
+                                showError('Location access is required. Please enable GPS and Allow permissions.');
+                                button.textContent = originalText;
+                                button.disabled = false;
+                                return;
                             }
+                            formData.append('lat_out', coords.latitude);
+                            formData.append('lng_out', coords.longitude);
                             
                             // Submit using fetch
                             const response = await fetch(routes.out, {
@@ -648,86 +898,117 @@
                         <table class="min-w-full divide-y divide-gray-200 text-sm">
                             <thead class="bg-gray-50 sticky top-0">
                                 <tr>
-                                    <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wide">Date</th>
-                                    <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wide">Time In</th>
-                                    <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wide">Time Out</th>
-                                    <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wide">Hours</th>
-                                    <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wide">Photos</th>
-                                    <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wide">Status</th>
+                                    <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wide text-xs">Date</th>
+                                    <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wide text-xs">Schedule</th>
+                                    <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wide text-xs">Duration</th>
+                                    <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wide text-xs">Photos</th>
+                                    <th class="px-3 py-3 text-right font-medium text-gray-500 uppercase tracking-wide text-xs">Status</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100">
                                 @forelse($logs as $log)
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-4 py-3 text-gray-900">{{ $log->work_date?->format('M d, Y') ?? '—' }}</td>
-                                    <td class="px-4 py-3 text-gray-700">{{ $log->time_in_formatted ?? '—' }}</td>
-                                    <td class="px-4 py-3 text-gray-700">{{ $log->time_out_formatted ?? '—' }}</td>
-                                    <td class="px-4 py-3">
-                                        @if($log->minutes_worked)
-                                            <div class="flex flex-col">
-                                                <span class="font-semibold text-ojt-primary">{{ round($log->minutes_worked / 60, 1) }}h</span>
-                                                @if($log->overtime_minutes > 0)
-                                                    @php
-                                                        $otHours = floor($log->overtime_minutes / 60);
-                                                        $otMins = $log->overtime_minutes % 60;
-                                                    @endphp
-                                                    <span class="text-xs text-green-600 font-medium">
-                                                        @if($otHours > 0 && $otMins > 0)
-                                                            +{{ $otHours }}h {{ $otMins }}m OT
-                                                        @elseif($otHours > 0)
-                                                            +{{ $otHours }}h OT
-                                                        @else
-                                                            +{{ $otMins }}m OT
-                                                        @endif
-                                                    </span>
+                                <tr class="hover:bg-gray-50 group">
+                                    <td class="px-3 py-2 text-gray-900 whitespace-nowrap text-sm font-medium">
+                                        {{ $log->work_date?->format('M d') ?? '—' }}
+                                    </td>
+                                    <td class="px-3 py-2 text-gray-700 text-xs">
+                                        <div class="flex flex-col gap-1">
+                                            <!-- AM -->
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-gray-400 font-bold w-6">AM</span>
+                                                @if($log->am_in_time)
+                                                    <span>{{ \Carbon\Carbon::parse($log->am_in_time)->format('g:i a') }}</span>
+                                                    <span class="text-gray-300">-</span>
+                                                    <span>{{ $log->am_out_time ? \Carbon\Carbon::parse($log->am_out_time)->format('g:i a') : '...' }}</span>
+                                                @else
+                                                    <span class="text-gray-300">—</span>
                                                 @endif
                                             </div>
-                                        @else
-                                            <span class="text-gray-400">—</span>
-                                        @endif
+                                            <!-- PM -->
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-gray-400 font-bold w-6">PM</span>
+                                                @if($log->pm_in_time)
+                                                    <span>{{ \Carbon\Carbon::parse($log->pm_in_time)->format('g:i a') }}</span>
+                                                    <span class="text-gray-300">-</span>
+                                                    <span>{{ $log->pm_out_time ? \Carbon\Carbon::parse($log->pm_out_time)->format('g:i a') : '...' }}</span>
+                                                @else
+                                                    <span class="text-gray-300">—</span>
+                                                @endif
+                                            </div>
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3">
-                                        <div class="flex items-center gap-2">
-                                            @if($log->photo_in_path)
-                                                <button onclick="showPhoto('{{ Storage::url($log->photo_in_path) }}', 'Time In - {{ $log->work_date?->format('M d, Y') }}')" class="inline-flex items-center px-2.5 py-1.5 text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors">
-                                                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                                    </svg>
-                                                    In
-                                                </button>
-                                            @endif
-                                            @if($log->photo_out_path)
-                                                <button onclick="showPhoto('{{ Storage::url($log->photo_out_path) }}', 'Time Out - {{ $log->work_date?->format('M d, Y') }}')" class="inline-flex items-center px-2.5 py-1.5 text-xs font-medium bg-green-50 text-green-700 border border-green-200 rounded-md hover:bg-green-100 transition-colors">
-                                                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                                    </svg>
-                                                    Out
-                                                </button>
-                                            @endif
-                                            @if(!$log->photo_in_path && !$log->photo_out_path)
-                                                <span class="text-xs text-gray-400">No photos</span>
+                                    <td class="px-3 py-2 text-xs">
+                                        <div class="flex flex-col gap-1">
+                                            <div class="flex justify-between w-24">
+                                                <span class="text-gray-500">Work:</span>
+                                                <span class="font-bold text-gray-900">{{ $log->minutes_worked ? round($log->minutes_worked / 60, 1).'h' : '—' }}</span>
+                                            </div>
+                                            <div class="flex justify-between w-24">
+                                                <span class="text-gray-500">Break:</span>
+                                                <span class="text-gray-700">
+                                                    @if($log->am_out_time && $log->pm_in_time)
+                                                        {{ \Carbon\Carbon::parse($log->am_out_time)->diff(\Carbon\Carbon::parse($log->pm_in_time))->format('%hh %im') }}
+                                                    @elseif($log->break_minutes)
+                                                        {{ floor($log->break_minutes / 60) }}h {{ $log->break_minutes % 60 }}m
+                                                    @else
+                                                        —
+                                                    @endif
+                                                </span>
+                                            </div>
+                                            @if($log->overtime_minutes > 0)
+                                                <div class="flex justify-end mt-1">
+                                                    <span class="bg-green-100 text-green-700 border border-green-200 px-1.5 py-0.5 rounded text-[10px] font-bold">
+                                                        +{{ round($log->overtime_minutes / 60, 1) }}h OT
+                                                    </span>
+                                                </div>
                                             @endif
                                         </div>
                                     </td>
-                                    <td class="px-4 py-3">
-                                        @if($log->is_recovered && $log->recovery_approved === null)
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">Pending</span>
-                                        @elseif($log->is_recovered && $log->recovery_approved === true)
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Approved</span>
-                                        @elseif($log->is_recovered && $log->recovery_approved === false)
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">Rejected</span>
-                                        @elseif((! $log->time_out || ! $log->minutes_worked) && $log->work_date->lt(now()->startOfDay()))
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-600">Incomplete</span>
-                                        @elseif(! $log->time_out || ! $log->minutes_worked)
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">In Progress</span>
-                                        @elseif($log->status === 'approved')
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Complete</span>
-                                        @else
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">{{ ucfirst($log->status) }}</span>
-                                        @endif
+                                    <td class="px-3 py-2">
+                                        <div class="flex items-center gap-1">
+                                            @foreach(['am_in', 'am_out', 'pm_in', 'pm_out'] as $type)
+                                                @php
+                                                    $photo = $type.'_photo';
+                                                    $hasPhoto = $log->$photo;
+                                                @endphp
+                                                <button 
+                                                    @if($hasPhoto) onclick="showPhoto('{{ Storage::url($hasPhoto) }}', '{{ strtoupper(str_replace('_', ' ', $type)) }}')" @endif
+                                                    class="w-6 h-6 rounded flex items-center justify-center transition-all {{ $hasPhoto ? 'bg-blue-100 text-blue-600 hover:bg-blue-200 cursor-pointer' : 'bg-gray-100 text-gray-300 cursor-default' }}"
+                                                    title="{{ strtoupper(str_replace('_', ' ', $type)) }}"
+                                                    {{ !$hasPhoto ? 'disabled' : '' }}
+                                                >
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                                </button>
+                                            @endforeach
+                                        </div>
                                     </td>
+                                        <td class="px-3 py-2 text-right">
+                                            @if($log->status === 'approved' && $log->is_recovered)
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                    Recovered
+                                                </span>
+                                            @elseif($log->status === 'approved')
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                    Completed
+                                                </span>
+                                            @elseif($log->status === 'pending')
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                    Pending Review
+                                                </span>
+                                            @elseif($log->is_recovered && $log->recovery_approved === false)
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200" title="Your recovery request was rejected. You may request again.">
+                                                    Recovery Rejected
+                                                </span>
+                                            @elseif($log->status === 'rejected')
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                    Rejected
+                                                </span>
+                                            @else
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                    In Progress
+                                                </span>
+                                            @endif
+                                        </td>
                                 </tr>
                             @empty
                                 <tr>
@@ -789,175 +1070,251 @@
             }
         });
     </script>
-</x-app-layout>
 
-<!-- Recovery Request Modal (Dashboard Style) -->
-<div id="recoveryModal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onclick="closeRecoveryModal()"></div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-            <form id="recoveryForm">
-                @csrf
-                <input type="hidden" id="recoveryLogId" name="log_id">
-                
-                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <div class="sm:flex sm:items-start">
+
+<!-- Recovery Modal -->
+<div id="recoveryModal" class="fixed z-[60] inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-gray-600 bg-opacity-75 transition-opacity backdrop-blur-sm" aria-hidden="true" onclick="closeRecoveryModal()"></div>
+
+        <!-- Modal Panel -->
+        <div class="relative bg-white rounded-xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-lg w-full ring-1 ring-black ring-opacity-5">
+            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <form id="recoveryForm" onsubmit="submitRecovery(event)">
+                    @csrf
+                    <input type="hidden" id="recoveryLogId" name="log_id">
+
+                    <!-- Header -->
+                    <div class="sm:flex sm:items-start mb-6">
                         <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
-                            <svg class="h-6 w-6 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                         </div>
                         <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                            <h3 class="text-lg leading-6 font-bold text-gray-900" id="modal-title">
                                 Request Attendance Recovery
                             </h3>
-                            <div class="mt-2">
-                                <p class="text-sm text-gray-500 mb-4">
-                                     Recover hours for <span id="recoveryDate" class="font-medium text-gray-900"></span>.
-                                     <br>Time In was: <span id="recoveryTimeIn" class="font-medium text-gray-900"></span>
+                            <!-- Dynamic Context Banner -->
+                            <div id="recoveryContext" class="mt-3 p-3 bg-red-50 border border-red-100 rounded-lg text-left">
+                                <p class="text-sm text-red-800 font-medium">Missing Log Detected</p>
+                                <p class="text-xs text-red-600 mt-1" id="recoveryDescription">
+                                    You forgot to clock out for <span id="recoveryShiftType" class="font-bold">Unknown Context</span> on <span id="recoveryDate" class="font-bold"></span>.
                                 </p>
-                                
-                                <div class="space-y-4">
-                                    <div>
-                                        <label for="time_out" class="block text-sm font-medium text-gray-700">Actual Time Out</label>
-                                        <input type="time" name="time_out" id="time_out" required
-                                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-ojt-primary focus:border-ojt-primary sm:text-sm">
-                                    </div>
-                                    
-                                    <div>
-                                        <label for="reason" class="block text-sm font-medium text-gray-700">Reason for Missing Log</label>
-                                        <textarea name="reason" id="reason" rows="3" required
-                                                  class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-ojt-primary focus:border-ojt-primary sm:text-sm"
-                                                  placeholder="E.g. I forgot to time out because of urgent task..."></textarea>
-                                    </div>
-
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-2">Proof of Attendance</label>
-                                        
-                                        <!-- Photo Upload Area -->
-                                        <div id="photoUploadArea" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-blue-400 cursor-pointer bg-gray-50 transition-colors">
-                                            <div class="space-y-1 text-center">
-                                                <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-                                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                                </svg>
-                                                <div class="flex text-sm text-gray-600">
-                                                    <span class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
-                                                        <span>Upload a photo</span>
-                                                    </span>
-                                                    <p class="pl-1">or drag and drop</p>
-                                                </div>
-                                                <p class="text-xs text-gray-500">PNG, JPG up to 5MB</p>
-                                            </div>
-                                        </div>
-                                        <input type="file" name="photo_out" id="recoveryPhoto" accept="image/jpeg,image/png" class="hidden">
-                                        
-                                        <!-- Preview Area -->
-                                        <div id="photoPreview" class="hidden mt-2 relative">
-                                            <img id="previewImage" src="" alt="Proof Preview" class="max-h-48 rounded-md mx-auto shadow-sm">
-                                            <button type="button" onclick="document.getElementById('photoUploadArea').click()" class="absolute top-2 right-2 bg-gray-800 bg-opacity-70 text-white p-1 rounded-full hover:bg-opacity-100">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                                            </button>
-                                        </div>
-                                        <p id="photoError" class="hidden text-xs text-red-600 mt-1">⚠ Proof photo is required.</p>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                    <button type="submit"
-                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-ojt-primary text-base font-medium text-white hover:bg-maroon-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ojt-primary sm:ml-3 sm:w-auto sm:text-sm">
-                        <span id="submitText">Submit Request</span>
-                    </button>
-                    <button type="button" onclick="closeRecoveryModal()"
-                            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                        Cancel
-                    </button>
-                </div>
-            </form>
+
+                    <div class="space-y-5">
+                        <!-- Time Out Input -->
+                        <div>
+                            <label for="time_out" class="block text-sm font-semibold text-gray-700 mb-1">Actual Time Out</label>
+                            <div class="relative">
+                                <input type="time" name="time_out" id="time_out" required
+                                       class="block w-full pl-3 pr-10 py-2.5 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-lg shadow-sm transition-colors"
+                                       onchange="validateTime(this)">
+                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                    <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500" id="timeHelpText">Please enter the exact time you stopped working.</p>
+                            <p class="hidden text-xs text-red-600 mt-1" id="timeError">Time must be after your Time In.</p>
+                        </div>
+
+                        <!-- Reason Input -->
+                        <div>
+                            <label for="reason" class="block text-sm font-semibold text-gray-700 mb-1">Reason for Missing Log</label>
+                            <textarea name="reason" id="reason" rows="3" required
+                                      class="block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border-gray-300 rounded-lg p-2.5 transition-colors"
+                                      placeholder="Example: I forgot to click the button because I was rushing to catch the bus..."
+                                      oninput="this.classList.remove('border-red-300', 'ring-red-200');"></textarea>
+                            <p class="hidden text-xs text-red-600 mt-1" id="reasonError">A valid reason is required.</p>
+                        </div>
+
+                        <!-- Photo Upload -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Proof of Attendance <span class="text-gray-400 font-normal">(Selfie or Work)</span></label>
+                            
+                            <div id="photoUploadArea" class="relative group mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all" onclick="document.getElementById('recoveryPhoto').click()">
+                                <div class="space-y-2 text-center">
+                                    <div class="mx-auto h-12 w-12 text-gray-400 group-hover:text-blue-500 transition-colors duration-200">
+                                        <svg class="h-full w-full" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                        </svg>
+                                    </div>
+                                    <div class="text-sm text-gray-600">
+                                        <span class="font-medium text-blue-600 group-hover:text-blue-700">Tap to upload photo</span>
+                                    </div>
+                                    <p class="text-xs text-gray-400">JPG or PNG (Max 5MB)</p>
+                                </div>
+                            </div>
+                            <input type="file" name="photo_out" id="recoveryPhoto" accept="image/jpeg,image/png" class="hidden" onchange="previewFile(this)">
+                            
+                            <!-- Preview Box -->
+                            <div id="photoPreview" class="hidden mt-3 relative group animate-fade-in-up">
+                                <div class="aspect-w-16 aspect-h-9 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+                                    <img id="previewImage" src="" alt="Proof Preview" class="object-cover w-full h-48">
+                                </div>
+                                <button type="button" onclick="resetPhoto()" 
+                                        class="absolute top-2 right-2 p-1.5 bg-gray-900 bg-opacity-60 text-white rounded-full hover:bg-opacity-100 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500" title="Remove photo">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                </button>
+                                <div class="absolute bottom-2 left-2 bg-green-500 text-white text-xs px-2 py-1 rounded shadow-sm flex items-center">
+                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                                    Photo attached
+                                </div>
+                            </div>
+                            <p id="photoError" class="hidden text-xs text-red-600 mt-2 flex items-center animate-pulse">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                                Proof photo is required.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Footer Buttons -->
+                    <div class="mt-8 sm:mt-8 sm:grid sm:grid-cols-2 sm:gap-3 sm:flex-row-reverse border-t border-gray-100 pt-5">
+                        <button type="submit"
+                                class="w-full inline-flex justify-center items-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:col-start-2 sm:text-sm transition-colors">
+                            <span id="submitText">Submit Recovery</span>
+                        </button>
+                        <button type="button" onclick="closeRecoveryModal()"
+                                class="mt-3 w-full inline-flex justify-center items-center rounded-lg border border-gray-300 shadow-sm px-4 py-2.5 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 sm:mt-0 sm:col-start-1 sm:text-sm transition-colors">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
     let currentLogId = null;
-    
-    // Updated function signature to match Dashboard
+    let recoveryStartTime = null; // Store the Time In for validation
+
+    // Updated to accept log details directly for context
     function openRecoveryModal(logId, dateStr) {
         currentLogId = logId;
         
-        // Parse date string carefully since we passed a combined string from the blade template
-        // We passed: 'Y-m-d (Time In)'
-        // Let's just display it directly as it's already formatted nicely in the blade loop
-        document.getElementById('recoveryDate').textContent = dateStr; 
-        document.getElementById('recoveryTimeIn').textContent = ''; // Cleared as it is combined in dateStr
+        // Find the log object from the server data (we need to pass this or look it up)
+        // For now, we will rely on data attributes or a lookup if available. 
+        // A simpler way: The button can pass the "Missing AM Out" or "Missing PM Out" context if we calculate it in Blade.
+        // Let's assume the button onclick has: openRecoveryModal(id, date, 'AM/PM')
+        // But the blade loop above just passes id and date. We can infer from the backend or just show generic.
+        // To be precise, let's just show the date for now as per previous implementation, but enhanced.
         
+        document.getElementById('recoveryDate').textContent = dateStr;
         document.getElementById('recoveryModal').classList.remove('hidden');
         document.getElementById('recoveryLogId').value = logId;
         
-        // Reset form
+        // Reset form completely
         document.getElementById('recoveryForm').reset();
-        document.getElementById('photoPreview').classList.add('hidden');
-        document.getElementById('photoError').classList.add('hidden');
-        document.getElementById('photoUploadArea').classList.remove('hidden');
+        resetPhoto();
+        
+        // Clear errors
+        document.querySelectorAll('#recoveryForm .text-red-600').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('#recoveryForm input, #recoveryForm textarea').forEach(el => {
+            el.classList.remove('border-red-300', 'focus:border-red-500', 'focus:ring-red-500');
+        });
+
+        // Determine Context (Simulated for now based on button logic, can be refined)
+        // Ideally we pass this from the button: openRecoveryModal(id, date, 'Lunch Break')
+        // For now, we default to "Shift End"
+        document.getElementById('recoveryDescription').innerHTML = `You forgot to clock out on <span class="font-bold text-gray-800">${dateStr}</span>.`;
     }
 
     function closeRecoveryModal() {
         document.getElementById('recoveryModal').classList.add('hidden');
         currentLogId = null;
     }
-    
-    // Photo upload handling (Same as Dashboard)
-    document.getElementById('recoveryPhoto').addEventListener('change', function(e) {
-        const file = e.target.files[0];
+
+    // Photo Handling
+    function previewFile(input) {
+        const file = input.files[0];
         if (file) {
+            // Validate size (5MB max)
+            if(file.size > 5 * 1024 * 1024) {
+                 alert("File is too large. Max size is 5MB.");
+                 input.value = "";
+                 return;
+            }
+
             const reader = new FileReader();
             reader.onload = function(e) {
                 document.getElementById('previewImage').src = e.target.result;
                 document.getElementById('photoPreview').classList.remove('hidden');
                 document.getElementById('photoUploadArea').classList.add('hidden');
+                document.getElementById('photoError').classList.add('hidden');
             };
             reader.readAsDataURL(file);
         }
-    });
-    
-    document.getElementById('photoUploadArea').addEventListener('click', function() {
-        document.getElementById('recoveryPhoto').click();
-    });
+    }
 
+    function resetPhoto() {
+        document.getElementById('recoveryPhoto').value = "";
+        document.getElementById('photoPreview').classList.add('hidden');
+        document.getElementById('photoUploadArea').classList.remove('hidden');
+    }
+
+    // Time Validation
+    function validateTime(input) {
+        // Simple check just to ensure it's filled
+        if(input.value) {
+            document.getElementById('timeError').classList.add('hidden');
+            input.classList.remove('border-red-300', 'text-red-900');
+        }
+    }
+
+    // Form Submission
     document.getElementById('recoveryForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
-        const formData = new FormData(this);
-        // Ensure log_id is appended if not in form
-        if(!formData.get('log_id')) {
-             formData.append('log_id', document.getElementById('recoveryLogId').value);
-        }
+        // 1. Reset Errors
+        let hasError = false;
+        const timeInput = document.getElementById('time_out');
+        const reasonInput = document.getElementById('reason');
+        const photoInput = document.getElementById('recoveryPhoto');
         
-        // Validate
-        if (!formData.get('time_out')) {
-            alert('⚠ Please enter the exact time you left work.');
-            return;
+        // 2. Validate Time
+        if (!timeInput.value) {
+            document.getElementById('timeError').classList.remove('hidden');
+            timeInput.classList.add('border-red-300', 'text-red-900');
+            hasError = true;
         }
-        if (!formData.get('reason') || formData.get('reason').trim() === '') {
-            alert('⚠ Please provide a reason.');
-            return;
+
+        // 3. Validate Reason
+        if (!reasonInput.value.trim()) {
+            document.getElementById('reasonError').classList.remove('hidden');
+            reasonInput.classList.add('border-red-300');
+            hasError = true;
         }
-        if (!formData.get('photo_out') || formData.get('photo_out').size === 0) {
+
+        // 4. Validate Photo
+        if (!photoInput.files || photoInput.files.length === 0) {
             document.getElementById('photoError').classList.remove('hidden');
-            alert('⚠ Proof photo is required.');
-            return;
+            hasError = true;
         }
+
+        if (hasError) return;
         
-        if (confirm('Submit this recovery request?')) {
+        // 5. Submit with Confirmation
+        if (confirm('Are you sure you want to submit this recovery request? details cannot be edited once submitted.')) {
+            const formData = new FormData(this);
+            if(!formData.get('log_id')) {
+                 formData.append('log_id', document.getElementById('recoveryLogId').value);
+            }
+            
             const submitBtn = this.querySelector('button[type="submit"]');
             const submitText = document.getElementById('submitText');
-            const originalText = submitText.textContent;
+            const originalText = "Submit Recovery";
             
-            submitText.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Uploading...';
+            // Loading State
+            submitText.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Sending...';
             submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
             
             fetch("{{ route('attendance.recovery') }}", {
                 method: 'POST',
@@ -969,19 +1326,26 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert(data.message);
-                    location.reload();
+                    // Success State
+                    submitText.innerText = 'Success!';
+                    submitBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                    submitBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                    
+                    setTimeout(() => {
+                        alert(data.message);
+                        location.reload();
+                    }, 500);
                 } else {
-                    alert('Error: ' + data.message);
-                    submitText.innerHTML = originalText;
-                    submitBtn.disabled = false;
+                    // Error from Server
+                    throw new Error(data.message || 'Unknown error');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred.');
-                submitText.innerHTML = originalText;
+                alert('Request failed: ' + error.message);
+                submitText.innerText = originalText;
                 submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-75', 'cursor-not-allowed');
             });
         }
     });
@@ -993,5 +1357,6 @@
         }
     });
 </script>
+</x-app-layout>
 
 
