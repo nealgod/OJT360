@@ -138,7 +138,7 @@ class DocumentController extends Controller
         // RESTRICTION: Logic based on OJT Status
         $status = $user->studentProfile?->ojt_status;
         
-        $allowedKeywords = ['weekly', 'photo documentation'];
+        $allowedKeywords = ['weekly'];
         $isExempt = \Illuminate\Support\Str::contains(strtolower($requirement->name), $allowedKeywords);
 
         if ($requirement->type === 'post_placement') {
