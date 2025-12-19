@@ -177,7 +177,7 @@
                                     
                                     @php
                                         // Define exempted ongoing documents
-                                        $allowedKeywords = ['weekly'];
+                                        $allowedKeywords = [];
                                         $isExempt = \Illuminate\Support\Str::contains(strtolower($requirement->name), $allowedKeywords);
 
                                         // Status Check
