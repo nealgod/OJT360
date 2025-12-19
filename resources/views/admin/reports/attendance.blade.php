@@ -260,12 +260,14 @@
     </div>
     <!-- Photo & Map Modal -->
     <div id="photoMapModal" class="fixed inset-0 z-50 hidden overflow-y-auto" onclick="closePhotoMap()">
-        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="flex items-center justify-center min-h-screen p-4 text-center">
+            <!-- Backdrop -->
             <div class="fixed inset-0 transition-opacity" aria-hidden="true">
                 <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
             </div>
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full" onclick="event.stopPropagation()">
+
+            <!-- Modal Content -->
+            <div class="relative bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-4xl sm:w-full" onclick="event.stopPropagation()">
                 <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                     <div class="flex justify-between items-start mb-4">
                         <h3 class="text-lg leading-6 font-medium text-gray-900" id="photoMapTitle">Attendance Logic</h3>
