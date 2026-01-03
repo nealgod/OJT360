@@ -509,23 +509,62 @@
                                         </div>
                                     </div>
 
-                                    <div class="grid grid-cols-2 gap-4 mb-4">
-                                        <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                                            @if($log->am_in_time && !$log->am_out_time)
-                                                <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Original AM Time In</p>
-                                                <p class="text-sm font-semibold text-gray-900">{{ \Carbon\Carbon::parse($log->am_in_time)->format('g:i A') }}</p>
-                                            @else
-                                                <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Original PM Time In</p>
-                                                <p class="text-sm font-semibold text-gray-900">{{ $log->pm_in_time ? \Carbon\Carbon::parse($log->pm_in_time)->format('g:i A') : 'N/A' }}</p>
-                                            @endif
-                                        </div>
-                                        <div class="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                                            <p class="text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-1">New Requested Out</p>
+                                    <div class="mb-4">
+                                        <p class="text-[11px] font-bold text-gray-500 uppercase mb-3 tracking-widest flex items-center">
+                                            <svg class="w-3 h-3 mr-1 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"/></svg>
+                                            Timeline Comparison
+                                        </p>
+                                        
+                                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                             @php
-                                                $requestedOut = $log->am_out_time ?? $log->pm_out_time;
+                                                $isModalWholeDay = $log->pm_out_time && $log->is_recovered && ($log->pm_in_photo === $log->am_out_photo);
                                             @endphp
-                                            <p class="text-lg font-bold text-blue-900">{{ $requestedOut ? \Carbon\Carbon::parse($requestedOut)->format('g:i A') : 'N/A' }}</p>
+
+                                            <!-- AM IN -->
+                                            <div class="p-2 rounded border bg-green-50 border-green-100">
+                                                <span class="block text-[9px] font-bold text-green-600 uppercase tracking-tight">AM In (Regular)</span>
+                                                <span class="block text-green-900 font-bold text-sm">{{ $log->am_in_time ? \Carbon\Carbon::parse($log->am_in_time)->format('g:i A') : '—' }}</span>
+                                            </div>
+
+                                            <!-- AM OUT -->
+                                            @php $isModalAmRec = $log->is_recovered && $log->am_out_time && ($isModalWholeDay || !$log->pm_in_time); @endphp
+                                            <div class="p-2 rounded border {{ $isModalAmRec ? 'bg-blue-50 border-blue-200 ring-1 ring-blue-500/20' : 'bg-green-50 border-green-100' }}">
+                                                <span class="block text-[9px] font-bold {{ $isModalAmRec ? 'text-blue-600' : 'text-green-600' }} uppercase tracking-tight">
+                                                    AM Out {{ $isModalAmRec ? '(Recovery)' : '(Regular)' }}
+                                                </span>
+                                                <span class="block {{ $isModalAmRec ? 'text-blue-900' : 'text-green-900' }} font-bold text-sm">
+                                                    {{ $log->am_out_time ? \Carbon\Carbon::parse($log->am_out_time)->format('g:i A') : '—' }}
+                                                </span>
+                                            </div>
+
+                                            <!-- PM IN -->
+                                            @php $isModalPmInRec = $log->is_recovered && $isModalWholeDay; @endphp
+                                            <div class="p-2 rounded border {{ $isModalPmInRec ? 'bg-blue-50 border-blue-200 ring-1 ring-blue-500/20' : ($log->pm_in_time ? 'bg-green-50 border-green-100' : 'bg-gray-50 border-gray-100') }}">
+                                                <span class="block text-[9px] font-bold {{ $isModalPmInRec ? 'text-blue-600' : ($log->pm_in_time ? 'text-green-600' : 'text-gray-400') }} uppercase tracking-tight">
+                                                    PM In {{ $isModalPmInRec ? '(Recovery)' : ($log->pm_in_time ? '(Regular)' : '') }}
+                                                </span>
+                                                <span class="block {{ $isModalPmInRec ? 'text-blue-900' : ($log->pm_in_time ? 'text-green-900' : 'text-gray-400') }} font-bold text-sm">
+                                                    {{ $log->pm_in_time ? \Carbon\Carbon::parse($log->pm_in_time)->format('g:i A') : '—' }}
+                                                </span>
+                                            </div>
+
+                                            <!-- PM OUT -->
+                                            @php $isModalPmOutRec = $log->is_recovered && $log->pm_out_time; @endphp
+                                            <div class="p-2 rounded border {{ $isModalPmOutRec ? 'bg-blue-50 border-blue-200 ring-1 ring-blue-500/20' : ($log->pm_out_time ? 'bg-green-50 border-green-100' : 'bg-gray-50 border-gray-100') }}">
+                                                <span class="block text-[9px] font-bold {{ $isModalPmOutRec ? 'text-blue-600' : ($log->pm_out_time ? 'text-green-600' : 'text-gray-400') }} uppercase tracking-tight">
+                                                    PM Out {{ $isModalPmOutRec ? '(Recovery)' : ($log->pm_out_time ? '(Regular)' : '') }}
+                                                </span>
+                                                <span class="block {{ $isModalPmOutRec ? 'text-blue-900' : ($log->pm_out_time ? 'text-green-900' : 'text-gray-400') }} font-bold text-sm">
+                                                    {{ $log->pm_out_time ? \Carbon\Carbon::parse($log->pm_out_time)->format('g:i A') : '—' }}
+                                                </span>
+                                            </div>
                                         </div>
+
+                                        @if($isModalWholeDay)
+                                            <div class="mt-2 text-center">
+                                                <span class="px-2 py-0.5 rounded text-[9px] font-black bg-blue-600 text-white uppercase italic tracking-widest shadow-sm">Whole Day Request</span>
+                                            </div>
+                                        @endif
                                     </div>
 
                                     <div class="mb-4">
@@ -537,15 +576,26 @@
 
                                     @php
                                         $recoveryPhoto = $log->am_out_photo ?? $log->pm_out_photo;
+                                        $recoveryLat = $log->am_out_lat ?? $log->pm_out_lat ?? null;
+                                        $recoveryLng = $log->am_out_lng ?? $log->pm_out_lng ?? null;
                                     @endphp
                                     @if($recoveryPhoto)
                                         <div class="mb-5">
                                             <div class="flex justify-between items-end mb-2">
                                                  <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Proof Photo (Full View)</p>
-                                                 <span class="text-[10px] text-blue-600 cursor-pointer hover:underline flex items-center" onclick="window.open('{{ Storage::url($recoveryPhoto) }}', '_blank')">
-                                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 21h7a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v11m0 5l4.879-4.879m0 0a3 3 0 104.243-4.242 3 3 0 00-4.243 4.242z"/></svg>
-                                                    Open Original
-                                                 </span>
+                                                 <div class="flex items-center gap-2">
+                                                     @if($recoveryLat && $recoveryLng)
+                                                         <button onclick="showRecoveryPhotoMap('{{ Storage::url($recoveryPhoto) }}', '{{ $recoveryLat }}', '{{ $recoveryLng }}', 'Recovery Photo')" 
+                                                                 class="text-[10px] text-blue-600 cursor-pointer hover:underline flex items-center">
+                                                             <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                                             View on Map
+                                                         </button>
+                                                     @endif
+                                                     <span class="text-[10px] text-blue-600 cursor-pointer hover:underline flex items-center" onclick="window.open('{{ Storage::url($recoveryPhoto) }}', '_blank')">
+                                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 21h7a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v11m0 5l4.879-4.879m0 0a3 3 0 104.243-4.242 3 3 0 00-4.243 4.242z"/></svg>
+                                                        Open Original
+                                                     </span>
+                                                 </div>
                                             </div>
                                             <!-- Enhanced Image Container -->
                                             <div class="h-auto min-h-[250px] bg-black rounded-lg border border-gray-300 overflow-hidden relative group cursor-pointer shadow-inner" onclick="window.open('{{ Storage::url($recoveryPhoto) }}', '_blank')">
@@ -622,20 +672,25 @@
                                         </svg>
                                         <span class="text-sm font-semibold text-gray-900">{{ $log->work_date->format('M d, Y') }}</span>
                                     </div>
-                                    @if($log->is_recovered)
-                                        @if($log->recovery_approved === true)
-                                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Recovered (Approved)</span>
-                                        @elseif($log->recovery_approved === false)
-                                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Recovery Rejected</span>
-                                        @else
-                                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 animate-pulse">Pending Review</span>
-                                        @endif
+                                    @php
+                                        // Simple completion check
+                                        $isComplete = ($log->am_in_time && $log->am_out_time) || ($log->pm_in_time && $log->pm_out_time);
+                                        $isPastDate = $log->work_date < today();
+                                        $isMissed = $isPastDate && !$isComplete && $log->status !== 'pending' && !$log->is_recovered;
+                                    @endphp
+
+                                    @if($log->is_recovered && is_null($log->recovery_approved))
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 animate-pulse">Pending Review</span>
+                                    @elseif($log->is_recovered && $log->recovery_approved === true)
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Recovered (Approved)</span>
+                                    @elseif($log->is_recovered && $log->recovery_approved === false)
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Recovery Rejected</span>
+                                    @elseif($isMissed)
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 border border-red-200">Incomplete</span>
+                                    @elseif($log->status === 'approved' && $isComplete)
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Completed</span>
                                     @else
-                                        @if($log->status === 'approved')
-                                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Completed</span>
-                                        @else
-                                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">{{ ucfirst($log->status) }}</span>
-                                        @endif
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">In Progress</span>
                                     @endif
                                 </div>
 
@@ -673,41 +728,92 @@
                                         Review Recovery Request
                                     </button>
 
-                                    <!-- Panel -->
+                                    <!-- Enhanced Review Panel -->
                                     <div id="review-panel-{{ $log->id }}" class="hidden mt-4 pt-4 border-t border-yellow-200 animate-fade-in-down">
-                                        <div class="grid grid-cols-2 gap-3 mb-4">
-                                            <div class="bg-white p-2.5 rounded border border-gray-100">
-                                                <span class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">Time In</span>
-                                                <span class="block text-gray-900 font-medium text-sm">
-                                                    {{ $log->time_in_formatted }}
-                                                </span>
-                                            </div>
-                                            <div class="bg-blue-50 p-2.5 rounded border border-blue-100">
-                                                <span class="block text-[10px] font-bold text-blue-600 uppercase tracking-wider">Requested Time Out</span>
+                                        <div class="mb-4">
+                                            <p class="text-[11px] font-bold text-gray-500 uppercase mb-3 tracking-widest flex items-center">
+                                                <svg class="w-3 h-3 mr-1 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"/></svg>
+                                                Timeline Comparison
+                                            </p>
+                                            
+                                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                                 @php
-                                                    $requestedOut = $log->am_out_time ?? $log->pm_out_time;
+                                                    $isWholeDay = $log->pm_out_time && $log->is_recovered && ($log->pm_in_photo === $log->am_out_photo);
+                                                    // Recovered slots usually have the same photo as the one uploaded in recovery
+                                                    // For simple recovery, only am_out or pm_out is recovered.
                                                 @endphp
-                                                <span class="block text-blue-900 font-bold text-lg">
-                                                    {{ $requestedOut ? \Carbon\Carbon::parse($requestedOut)->format('g:i A') : 'N/A' }}
-                                                </span>
+
+                                                <!-- AM IN -->
+                                                <div class="p-2 rounded border bg-green-50 border-green-100">
+                                                    <span class="block text-[9px] font-bold text-green-600 uppercase tracking-tight">AM In (Regular)</span>
+                                                    <span class="block text-green-900 font-bold text-sm">{{ $log->am_in_time ? \Carbon\Carbon::parse($log->am_in_time)->format('g:i A') : '—' }}</span>
+                                                </div>
+
+                                                <!-- AM OUT -->
+                                                @php $isAmRec = $log->is_recovered && $log->am_out_time && ($isWholeDay || !$log->pm_in_time); @endphp
+                                                <div class="p-2 rounded border {{ $isAmRec ? 'bg-blue-50 border-blue-200 ring-1 ring-blue-500/20' : 'bg-green-50 border-green-100' }}">
+                                                    <span class="block text-[9px] font-bold {{ $isAmRec ? 'text-blue-600' : 'text-green-600' }} uppercase tracking-tight">
+                                                        AM Out {{ $isAmRec ? '(Recovery)' : '(Regular)' }}
+                                                    </span>
+                                                    <span class="block {{ $isAmRec ? 'text-blue-900' : 'text-green-900' }} font-bold text-sm">
+                                                        {{ $log->am_out_time ? \Carbon\Carbon::parse($log->am_out_time)->format('g:i A') : '—' }}
+                                                    </span>
+                                                </div>
+
+                                                <!-- PM IN -->
+                                                @php $isPmInRec = $log->is_recovered && $isWholeDay; @endphp
+                                                <div class="p-2 rounded border {{ $isPmInRec ? 'bg-blue-50 border-blue-200 ring-1 ring-blue-500/20' : ($log->pm_in_time ? 'bg-green-50 border-green-100' : 'bg-gray-50 border-gray-100') }}">
+                                                    <span class="block text-[9px] font-bold {{ $isPmInRec ? 'text-blue-600' : ($log->pm_in_time ? 'text-green-600' : 'text-gray-400') }} uppercase tracking-tight">
+                                                        PM In {{ $isPmInRec ? '(Recovery)' : ($log->pm_in_time ? '(Regular)' : '') }}
+                                                    </span>
+                                                    <span class="block {{ $isPmInRec ? 'text-blue-900' : ($log->pm_in_time ? 'text-green-900' : 'text-gray-400') }} font-bold text-sm">
+                                                        {{ $log->pm_in_time ? \Carbon\Carbon::parse($log->pm_in_time)->format('g:i A') : '—' }}
+                                                    </span>
+                                                </div>
+
+                                                <!-- PM OUT -->
+                                                @php $isPmOutRec = $log->is_recovered && $log->pm_out_time; @endphp
+                                                <div class="p-2 rounded border {{ $isPmOutRec ? 'bg-blue-50 border-blue-200 ring-1 ring-blue-500/20' : ($log->pm_out_time ? 'bg-green-50 border-green-100' : 'bg-gray-50 border-gray-100') }}">
+                                                    <span class="block text-[9px] font-bold {{ $isPmOutRec ? 'text-blue-600' : ($log->pm_out_time ? 'text-green-600' : 'text-gray-400') }} uppercase tracking-tight">
+                                                        PM Out {{ $isPmOutRec ? '(Recovery)' : ($log->pm_out_time ? '(Regular)' : '') }}
+                                                    </span>
+                                                    <span class="block {{ $isPmOutRec ? 'text-blue-900' : ($log->pm_out_time ? 'text-green-900' : 'text-gray-400') }} font-bold text-sm">
+                                                        {{ $log->pm_out_time ? \Carbon\Carbon::parse($log->pm_out_time)->format('g:i A') : '—' }}
+                                                    </span>
+                                                </div>
                                             </div>
+
+                                            @if($isWholeDay)
+                                                <div class="mt-2 text-center">
+                                                    <span class="px-2 py-0.5 rounded text-[9px] font-black bg-blue-600 text-white uppercase italic tracking-widest shadow-sm">Whole Day Request</span>
+                                                </div>
+                                            @endif
                                         </div>
 
-                                        <div class="mb-4">
-                                            <h4 class="text-xs font-bold text-gray-700 mb-1 uppercase tracking-wider">Reason</h4>
-                                            <div class="bg-white p-3 rounded border border-gray-100 italic text-gray-700 text-sm">
-                                                "{{ $log->recovery_reason ?? 'No reason provided' }}"
-                                            </div>
+                                        <div class="bg-gray-50 rounded-lg p-3 border border-gray-200 mb-4">
+                                            <span class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Reason for Recovery</span>
+                                            <p class="text-sm text-gray-700 italic">"{{ $log->recovery_reason }}"</p>
                                         </div>
 
                                         @php
                                             $recoveryPhoto = $log->am_out_photo ?? $log->pm_out_photo;
+                                            $recoveryLat = $log->am_out_lat ?? $log->pm_out_lat ?? null;
+                                            $recoveryLng = $log->am_out_lng ?? $log->pm_out_lng ?? null;
                                         @endphp
                                         @if($recoveryPhoto)
                                             <div class="mb-4">
                                                 <div class="flex justify-between items-end mb-1">
                                                     <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider">Proof Photo</h4>
-                                                    <span class="text-[10px] text-blue-600 cursor-pointer hover:underline" onclick="window.open('{{ Storage::url($recoveryPhoto) }}', '_blank')">View Full Size</span>
+                                                    <div class="flex items-center gap-2">
+                                                        @if($recoveryLat && $recoveryLng)
+                                                            <button onclick="showRecoveryPhotoMap('{{ Storage::url($recoveryPhoto) }}', '{{ $recoveryLat }}', '{{ $recoveryLng }}', 'Recovery Photo')" 
+                                                                    class="text-[10px] text-blue-600 cursor-pointer hover:underline flex items-center">
+                                                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                                                View on Map
+                                                            </button>
+                                                        @endif
+                                                        <span class="text-[10px] text-blue-600 cursor-pointer hover:underline" onclick="window.open('{{ Storage::url($recoveryPhoto) }}', '_blank')">View Full Size</span>
+                                                    </div>
                                                 </div>
                                                 <div class="relative h-32 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 group cursor-pointer" onclick="window.open('{{ Storage::url($recoveryPhoto) }}', '_blank')">
                                                     <img src="{{ Storage::url($recoveryPhoto) }}" class="w-full h-full object-cover transition-transform group-hover:scale-110">
@@ -807,5 +913,78 @@
                 btn.classList.remove('opacity-75');
             }
         }
+
+        function showRecoveryPhotoMap(photoUrl, lat, lng, title) {
+            document.getElementById('recoveryPhotoMapTitle').textContent = title;
+            document.getElementById('recoveryModalPhoto').src = photoUrl;
+            
+            const mapFrame = document.getElementById('recoveryGoogleMap');
+            const mapLink = document.getElementById('recoveryExternalMapLink');
+            const noMap = document.getElementById('recoveryNoMapMessage');
+            
+            // Check if lat/lng are valid
+            const hasValidLocation = lat && lng && 
+                                     lat !== 'null' && lng !== 'null' && 
+                                     lat !== '' && lng !== '' &&
+                                     !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lng)) &&
+                                     parseFloat(lat) !== 0 && parseFloat(lng) !== 0;
+            
+            if (hasValidLocation) {
+                const mapUrl = `https://maps.google.com/maps?q=${lat},${lng}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+                mapFrame.src = mapUrl;
+                mapFrame.classList.remove('hidden');
+                noMap.classList.add('hidden');
+                
+                mapLink.href = `https://www.google.com/maps?q=${lat},${lng}`;
+                mapLink.style.display = 'inline-flex';
+            } else {
+                mapFrame.classList.add('hidden');
+                noMap.classList.remove('hidden');
+                mapLink.style.display = 'none';
+            }
+
+            document.getElementById('recoveryPhotoMapModal').classList.remove('hidden');
+        }
+
+        function closeRecoveryPhotoMap() {
+            document.getElementById('recoveryPhotoMapModal').classList.add('hidden');
+            document.getElementById('recoveryGoogleMap').src = '';
+        }
     </script>
+
+    <!-- Recovery Photo Map Modal -->
+    <div id="recoveryPhotoMapModal" class="fixed inset-0 z-50 hidden overflow-y-auto" onclick="closeRecoveryPhotoMap()">
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="relative bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-4xl sm:w-full" onclick="event.stopPropagation()">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="recoveryPhotoMapTitle">Recovery Photo</h3>
+                        <button type="button" onclick="closeRecoveryPhotoMap()" class="text-gray-400 hover:text-gray-500">
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Photo Column -->
+                        <div class="bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center h-full min-h-[300px]">
+                            <img id="recoveryModalPhoto" src="" alt="Recovery Photo" class="max-w-full max-h-[500px] object-contain">
+                        </div>
+                        <!-- Map Column -->
+                        <div class="bg-gray-100 rounded-lg overflow-hidden h-[300px] md:h-auto relative">
+                            <div id="recoveryNoMapMessage" class="hidden absolute inset-0 flex items-center justify-center text-gray-500 text-sm">
+                                No location data available
+                            </div>
+                            <iframe id="recoveryGoogleMap" class="w-full h-full" frameborder="0" style="border:0" allowfullscreen loading="lazy" src=""></iframe>
+                        </div>
+                    </div>
+                    <!-- External Link -->
+                    <div class="mt-4 text-right">
+                        <a id="recoveryExternalMapLink" href="#" target="_blank" class="text-sm text-blue-600 hover:text-blue-800 font-medium inline-flex items-center">
+                            Open in Google Maps
+                            <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </x-app-layout>

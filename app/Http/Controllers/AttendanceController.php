@@ -79,12 +79,13 @@ class AttendanceController extends Controller
                 $msg = 'Timed In (Morning) successfully.';
             } elseif ($log->am_out_time && ! $log->pm_in_time) {
                 // Case 2: PM IN (After lunch)
+                // When student returns after morning shift, status should be pending for verification
                 $log->update([
                     'pm_in_time' => $currentTime,
                     'pm_in_photo' => $path,
                     'pm_in_lat' => $request->input('lat_in'),
                     'pm_in_lng' => $request->input('lng_in'),
-                    'status' => 'approved', // Continue In Progress
+                    'status' => 'approved', // Keep as approved (will remain approved at PM OUT)
                 ]);
                 $msg = 'Timed In (Afternoon) successfully.';
             } else {
@@ -221,6 +222,10 @@ class AttendanceController extends Controller
                 'time_out' => 'required|date_format:H:i',
                 'reason' => 'required|string|max:500',
                 'photo_out' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
+                // New validation for optional Whole Day Recovery
+                'whole_day' => 'nullable|in:on,true,1',
+                'pm_in' => 'nullable|required_if:whole_day,on|date_format:H:i|after:time_out',
+                'pm_out' => 'nullable|required_if:whole_day,on|date_format:H:i|after:pm_in',
             ]);
 
             if (!$request->hasFile('photo_out')) {
@@ -268,28 +273,75 @@ class AttendanceController extends Controller
             // Determine recovery type: "AM Out" recovery or "PM Out" recovery
             $isAmRecovery = $log->am_in_time && !$log->am_out_time;
             
+            $isWholeDay = $request->has('whole_day') && $request->input('whole_day') === 'on' && $isAmRecovery;
+
             if ($isAmRecovery) {
                 // Recovering the Morning Shift
                 $timeIn = $log->work_date->setTimeFromTimeString($log->am_in_time)->setTimezone('Asia/Manila');
                 $timeOut = $log->work_date->setTimeFromTimeString($request->time_out)->setTimezone('Asia/Manila');
                 
                 if ($timeOut->lt($timeIn)) {
-                     return response()->json(['success' => false, 'message' => 'Time out cannot be before Time in.']);
+                     return response()->json(['success' => false, 'message' => 'Morning Time Out cannot be before Morning Time In.']);
                 }
 
-                $minutes = max(0, $timeIn->diffInMinutes($timeOut));
-                
-                $log->update([
+                $amMinutes = max(0, $timeIn->diffInMinutes($timeOut));
+                $pmMinutes = 0;
+                $updates = [
                     'am_out_time' => $request->time_out,
                     'am_out_photo' => $photoPath,
-                    'minutes_worked' => $minutes, 
+                    'am_out_lat' => $request->input('lat_out'),
+                    'am_out_lng' => $request->input('lng_out'),
                     'status' => 'pending',
                     'is_recovered' => true,
                     'recovery_reason' => $request->reason,
                     'recovery_approved' => null,
-                ]);
+                ];
+
+                // --- WHOLE DAY RECOVERY LOGIC ---
+                if ($isWholeDay) {
+                    // Validate that PM In is not already set (safety check)
+                    if($log->pm_in_time) {
+                         return response()->json(['success' => false, 'message' => 'Cannot overwrite existing PM logs using Whole Day Recovery.']);
+                    }
+
+                    $pmInTime = $log->work_date->setTimeFromTimeString($request->pm_in)->setTimezone('Asia/Manila');
+                    $pmOutTime = $log->work_date->setTimeFromTimeString($request->pm_out)->setTimezone('Asia/Manila');
+                    
+                    if ($pmOutTime->lt($pmInTime)) {
+                        return response()->json(['success' => false, 'message' => 'Afternoon Time Out cannot be before Afternoon Time In.']);
+                    }
+
+                    $pmMinutes = max(0, $pmInTime->diffInMinutes($pmOutTime));
+
+                    // Add PM Data to updates
+                    $updates['pm_in_time'] = $request->pm_in;
+                    $updates['pm_out_time'] = $request->pm_out;
+                    
+                    // --- DUPLICATE PHOTO PROOF ---
+                    // Save the SAME photo to PM slots so the UI shows it everywhere
+                    $updates['pm_in_photo'] = $photoPath;
+                    $updates['pm_out_photo'] = $photoPath;
+                    
+                    // Optional: Duplicate location if available
+                    if ($request->input('lat_out')) {
+                         $updates['pm_in_lat'] = $request->input('lat_out');
+                         $updates['pm_in_lng'] = $request->input('lng_out');
+                         $updates['pm_out_lat'] = $request->input('lat_out');
+                         $updates['pm_out_lng'] = $request->input('lng_out');
+                    }
+                }
+
+                $totalMinutes = $amMinutes + $pmMinutes;
+                $updates['minutes_worked'] = $totalMinutes;
+                $updates['overtime_minutes'] = max(0, $totalMinutes - 480); // Calc overtime if whole day exceeds 8h
+
+                $log->update($updates);
+                
+                $minutes = $totalMinutes;
             } else {
                 // Recovering PM Shift (Missing PM OUT)
+                // Note: Whole Day checkbox is ignored here as per logic (only available if stuck in AM)
+                
                 $timeInStr = $log->pm_in_time;
                 if (!$timeInStr) {
                     return response()->json(['success' => false, 'message' => 'Cannot recover PM time without a PM Time In.']);
@@ -317,6 +369,8 @@ class AttendanceController extends Controller
                 $log->update([
                     'pm_out_time' => $request->time_out,
                     'pm_out_photo' => $photoPath,
+                    'pm_out_lat' => $request->input('lat_out'),
+                    'pm_out_lng' => $request->input('lng_out'),
                     'minutes_worked' => $totalMinutes,
                     'overtime_minutes' => max(0, $totalMinutes - 480),
                     'status' => 'pending',
@@ -332,7 +386,7 @@ class AttendanceController extends Controller
             \Log::info('Attendance recovery completed', [
                 'user_id' => $user->id,
                 'log_id' => $log->id,
-                'type' => $isAmRecovery ? 'AM_RECOVERY' : 'PM_RECOVERY',
+                'type' => $isAmRecovery ? ($isWholeDay ? 'WHOLE_DAY_RECOVERY' : 'AM_RECOVERY') : 'PM_RECOVERY',
                 'minutes_worked' => $minutes,
                 'reason' => $request->reason,
             ]);

@@ -277,6 +277,7 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
 
     // Coordinator manage students
     Route::get('/coord/students', [App\Http\Controllers\CoordinatorStudentController::class, 'index'])->name('coord.students.index');
+    Route::get('/coord/students/locator', [App\Http\Controllers\CoordinatorStudentController::class, 'locator'])->name('coord.students.locator');
 
     // Coordinator whitelist import (static routes must be BEFORE the {student} param route)
     Route::get('/coord/students/import', [App\Http\Controllers\CoordinatorImportController::class, 'showImport'])->name('coord.students.import');

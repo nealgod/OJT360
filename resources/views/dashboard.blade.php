@@ -188,11 +188,20 @@
                                 ->get();
                                 
                             $incompleteLogs = $recentLogs->filter(function($log) {
-                                $missingAmOut = $log->am_in_time && !$log->am_out_time;
-                                $missingPmOut = $log->pm_in_time && !$log->pm_out_time;
+                                $hasAmIn = $log->am_in_time;
+                                $hasAmOut = $log->am_out_time;
+                                $hasPmIn = $log->pm_in_time;
+                                $hasPmOut = $log->pm_out_time;
                                 
-                                // It is incomplete if any 'Out' is missing for an existing 'In'
-                                return $missingAmOut || $missingPmOut;
+                                if ($hasPmIn) {
+                                    $isComplete = $hasPmOut;
+                                } elseif ($hasAmIn) {
+                                    $isComplete = $hasAmOut;
+                                } else {
+                                    $isComplete = false;
+                                }
+
+                                return !$isComplete;
                             });
                         @endphp
                         
@@ -235,7 +244,7 @@
                                                         <span class="font-medium">Time In:</span> {{ $timeInDisplay }}
                                                     </div>
                                                 </div>
-                                                <button onclick="openRecoveryModal({{ $log->id }}, '{{ $log->work_date->format('Y-m-d') }}', '{{ $log->time_in_formatted }}')" 
+                                                <button onclick="openRecoveryModal({{ $log->id }}, '{{ $log->work_date->format('Y-m-d') }}', '{{ $log->time_in_formatted }}', {{ ($log->am_in_time && !$log->am_out_time) ? 'true' : 'false' }})" 
                                                         class="w-full sm:w-auto bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors shadow-sm flex items-center justify-center">
                                                     Recover Now
                                                     <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1122,11 +1131,37 @@
                     
                     <!-- Time Out Input -->
                     <div>
-                        <label for="time_out" class="block text-sm font-semibold text-gray-700 mb-1">Time Out <span class="text-red-500">*</span></label>
+                        <label for="time_out" class="block text-sm font-semibold text-gray-700 mb-1">Morning Time Out <span class="text-red-500">*</span></label>
                         <input type="time" id="time_out" name="time_out" onchange="validateTime(this)"
                                class="w-full rounded-lg border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 transition-colors"
                                required>
                         <p class="text-xs text-red-600 mt-1 hidden" id="timeError">⚠ Time must be provided.</p>
+                    </div>
+
+                    <!-- Whole Day Recovery Checkbox (Only if AM Recovery) -->
+                    <div id="wholeDayOption" class="animate-fade-in-down border rounded-lg p-3 bg-blue-50 border-blue-100">
+                         <div class="flex items-center">
+                             <input id="whole_day" name="whole_day" type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" onchange="toggleWholeDayInputs(this)">
+                             <label for="whole_day" class="ml-2 block text-sm font-semibold text-blue-900">
+                                 I also worked the afternoon shift (Whole Day)
+                             </label>
+                         </div>
+                         <p class="ml-6 mt-1 text-xs text-blue-700">Check this if you also forgot to log your PM shift.</p>
+                    </div>
+
+                    <!-- PM Inputs (Hidden by default) -->
+                    <div id="wholeDayInputs" class="hidden space-y-4 border-l-2 border-blue-200 pl-4 py-1">
+                        <div>
+                            <label for="pm_in" class="block text-sm font-semibold text-gray-700 mb-1">Afternoon Time In <span class="text-red-500">*</span></label>
+                            <input type="time" name="pm_in" id="pm_in"
+                                   class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label for="pm_out" class="block text-sm font-semibold text-gray-700 mb-1">Afternoon Time Out <span class="text-red-500">*</span></label>
+                            <input type="time" name="pm_out" id="pm_out"
+                                   class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        <p class="text-xs text-blue-600 font-medium italic">Note: The same proof photo will be used for both shifts.</p>
                     </div>
 
                     <!-- Reason Input -->
@@ -1190,17 +1225,59 @@
     
     <script>
         let currentLogId = null;
+
+        async function getLocationOrNull() {
+            try {
+                return await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition((pos) => resolve(pos.coords), () => resolve(null), { enableHighAccuracy: true, timeout: 5000 });
+                });
+            } catch { return null; }
+        }
+
+        function toggleWholeDayInputs(checkbox) {
+            const inputsDiv = document.getElementById('wholeDayInputs');
+            const pmIn = document.getElementById('pm_in');
+            const pmOut = document.getElementById('pm_out');
+
+            if (checkbox.checked) {
+                inputsDiv.classList.remove('hidden');
+                pmIn.required = true;
+                pmOut.required = true;
+            } else {
+                inputsDiv.classList.add('hidden');
+                pmIn.required = false;
+                pmOut.required = false;
+                pmIn.value = '';
+                pmOut.value = '';
+            }
+        }
         
-        function openRecoveryModal(logId, dateStr, timeInStr) {
+        function openRecoveryModal(logId, dateStr, timeInStr, isAmShift = true) {
             currentLogId = logId;
             document.getElementById('recoveryModal').classList.remove('hidden');
             
             // Set attendance info
-            // dateStr is expected to be Y-m-d from the blade call
             const d = new Date(dateStr);
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('recoveryDate').textContent = d.toLocaleDateString('en-US', options);
             document.getElementById('recoveryTimeIn').textContent = timeInStr;
+            
+            // Reset Whole Day UI
+            const wholeDayOption = document.getElementById('wholeDayOption');
+            const wholeDayCheckbox = document.getElementById('whole_day');
+            const timeOutLabel = document.querySelector('label[for="time_out"]');
+            
+            wholeDayCheckbox.checked = false;
+            toggleWholeDayInputs(wholeDayCheckbox);
+            
+            // Show checkbox only if it's a Morning Shift recovery
+            if (isAmShift) {
+                wholeDayOption.classList.remove('hidden');
+                timeOutLabel.innerHTML = 'Morning Time Out <span class="text-red-500">*</span>';
+            } else {
+                wholeDayOption.classList.add('hidden');
+                timeOutLabel.innerHTML = 'Afternoon Time Out <span class="text-red-500">*</span>';
+            }
             
             document.getElementById('recoveryLogId').value = logId;
             
@@ -1268,7 +1345,7 @@
         }
 
         // Form Submission
-        document.getElementById('recoveryForm').addEventListener('submit', function(e) {
+        document.getElementById('recoveryForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             let hasError = false;
@@ -1311,6 +1388,17 @@
                 submitText.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Sending...';
                 submitBtn.disabled = true;
                 submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
+
+                // GPS Relaxed for Dev
+                try {
+                    if (typeof getLocationOrNull === 'function') {
+                        const coords = await getLocationOrNull();
+                        if (coords) {
+                            formData.append('lat_out', coords.latitude);
+                            formData.append('lng_out', coords.longitude);
+                        }
+                    }
+                } catch(e) { console.warn("GPS failed"); }
                 
                 fetch('{{ route("attendance.recovery") }}', {
                     method: 'POST',

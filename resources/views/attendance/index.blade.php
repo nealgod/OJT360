@@ -667,16 +667,14 @@ bannerMessage = document.getElementById('statusMessage');
                             formData.append('photo_in', new File([capturedBlobIn], `photo_in-${Date.now()}.jpg`, { type: 'image/jpeg' }));
                             formData.append('_token', '{{ csrf_token() }}');
                             
-                            // REQUIRE Location (Mandatory)
+                            // REQUIRE Location (Mandatory) -> NOW RELAXED FOR DEV
                             const coords = await getLocationOrNull();
                             if (!coords) {
-                                showError('Location access is required. Please enable GPS and Allow permissions.');
-                                button.textContent = originalText;
-                                button.disabled = false;
-                                return;
+                                console.warn("GPS failed. Proceeding without location (Dev Mode).");
+                            } else {
+                                formData.append('lat_in', coords.latitude);
+                                formData.append('lng_in', coords.longitude);
                             }
-                            formData.append('lat_in', coords.latitude);
-                            formData.append('lng_in', coords.longitude);
                             
                             // Submit using fetch
                             // Submitting time in request...
@@ -831,16 +829,14 @@ bannerMessage = document.getElementById('statusMessage');
                             formData.append('photo_out', new File([capturedBlobOut], `photo_out-${Date.now()}.jpg`, { type: 'image/jpeg' }));
                             formData.append('_token', '{{ csrf_token() }}');
                             
-                            // REQUIRE Location (Mandatory)
+                            // REQUIRE Location (Mandatory) -> NOW RELAXED FOR DEV
                             const coords = await getLocationOrNull();
                             if (!coords) {
-                                showError('Location access is required. Please enable GPS and Allow permissions.');
-                                button.textContent = originalText;
-                                button.disabled = false;
-                                return;
+                                console.warn("GPS failed. Proceeding without location (Dev Mode).");
+                            } else {
+                                formData.append('lat_out', coords.latitude);
+                                formData.append('lng_out', coords.longitude);
                             }
-                            formData.append('lat_out', coords.latitude);
-                            formData.append('lng_out', coords.longitude);
                             
                             // Submit using fetch
                             const response = await fetch(routes.out, {
@@ -902,7 +898,7 @@ bannerMessage = document.getElementById('statusMessage');
                                     <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wide text-xs">Schedule</th>
                                     <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wide text-xs">Duration</th>
                                     <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wide text-xs">Photos</th>
-                                    <th class="px-3 py-3 text-right font-medium text-gray-500 uppercase tracking-wide text-xs">Status</th>
+                                    <th class="px-3 py-3 text-center font-medium text-gray-500 uppercase tracking-wide text-xs">Status</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100">
@@ -983,17 +979,46 @@ bannerMessage = document.getElementById('statusMessage');
                                         </div>
                                     </td>
                                         <td class="px-3 py-2 text-right">
+                                            @php
+                                                // Check if log is actually complete
+                                                // Complete = has OUT time for the last IN punch
+                                                $hasAmIn = $log->am_in_time;
+                                                $hasAmOut = $log->am_out_time;
+                                                $hasPmIn = $log->pm_in_time;
+                                                $hasPmOut = $log->pm_out_time;
+                                                
+                                                // If they started PM shift, they need PM OUT to be complete
+                                                // If they only did AM shift, they need AM OUT to be complete
+                                                if ($hasPmIn) {
+                                                    $isComplete = $hasPmOut; // PM started, need PM OUT
+                                                } elseif ($hasAmIn) {
+                                                    $isComplete = $hasAmOut; // Only AM, need AM OUT
+                                                } else {
+                                                    $isComplete = false; // No punches at all
+                                                }
+                                                
+                                                // Check if this is a past date (missed log)
+                                                $isPastDate = $log->work_date < today();
+                                                $isMissed = $isPastDate && !$isComplete && $log->status !== 'pending';
+                                            @endphp
+                                            
                                             @if($log->status === 'approved' && $log->is_recovered)
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                                     Recovered
                                                 </span>
-                                            @elseif($log->status === 'approved')
+                                            @elseif($log->status === 'approved' && $isComplete)
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                                     Completed
                                                 </span>
-                                            @elseif($log->status === 'pending')
+                                            @elseif($log->status === 'pending' && $log->is_recovered)
+                                                {{-- Only show "Pending Review" if there's an actual recovery request --}}
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                                                     Pending Review
+                                                </span>
+                                            @elseif($isMissed)
+                                                {{-- Past incomplete log - needs recovery --}}
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200" title="This log is incomplete. Please submit a recovery request.">
+                                                    Incomplete
                                                 </span>
                                             @elseif($log->is_recovered && $log->recovery_approved === false)
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200" title="Your recovery request was rejected. You may request again.">
@@ -1004,6 +1029,7 @@ bannerMessage = document.getElementById('statusMessage');
                                                     Rejected
                                                 </span>
                                             @else
+                                                {{-- Current day in progress --}}
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                                                     In Progress
                                                 </span>
@@ -1012,7 +1038,7 @@ bannerMessage = document.getElementById('statusMessage');
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="px-4 py-12 text-center text-gray-500">
+                                    <td colspan="5" class="px-4 py-12 text-center text-gray-500">
                                         <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                         </svg>
@@ -1072,291 +1098,11 @@ bannerMessage = document.getElementById('statusMessage');
     </script>
 
 
-<!-- Recovery Modal -->
-<div id="recoveryModal" class="fixed z-[60] inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
-        <!-- Backdrop -->
-        <div class="fixed inset-0 bg-gray-600 bg-opacity-75 transition-opacity backdrop-blur-sm" aria-hidden="true" onclick="closeRecoveryModal()"></div>
-
-        <!-- Modal Panel -->
-        <div class="relative bg-white rounded-xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-lg w-full ring-1 ring-black ring-opacity-5">
-            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <form id="recoveryForm" onsubmit="submitRecovery(event)">
-                    @csrf
-                    <input type="hidden" id="recoveryLogId" name="log_id">
-
-                    <!-- Header -->
-                    <div class="sm:flex sm:items-start mb-6">
-                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
-                            <svg class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                            <h3 class="text-lg leading-6 font-bold text-gray-900" id="modal-title">
-                                Request Attendance Recovery
-                            </h3>
-                            <!-- Dynamic Context Banner -->
-                            <div id="recoveryContext" class="mt-3 p-3 bg-red-50 border border-red-100 rounded-lg text-left">
-                                <p class="text-sm text-red-800 font-medium">Missing Log Detected</p>
-                                <p class="text-xs text-red-600 mt-1" id="recoveryDescription">
-                                    You forgot to clock out for <span id="recoveryShiftType" class="font-bold">Unknown Context</span> on <span id="recoveryDate" class="font-bold"></span>.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="space-y-5">
-                        <!-- Time Out Input -->
-                        <div>
-                            <label for="time_out" class="block text-sm font-semibold text-gray-700 mb-1">Actual Time Out</label>
-                            <div class="relative">
-                                <input type="time" name="time_out" id="time_out" required
-                                       class="block w-full pl-3 pr-10 py-2.5 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-lg shadow-sm transition-colors"
-                                       onchange="validateTime(this)">
-                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                    <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                </div>
-                            </div>
-                            <p class="mt-1 text-xs text-gray-500" id="timeHelpText">Please enter the exact time you stopped working.</p>
-                            <p class="hidden text-xs text-red-600 mt-1" id="timeError">Time must be after your Time In.</p>
-                        </div>
-
-                        <!-- Reason Input -->
-                        <div>
-                            <label for="reason" class="block text-sm font-semibold text-gray-700 mb-1">Reason for Missing Log</label>
-                            <textarea name="reason" id="reason" rows="3" required
-                                      class="block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border-gray-300 rounded-lg p-2.5 transition-colors"
-                                      placeholder="Example: I forgot to click the button because I was rushing to catch the bus..."
-                                      oninput="this.classList.remove('border-red-300', 'ring-red-200');"></textarea>
-                            <p class="hidden text-xs text-red-600 mt-1" id="reasonError">A valid reason is required.</p>
-                        </div>
-
-                        <!-- Photo Upload -->
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Proof of Attendance <span class="text-gray-400 font-normal">(Selfie or Work)</span></label>
-                            
-                            <div id="photoUploadArea" class="relative group mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all" onclick="document.getElementById('recoveryPhoto').click()">
-                                <div class="space-y-2 text-center">
-                                    <div class="mx-auto h-12 w-12 text-gray-400 group-hover:text-blue-500 transition-colors duration-200">
-                                        <svg class="h-full w-full" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                        </svg>
-                                    </div>
-                                    <div class="text-sm text-gray-600">
-                                        <span class="font-medium text-blue-600 group-hover:text-blue-700">Tap to upload photo</span>
-                                    </div>
-                                    <p class="text-xs text-gray-400">JPG or PNG (Max 5MB)</p>
-                                </div>
-                            </div>
-                            <input type="file" name="photo_out" id="recoveryPhoto" accept="image/jpeg,image/png" class="hidden" onchange="previewFile(this)">
-                            
-                            <!-- Preview Box -->
-                            <div id="photoPreview" class="hidden mt-3 relative group animate-fade-in-up">
-                                <div class="aspect-w-16 aspect-h-9 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 shadow-sm">
-                                    <img id="previewImage" src="" alt="Proof Preview" class="object-cover w-full h-48">
-                                </div>
-                                <button type="button" onclick="resetPhoto()" 
-                                        class="absolute top-2 right-2 p-1.5 bg-gray-900 bg-opacity-60 text-white rounded-full hover:bg-opacity-100 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500" title="Remove photo">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                                </button>
-                                <div class="absolute bottom-2 left-2 bg-green-500 text-white text-xs px-2 py-1 rounded shadow-sm flex items-center">
-                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                                    Photo attached
-                                </div>
-                            </div>
-                            <p id="photoError" class="hidden text-xs text-red-600 mt-2 flex items-center animate-pulse">
-                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                                Proof photo is required.
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Footer Buttons -->
-                    <div class="mt-8 sm:mt-8 sm:grid sm:grid-cols-2 sm:gap-3 sm:flex-row-reverse border-t border-gray-100 pt-5">
-                        <button type="submit"
-                                class="w-full inline-flex justify-center items-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:col-start-2 sm:text-sm transition-colors">
-                            <span id="submitText">Submit Recovery</span>
-                        </button>
-                        <button type="button" onclick="closeRecoveryModal()"
-                                class="mt-3 w-full inline-flex justify-center items-center rounded-lg border border-gray-300 shadow-sm px-4 py-2.5 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 sm:mt-0 sm:col-start-1 sm:text-sm transition-colors">
-                            Cancel
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
+@push('scripts')
 <script>
-    let currentLogId = null;
-    let recoveryStartTime = null; // Store the Time In for validation
-
-    // Updated to accept log details directly for context
-    function openRecoveryModal(logId, dateStr) {
-        currentLogId = logId;
-        
-        // Find the log object from the server data (we need to pass this or look it up)
-        // For now, we will rely on data attributes or a lookup if available. 
-        // A simpler way: The button can pass the "Missing AM Out" or "Missing PM Out" context if we calculate it in Blade.
-        // Let's assume the button onclick has: openRecoveryModal(id, date, 'AM/PM')
-        // But the blade loop above just passes id and date. We can infer from the backend or just show generic.
-        // To be precise, let's just show the date for now as per previous implementation, but enhanced.
-        
-        document.getElementById('recoveryDate').textContent = dateStr;
-        document.getElementById('recoveryModal').classList.remove('hidden');
-        document.getElementById('recoveryLogId').value = logId;
-        
-        // Reset form completely
-        document.getElementById('recoveryForm').reset();
-        resetPhoto();
-        
-        // Clear errors
-        document.querySelectorAll('#recoveryForm .text-red-600').forEach(el => el.classList.add('hidden'));
-        document.querySelectorAll('#recoveryForm input, #recoveryForm textarea').forEach(el => {
-            el.classList.remove('border-red-300', 'focus:border-red-500', 'focus:ring-red-500');
-        });
-
-        // Determine Context (Simulated for now based on button logic, can be refined)
-        // Ideally we pass this from the button: openRecoveryModal(id, date, 'Lunch Break')
-        // For now, we default to "Shift End"
-        document.getElementById('recoveryDescription').innerHTML = `You forgot to clock out on <span class="font-bold text-gray-800">${dateStr}</span>.`;
-    }
-
-    function closeRecoveryModal() {
-        document.getElementById('recoveryModal').classList.add('hidden');
-        currentLogId = null;
-    }
-
-    // Photo Handling
-    function previewFile(input) {
-        const file = input.files[0];
-        if (file) {
-            // Validate size (5MB max)
-            if(file.size > 5 * 1024 * 1024) {
-                 alert("File is too large. Max size is 5MB.");
-                 input.value = "";
-                 return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById('previewImage').src = e.target.result;
-                document.getElementById('photoPreview').classList.remove('hidden');
-                document.getElementById('photoUploadArea').classList.add('hidden');
-                document.getElementById('photoError').classList.add('hidden');
-            };
-            reader.readAsDataURL(file);
-        }
-    }
-
-    function resetPhoto() {
-        document.getElementById('recoveryPhoto').value = "";
-        document.getElementById('photoPreview').classList.add('hidden');
-        document.getElementById('photoUploadArea').classList.remove('hidden');
-    }
-
-    // Time Validation
-    function validateTime(input) {
-        // Simple check just to ensure it's filled
-        if(input.value) {
-            document.getElementById('timeError').classList.add('hidden');
-            input.classList.remove('border-red-300', 'text-red-900');
-        }
-    }
-
-    // Form Submission
-    document.getElementById('recoveryForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        // 1. Reset Errors
-        let hasError = false;
-        const timeInput = document.getElementById('time_out');
-        const reasonInput = document.getElementById('reason');
-        const photoInput = document.getElementById('recoveryPhoto');
-        
-        // 2. Validate Time
-        if (!timeInput.value) {
-            document.getElementById('timeError').classList.remove('hidden');
-            timeInput.classList.add('border-red-300', 'text-red-900');
-            hasError = true;
-        }
-
-        // 3. Validate Reason
-        if (!reasonInput.value.trim()) {
-            document.getElementById('reasonError').classList.remove('hidden');
-            reasonInput.classList.add('border-red-300');
-            hasError = true;
-        }
-
-        // 4. Validate Photo
-        if (!photoInput.files || photoInput.files.length === 0) {
-            document.getElementById('photoError').classList.remove('hidden');
-            hasError = true;
-        }
-
-        if (hasError) return;
-        
-        // 5. Submit with Confirmation
-        if (confirm('Are you sure you want to submit this recovery request? details cannot be edited once submitted.')) {
-            const formData = new FormData(this);
-            if(!formData.get('log_id')) {
-                 formData.append('log_id', document.getElementById('recoveryLogId').value);
-            }
-            
-            const submitBtn = this.querySelector('button[type="submit"]');
-            const submitText = document.getElementById('submitText');
-            const originalText = "Submit Recovery";
-            
-            // Loading State
-            submitText.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Sending...';
-            submitBtn.disabled = true;
-            submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
-            
-            fetch("{{ route('attendance.recovery') }}", {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Success State
-                    submitText.innerText = 'Success!';
-                    submitBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                    submitBtn.classList.add('bg-green-600', 'hover:bg-green-700');
-                    
-                    setTimeout(() => {
-                        alert(data.message);
-                        location.reload();
-                    }, 500);
-                } else {
-                    // Error from Server
-                    throw new Error(data.message || 'Unknown error');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Request failed: ' + error.message);
-                submitText.innerText = originalText;
-                submitBtn.disabled = false;
-                submitBtn.classList.remove('opacity-75', 'cursor-not-allowed');
-            });
-        }
-    });
-
-    // Close on click outside
-    document.getElementById('recoveryModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeRecoveryModal();
-        }
-    });
+    // Attendance page specific scripts (Camera, logic) already defined above in main script block.
 </script>
+@endpush
 </x-app-layout>
 
 

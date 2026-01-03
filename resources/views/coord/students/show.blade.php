@@ -266,7 +266,13 @@
                                                     @endforeach
                                                 </div>
                                             </td>
-                                            <td class="px-3 py-2 text-right">
+                                             <td class="px-3 py-2 text-right">
+                                                @php
+                                                    $isComplete = ($log->am_in_time && $log->am_out_time) || ($log->pm_in_time && $log->pm_out_time);
+                                                    $isPastDate = $log->work_date < today();
+                                                    $isMissed = $isPastDate && !$isComplete && $log->status !== 'pending' && !$log->is_recovered;
+                                                @endphp
+
                                                 @if($log->is_recovered && $log->recovery_approved === true)
                                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                                         Recovered
@@ -279,7 +285,11 @@
                                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 animate-pulse">
                                                         Pending Recovery
                                                     </span>
-                                                @elseif($log->status === 'approved')
+                                                @elseif($isMissed)
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200">
+                                                        Incomplete
+                                                    </span>
+                                                @elseif($log->status === 'approved' && $isComplete)
                                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                                         Completed
                                                     </span>
@@ -720,7 +730,14 @@
         const mapLink = document.getElementById('externalMapLink');
         const noMap = document.getElementById('noMapMessage');
         
-        if (lat && lng && lat != 'null' && lng != 'null') {
+        // Check if lat/lng are valid (not null, not empty, not 'null' string, and are valid numbers)
+        const hasValidLocation = lat && lng && 
+                                 lat !== 'null' && lng !== 'null' && 
+                                 lat !== '' && lng !== '' &&
+                                 !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lng)) &&
+                                 parseFloat(lat) !== 0 && parseFloat(lng) !== 0;
+        
+        if (hasValidLocation) {
             const mapUrl = `https://maps.google.com/maps?q=${lat},${lng}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
             mapFrame.src = mapUrl;
             mapFrame.classList.remove('hidden');

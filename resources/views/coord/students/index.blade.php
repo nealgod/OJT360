@@ -1,12 +1,29 @@
 <x-app-layout>
     <x-slot name="header">
-            <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between">
+            <div>
                 <h2 class="font-semibold text-xl text-ojt-dark leading-tight">Manage Students</h2>
-                <div class="flex items-center space-x-4">
+                <p class="mt-1 text-xs text-gray-500 hidden sm:block">
+                    View and manage interns in your department and program.
+                </p>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="hidden sm:flex flex-col items-end text-right">
                     <span class="text-sm text-gray-600">Department: {{ Auth::user()->coordinatorProfile?->department }}</span>
                     <span class="text-sm text-gray-600">Program: {{ $programName }}</span>
                 </div>
+                <a href="{{ route('coord.students.locator') }}"
+                   class="inline-flex items-center px-3 py-1.5 rounded-lg bg-ojt-primary text-white text-xs font-medium shadow-sm hover:bg-maroon-700 transition">
+                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5 9 6.343 9 8s1.343 3 3 3z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M19.5 8.25a7.5 7.5 0 10-15 0c0 4.142 3.5 7.5 7.5 11.25 4-3.75 7.5-7.108 7.5-11.25z" />
+                    </svg>
+                    Student Locator
+                </a>
             </div>
+        </div>
     </x-slot>
 
     <div class="py-6 sm:py-12">
@@ -126,8 +143,10 @@
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Supervisor</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Supervisor</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Docs Progress</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hrs Progress</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
@@ -167,17 +186,67 @@
                                                 {{ ucfirst($status) }}
                                             </span>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
+                                        <td class="px-3 py-4 whitespace-nowrap">
                                             @if($student->studentProfile?->supervisor)
-                                                <div class="flex items-center space-x-2">
-                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Assigned</span>
-                                                    <span class="text-sm text-gray-700 truncate max-w-[10rem]" title="{{ $student->studentProfile->supervisor->name }}">{{ $student->studentProfile->supervisor->name }}</span>
+                                                <div class="flex flex-col">
+                                                    <span class="text-xs font-medium text-gray-900 truncate max-w-[8rem]" title="{{ $student->studentProfile->supervisor->name }}">
+                                                        {{ $student->studentProfile->supervisor->name }}
+                                                    </span>
+                                                    <span class="text-[10px] text-green-600 font-semibold uppercase">Assigned</span>
                                                 </div>
                                             @else
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Pending</span>
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-yellow-100 text-yellow-800 uppercase">Pending</span>
                                             @endif
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <td class="px-3 py-4 whitespace-nowrap">
+                                            @php
+                                                $preDocs = $student->pre_docs_count ?? 0;
+                                                $prePercent = $totalPreRequirements > 0 ? min(100, round(($preDocs / $totalPreRequirements) * 100)) : 0;
+                                                
+                                                $postDocs = $student->post_docs_count ?? 0;
+                                                $postPercent = $totalPostRequirements > 0 ? min(100, round(($postDocs / $totalPostRequirements) * 100)) : 0;
+                                            @endphp
+                                            <div class="w-24 space-y-2">
+                                                <!-- Pre -->
+                                                <div>
+                                                    <div class="flex items-center justify-between mb-0.5">
+                                                        <span class="text-[9px] font-bold text-gray-500 uppercase">Pre</span>
+                                                        <span class="text-[9px] font-bold {{ $prePercent == 100 ? 'text-green-600' : 'text-gray-600' }}">{{ $prePercent }}%</span>
+                                                    </div>
+                                                    <div class="w-full bg-gray-100 rounded-full h-1 shadow-inner">
+                                                        <div class="h-1 rounded-full transition-all duration-500 {{ $prePercent == 100 ? 'bg-green-500' : 'bg-gray-500' }}" style="width: {{ $prePercent }}%"></div>
+                                                    </div>
+                                                </div>
+                                                <!-- Post -->
+                                                <div>
+                                                    <div class="flex items-center justify-between mb-0.5">
+                                                        <span class="text-[9px] font-bold text-gray-500 uppercase">Post</span>
+                                                        <span class="text-[9px] font-bold {{ $postPercent == 100 ? 'text-green-600' : 'text-ojt-primary' }}">{{ $postPercent }}%</span>
+                                                    </div>
+                                                    <div class="w-full bg-gray-100 rounded-full h-1 shadow-inner">
+                                                        <div class="h-1 rounded-full transition-all duration-500 {{ $postPercent == 100 ? 'bg-green-500' : 'bg-ojt-primary' }}" style="width: {{ $postPercent }}%"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-3 py-4 whitespace-nowrap">
+                                            @php
+                                                $totalMinutes = $student->total_minutes_worked ?? 0;
+                                                $compHrs = round($totalMinutes / 60, 1);
+                                                $reqHrs = $student->getRequiredHours();
+                                                $hrPercent = $reqHrs > 0 ? min(100, round(($compHrs / $reqHrs) * 100)) : 0;
+                                            @endphp
+                                            <div class="w-24">
+                                                <div class="flex items-center justify-between mb-1">
+                                                    <span class="text-[10px] font-bold text-gray-600">{{ $compHrs }}h/{{ $reqHrs }}h</span>
+                                                    <span class="text-[10px] font-bold {{ $hrPercent == 100 ? 'text-green-600' : 'text-ojt-primary' }}">{{ $hrPercent }}%</span>
+                                                </div>
+                                                <div class="w-full bg-gray-100 rounded-full h-1.5 shadow-inner">
+                                                    <div class="h-1.5 rounded-full transition-all duration-500 {{ $hrPercent == 100 ? 'bg-green-500' : 'bg-ojt-primary' }}" style="width: {{ $hrPercent }}%"></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-3 py-4 whitespace-nowrap text-sm text-right">
                                             <div class="flex flex-col sm:flex-row gap-2">
                                                 <a href="{{ route('coord.students.show', $student) }}" 
                                                    class="inline-flex items-center justify-center px-4 py-2 bg-ojt-primary text-white rounded-md text-xs font-semibold tracking-wide hover:bg-maroon-700 transition-colors">

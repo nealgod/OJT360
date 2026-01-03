@@ -23,11 +23,9 @@
         foreach ($reqs as $req) {
             $submission = \App\Models\StudentDocumentSubmission::where('student_user_id', $targetStudentId)
                 ->where('document_requirement_id', $req->id)
-                ->latest()
-                ->first();
+                ->exists();
             
             if ($submission) {
-                // Count any submission as completed since there is no approval flow
                 $completed++;
             }
         }
@@ -50,10 +48,10 @@
     <div class="mb-4">
         <div class="flex items-center justify-between mb-1">
             <span class="text-xs font-medium text-gray-700">Pre-Placement</span>
-            <span class="text-xs text-gray-600">{{ $preStats['completed'] }}/{{ $preStats['total'] }}</span>
+            <span class="text-xs font-bold {{ $preStats['percentage'] == 100 ? 'text-green-600' : 'text-ojt-primary' }}">{{ $preStats['percentage'] }}%</span>
         </div>
         <div class="w-full bg-gray-200 rounded-full h-2">
-            <div class="bg-gray-600 h-2 rounded-full transition-all duration-500 ease-out" 
+            <div class="h-2 rounded-full transition-all duration-500 ease-out {{ $preStats['percentage'] == 100 ? 'bg-green-500' : 'bg-ojt-primary' }}" 
                  style="width: {{ $preStats['percentage'] }}%"></div>
         </div>
     </div>
@@ -61,11 +59,11 @@
     <!-- Post-Placement Section -->
     <div>
         <div class="flex items-center justify-between mb-1">
-            <span class="text-xs font-medium text-ojt-primary">Post-Placement</span>
-            <span class="text-xs text-gray-600">{{ $postStats['completed'] }}/{{ $postStats['total'] }}</span>
+            <span class="text-xs font-medium text-gray-700">Post-Placement</span>
+            <span class="text-xs font-bold {{ $postStats['percentage'] == 100 ? 'text-green-600' : 'text-ojt-primary' }}">{{ $postStats['percentage'] }}%</span>
         </div>
         <div class="w-full bg-gray-200 rounded-full h-2">
-            <div class="bg-ojt-primary h-2 rounded-full transition-all duration-500 ease-out" 
+            <div class="h-2 rounded-full transition-all duration-500 ease-out {{ $postStats['percentage'] == 100 ? 'bg-green-500' : 'bg-ojt-primary' }}" 
                  style="width: {{ $postStats['percentage'] }}%"></div>
         </div>
     </div>

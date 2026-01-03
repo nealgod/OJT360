@@ -64,6 +64,22 @@ class CoordinatorStudentController extends Controller
             ->withCount(['attendanceLogs as pending_recoveries_count' => function ($q) {
                 $q->where('is_recovered', true)
                   ->whereNull('recovery_approved');
+            }])
+            ->withSum(['attendanceLogs as total_minutes_worked' => function ($q) {
+                $q->where('is_recovered', false)
+                  ->orWhere('recovery_approved', true);
+            }], 'minutes_worked')
+            ->withCount(['documentSubmissions as pre_docs_count' => function ($q) {
+                $q->select(\DB::raw('count(distinct(document_requirement_id))'))
+                  ->whereHas('requirement', function ($rq) {
+                      $rq->where('type', 'pre_placement');
+                  });
+            }])
+            ->withCount(['documentSubmissions as post_docs_count' => function ($q) {
+                $q->select(\DB::raw('count(distinct(document_requirement_id))'))
+                  ->whereHas('requirement', function ($rq) {
+                      $rq->where('type', 'post_placement');
+                  });
             }]);
 
         // Apply filters (status, supervisor, search; program is fixed)
@@ -135,10 +151,94 @@ class CoordinatorStudentController extends Controller
             })->count(),
         ];
 
+        $totalPreRequirements = \App\Models\DocumentRequirement::active()->prePlacement()->count();
+        $totalPostRequirements = \App\Models\DocumentRequirement::active()->postPlacement()->count();
+
         // Add current filter/sort values for the view
         $students->appends($request->only(['status', 'search', 'sort', 'supervisor']));
 
-        return view('coord.students.index', compact('students', 'stats', 'status', 'search', 'sort', 'programName', 'supervisorFilter'));
+        return view('coord.students.index', compact(
+            'students', 
+            'stats', 
+            'status', 
+            'search', 
+            'sort', 
+            'programName', 
+            'supervisorFilter', 
+            'totalPreRequirements',
+            'totalPostRequirements'
+        ));
+    }
+
+    /**
+     * Show locator view for coordinator to see where students are assigned for OJT.
+     *
+     * Groups only the coordinator's own students by OJT site and allows opening each site in Google Maps.
+     */
+    public function locator()
+    {
+        $info = $this->getCoordinatorInfo();
+        $department = $info['department'];
+        $programName = $info['programName'];
+
+        // Get ONLY this coordinator's students (same logic as index)
+        $students = User::where('role', 'intern')
+            ->whereHas('studentProfile', function ($q) use ($department, $programName) {
+                $q->where('department', $department)
+                  ->where('course', $programName);
+            })
+            ->with([
+                'studentProfile.supervisor.supervisorProfile.company',
+                'studentProfile.company',
+                'acceptanceLetters.company',
+            ])
+            ->get();
+
+        // Group students by derived OJT site (company name + address)
+        $sites = [];
+
+        foreach ($students as $student) {
+            $profile = $student->studentProfile;
+            if (! $profile) {
+                continue;
+            }
+
+            // Get latest acceptance with company (if any)
+            $acceptance = $student->acceptanceLetters
+                ? $student->acceptanceLetters->sortByDesc('start_date')->first()
+                : null;
+
+            // Derive company name/address using same priority as coordinator show page
+            $companyName = $profile->company?->name
+                ?? $acceptance?->company?->name
+                ?? $profile->supervisor?->supervisorProfile?->company?->name;
+
+            $companyAddress = $profile->company?->address
+                ?? $acceptance?->company?->address
+                ?? $profile->supervisor?->supervisorProfile?->company?->address;
+
+            // If we truly have no site info, skip for locator
+            if (! $companyName && ! $companyAddress) {
+                continue;
+            }
+
+            $key = strtolower(trim(($companyName ?? 'Unknown Site').'|'.($companyAddress ?? 'Unknown Address')));
+
+            if (! isset($sites[$key])) {
+                $sites[$key] = [
+                    'company_name' => $companyName ?? 'Unknown Site',
+                    'company_address' => $companyAddress ?? 'Unknown Address',
+                    'students' => [],
+                ];
+            }
+
+            $sites[$key]['students'][] = $student;
+        }
+
+        return view('coord.students.locator', [
+            'sites' => collect($sites)->values(),
+            'programName' => $programName,
+        ]);
     }
 
     public function show(User $student)
