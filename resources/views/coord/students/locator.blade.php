@@ -190,28 +190,31 @@
                 
                 const rawAddress = site.address || '';
                 
-                // SMARTER CLEANER: Handle Plus Codes (e.g., 2JC3+MRF)
+                // SMARTER CLEANER: Handle Plus Codes and Region suffixes
                 const parts = rawAddress.split(',');
-                let streetPart = parts[0].trim();
-                // If the first part looks like a Plus Code (contains + and is short), use the next part for street search
-                if (streetPart.includes('+') && streetPart.length <= 10 && parts.length > 1) {
-                    streetPart = parts[1].trim();
+                let mainChunk = parts[0].trim();
+                
+                // If it starts with a plus code, skip to next part
+                if (mainChunk.includes('+') && mainChunk.length <= 10 && parts.length > 1) {
+                    mainChunk = parts[1].trim();
                 }
 
-                const cleanStreet = streetPart
+                // Clean major regional suffixes that can trip up precise search
+                const cleaner = (str) => str.replace(/(Leyte|Philippines|Phils?|Region VIII)/gi, '').replace(/,\s*,/g, ',').trim();
+                
+                const cleanName = cleaner(site.name);
+                const cleanAddr = cleaner(rawAddress).replace(/[A-Z0-9]{4,8}\+[A-Z0-9]{2,3}/gi, '').trim();
+                const cleanStreet = cleaner(mainChunk)
                     .replace(/(corner|near|beside|across|opposite|#\d+|room|floor|brgy|barangay|bgry)\s+(of|the)?/gi, '')
                     .replace(/(st\.|street|rd\.|road)/gi, '')
                     .trim();
                 
-                // Remove Plus Code patterns from the full address for a cleaner OSM query
-                const fullStripped = rawAddress.replace(/[A-Z0-9]{4,8}\+[A-Z0-9]{2,3}/gi, '').trim();
-
                 const queries = [
-                    site.name + ", Ormoc City",           // 1. Business + City
-                    fullStripped,                         // 2. Full address without Plus Code
-                    cleanStreet + ", Ormoc City",         // 3. Cleaned Street + City
-                    site.name + " " + cleanStreet,        // 4. Combined
-                    site.name                             // 5. Last resort
+                    cleanName + ", Ormoc City",           // 1. Specific Business + City
+                    cleanAddr,                            // 2. Full address (stripped)
+                    cleanStreet + ", Ormoc City",         // 3. Main address part + City
+                    cleanName + " " + cleanStreet,        // 4. Name + Street combo
+                    cleanStreet                           // 5. Just the street part
                 ];
 
                 for (let q of queries) {
@@ -225,6 +228,7 @@
                             break; 
                         }
                     } catch(e) {}
+                    await new Promise(r => setTimeout(r, 200)); // Minor tap between retries
                 }
 
                 let finalLat = locationData ? parseFloat(locationData.lat) : 11.0083;
@@ -233,8 +237,8 @@
 
                 const posKey = `${finalLat.toFixed(5)},${finalLon.toFixed(5)}`;
                 if (markerPositions.includes(posKey)) {
-                    finalLat += 0.00008;
-                    finalLon += 0.00008;
+                    finalLat += 0.00012; 
+                    finalLon += 0.00012;
                 }
                 markerPositions.push(`${finalLat.toFixed(5)},${finalLon.toFixed(5)}`);
 
@@ -286,7 +290,7 @@
                 if (pinsSet === 1) map.setView([finalLat, finalLon], 16, { animate: true });
                 if (pinsSet > 1) map.fitBounds(featureGroup.getBounds(), { padding: [60, 60] });
 
-                await new Promise(r => setTimeout(r, 650)); 
+                await new Promise(r => setTimeout(r, 1000)); 
             }
             statusText.textContent = "Live Tracker Ready.";
         }
