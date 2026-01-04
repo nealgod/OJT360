@@ -118,18 +118,40 @@
                                 <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Active Trainees ({{ count($site['students']) }})</p>
                                 <div class="space-y-2 max-h-40 overflow-y-auto pr-1">
                                     @foreach($site['students'] as $std)
-                                        <div class="flex items-center gap-3">
-                                            @if($std['image'])
-                                                <img src="{{ $std['image'] }}" class="w-7 h-7 rounded-full object-cover border border-gray-100">
-                                            @else
-                                                <div class="w-7 h-7 rounded-full {{ $std['color'] }} flex items-center justify-center text-[9px] text-white font-bold border border-gray-100">{{ substr($std['name'], 0, 1) }}</div>
-                                            @endif
-                                            <div class="min-w-0 flex-1">
-                                                <p class="text-xs text-gray-700 font-bold truncate">{{ $std['name'] }}</p>
-                                                <p class="text-[8px] text-gray-400 uppercase">{{ $std['course'] }}</p>
+                                        <div class="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
+                                            <div class="relative shrink-0">
+                                                @if($std['image'])
+                                                    <img src="{{ $std['image'] }}" class="w-9 h-9 rounded-full object-cover border border-gray-100">
+                                                @else
+                                                    <div class="w-9 h-9 rounded-full {{ $std['color'] }} flex items-center justify-center text-[10px] text-white font-bold border border-gray-100">{{ substr($std['name'], 0, 1) }}</div>
+                                                @endif
+                                                @if($std['is_active'])
+                                                    <div class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.8)] pulse"></div>
+                                                @endif
                                             </div>
-                                            <a href="{{ route('coord.students.show', $std['id']) }}" class="shrink-0 p-1.5 rounded-lg bg-gray-50 text-ojt-primary hover:bg-ojt-primary hover:text-white transition-all shadow-sm group">
-                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <div class="min-w-0 flex-1">
+                                                <div class="flex items-center justify-between gap-2">
+                                                    <p class="text-sm text-gray-900 font-medium truncate">{{ $std['name'] }}</p>
+                                                    <span class="text-xs font-bold {{ $std['is_active'] ? 'text-green-600' : 'text-gray-400' }} uppercase tracking-wider">
+                                                        {{ $std['is_active'] ? 'Active' : 'Offline' }}
+                                                    </span>
+                                                </div>
+                                                <p class="text-xs text-gray-500 truncate mt-1">
+                                                    Supervisor: <span class="text-gray-700 font-bold">{{ $std['supervisor'] }}</span>
+                                                </p>
+                                                
+                                                <div class="mt-3">
+                                                    <div class="flex items-center justify-between mb-1">
+                                                        <span class="text-xs font-bold text-gray-400 uppercase">Progress</span>
+                                                        <span class="text-xs font-bold {{ $std['progress'] == 100 ? 'text-green-600' : 'text-ojt-primary' }}">{{ $std['progress'] }}%</span>
+                                                    </div>
+                                                    <div class="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden shadow-inner">
+                                                        <div class="h-full transition-all duration-700 {{ $std['progress'] == 100 ? 'bg-green-500' : 'bg-ojt-primary' }}" style="width:{{ $std['progress'] }}%"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <a href="{{ route('coord.students.show', $std['id']) }}" class="shrink-0 self-center p-2 rounded-lg bg-white text-ojt-primary hover:bg-ojt-primary hover:text-white transition-all shadow-sm border border-gray-100 group">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                                 </svg>
@@ -210,11 +232,11 @@
                     .trim();
                 
                 const queries = [
-                    cleanName + ", Ormoc City",           // 1. Specific Business + City
-                    cleanAddr,                            // 2. Full address (stripped)
-                    cleanStreet + ", Ormoc City",         // 3. Main address part + City
+                    cleanAddr,                            // 1. Full address (usually Robinsons Place... Leyte)
+                    cleanStreet + ", Ormoc City",         // 2. Main address part + City
+                    cleanName + ", Ormoc City",           // 3. Specific Business + City
                     cleanName + " " + cleanStreet,        // 4. Name + Street combo
-                    cleanStreet                           // 5. Just the street part
+                    cleanName                             // 5. Just the name
                 ];
 
                 for (let q of queries) {
@@ -277,7 +299,7 @@
 
                 const pinIcon = L.divIcon({
                     className: 'custom-div-icon',
-                    html: `<div class='marker-pin' style='${isApprox ? 'background:#64748b;' : ''}'><span class='marker-text'>${site.name.charAt(0)}</span></div>`,
+                    html: `<div class='marker-pin'><span class='marker-text'>${site.name.charAt(0)}</span></div>`,
                     iconSize: [32, 32], iconAnchor: [16, 32]
                 });
 

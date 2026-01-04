@@ -206,26 +206,22 @@
                                                 $postDocs = $student->post_docs_count ?? 0;
                                                 $postPercent = $totalPostRequirements > 0 ? min(100, round(($postDocs / $totalPostRequirements) * 100)) : 0;
                                             @endphp
-                                            <div class="w-24 space-y-2">
+                                            <div class="w-28 space-y-1.5">
                                                 <!-- Pre -->
-                                                <div>
-                                                    <div class="flex items-center justify-between mb-0.5">
-                                                        <span class="text-[9px] font-bold text-gray-500 uppercase">Pre</span>
-                                                        <span class="text-[9px] font-bold {{ $prePercent == 100 ? 'text-green-600' : 'text-gray-600' }}">{{ $prePercent }}%</span>
+                                                <div class="flex items-center gap-2">
+                                                    <span class="text-xs font-bold text-gray-400 uppercase w-8">PRE</span>
+                                                    <div class="flex-1 bg-gray-100 rounded-full h-1.5 shadow-inner overflow-hidden">
+                                                        <div class="h-full transition-all duration-500 {{ $prePercent == 100 ? 'bg-green-500' : 'bg-ojt-primary' }}" style="width: {{ $prePercent }}%"></div>
                                                     </div>
-                                                    <div class="w-full bg-gray-100 rounded-full h-1 shadow-inner">
-                                                        <div class="h-1 rounded-full transition-all duration-500 {{ $prePercent == 100 ? 'bg-green-500' : 'bg-gray-500' }}" style="width: {{ $prePercent }}%"></div>
-                                                    </div>
+                                                    <span class="text-xs font-bold {{ $prePercent == 100 ? 'text-green-600' : 'text-gray-700' }} w-8 text-right">{{ $prePercent }}%</span>
                                                 </div>
                                                 <!-- Post -->
-                                                <div>
-                                                    <div class="flex items-center justify-between mb-0.5">
-                                                        <span class="text-[9px] font-bold text-gray-500 uppercase">Post</span>
-                                                        <span class="text-[9px] font-bold {{ $postPercent == 100 ? 'text-green-600' : 'text-ojt-primary' }}">{{ $postPercent }}%</span>
+                                                <div class="flex items-center gap-2">
+                                                    <span class="text-xs font-bold text-gray-400 uppercase w-8">POST</span>
+                                                    <div class="flex-1 bg-gray-100 rounded-full h-1.5 shadow-inner overflow-hidden">
+                                                        <div class="h-full transition-all duration-500 {{ $postPercent == 100 ? 'bg-green-500' : 'bg-ojt-primary' }}" style="width: {{ $postPercent }}%"></div>
                                                     </div>
-                                                    <div class="w-full bg-gray-100 rounded-full h-1 shadow-inner">
-                                                        <div class="h-1 rounded-full transition-all duration-500 {{ $postPercent == 100 ? 'bg-green-500' : 'bg-ojt-primary' }}" style="width: {{ $postPercent }}%"></div>
-                                                    </div>
+                                                    <span class="text-xs font-bold {{ $postPercent == 100 ? 'text-green-600' : 'text-ojt-primary' }} w-8 text-right">{{ $postPercent }}%</span>
                                                 </div>
                                             </div>
                                         </td>
