@@ -190,19 +190,28 @@
                 
                 const rawAddress = site.address || '';
                 
-                // AGGRESSIVE CLEANER: For messy longtext addresses
-                // We strip "corner of", "beside", etc., and just take the first important part
-                const cleanStreet = rawAddress
+                // SMARTER CLEANER: Handle Plus Codes (e.g., 2JC3+MRF)
+                const parts = rawAddress.split(',');
+                let streetPart = parts[0].trim();
+                // If the first part looks like a Plus Code (contains + and is short), use the next part for street search
+                if (streetPart.includes('+') && streetPart.length <= 10 && parts.length > 1) {
+                    streetPart = parts[1].trim();
+                }
+
+                const cleanStreet = streetPart
                     .replace(/(corner|near|beside|across|opposite|#\d+|room|floor|brgy|barangay|bgry)\s+(of|the)?/gi, '')
-                    .split(',')[0]
                     .replace(/(st\.|street|rd\.|road)/gi, '')
                     .trim();
                 
+                // Remove Plus Code patterns from the full address for a cleaner OSM query
+                const fullStripped = rawAddress.replace(/[A-Z0-9]{4,8}\+[A-Z0-9]{2,3}/gi, '').trim();
+
                 const queries = [
-                    site.name + ", Ormoc City",           // 1. Business + City (Most accurate)
-                    cleanStreet + ", Ormoc City",         // 2. Primary Street chunk + City
-                    site.name + " " + cleanStreet,        // 3. Name + Street combined
-                    site.name                             // 4. Last resort: Just name
+                    site.name + ", Ormoc City",           // 1. Business + City
+                    fullStripped,                         // 2. Full address without Plus Code
+                    cleanStreet + ", Ormoc City",         // 3. Cleaned Street + City
+                    site.name + " " + cleanStreet,        // 4. Combined
+                    site.name                             // 5. Last resort
                 ];
 
                 for (let q of queries) {
@@ -250,9 +259,12 @@
                         </div>`;
                 });
 
+                const approxBadge = isApprox ? '<div class="text-[8px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full inline-block font-bold mb-1">Approximate Location</div>' : '';
+
                 const popupContent = `
                     <div class="pop-header">${site.name}</div>
                     <div class="pop-body">
+                        ${approxBadge}
                         <p class="text-[9px] text-gray-400 mb-2 italic border-b pb-1">${site.address}</p>
                         <p class="text-[8px] font-black text-ojt-primary uppercase tracking-widest mb-1">Deployed Trainees</p>
                         ${studentHtml}
@@ -261,7 +273,7 @@
 
                 const pinIcon = L.divIcon({
                     className: 'custom-div-icon',
-                    html: `<div class='marker-pin' style='${isApprox ? 'background:#ccc;' : ''}'><span class='marker-text'>${site.name.charAt(0)}</span></div>`,
+                    html: `<div class='marker-pin' style='${isApprox ? 'background:#64748b;' : ''}'><span class='marker-text'>${site.name.charAt(0)}</span></div>`,
                     iconSize: [32, 32], iconAnchor: [16, 32]
                 });
 
