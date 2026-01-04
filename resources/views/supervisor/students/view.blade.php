@@ -674,7 +674,7 @@
                                     </div>
                                     @php
                                         // Simple completion check
-                                        $isComplete = ($log->am_in_time && $log->am_out_time) || ($log->pm_in_time && $log->pm_out_time);
+                                        $isComplete = $log->is_complete;
                                         $isPastDate = $log->work_date < today();
                                         $isMissed = $isPastDate && !$isComplete && $log->status !== 'pending' && !$log->is_recovered;
                                     @endphp

@@ -1010,22 +1010,8 @@ bannerMessage = document.getElementById('statusMessage');
                                     </td>
                                         <td class="px-3 py-2 text-right">
                                             @php
-                                                // Check if log is actually complete
-                                                // Complete = has OUT time for the last IN punch
-                                                $hasAmIn = $log->am_in_time;
-                                                $hasAmOut = $log->am_out_time;
-                                                $hasPmIn = $log->pm_in_time;
-                                                $hasPmOut = $log->pm_out_time;
-                                                
-                                                // If they started PM shift, they need PM OUT to be complete
-                                                // If they only did AM shift, they need AM OUT to be complete
-                                                if ($hasPmIn) {
-                                                    $isComplete = $hasPmOut; // PM started, need PM OUT
-                                                } elseif ($hasAmIn) {
-                                                    $isComplete = $hasAmOut; // Only AM, need AM OUT
-                                                } else {
-                                                    $isComplete = false; // No punches at all
-                                                }
+                                                // Use central completion logic from model
+                                                $isComplete = $log->is_complete;
                                                 
                                                 // Check if this is a past date (missed log)
                                                 $isPastDate = $log->work_date < today();

@@ -268,10 +268,10 @@
                                             </td>
                                              <td class="px-3 py-2 text-right">
                                                 @php
-                                                    $isComplete = ($log->am_in_time && $log->am_out_time) || ($log->pm_in_time && $log->pm_out_time);
-                                                    $isPastDate = $log->work_date < today();
-                                                    $isMissed = $isPastDate && !$isComplete && $log->status !== 'pending' && !$log->is_recovered;
-                                                @endphp
+                                                     $isComplete = $log->is_complete;
+                                                     $isPastDate = $log->work_date < today();
+                                                     $isMissed = $isPastDate && !$isComplete && $log->status !== 'pending' && !$log->is_recovered;
+                                                 @endphp
 
                                                 @if($log->is_recovered && $log->recovery_approved === true)
                                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">

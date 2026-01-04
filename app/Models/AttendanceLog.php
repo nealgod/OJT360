@@ -61,6 +61,8 @@ class AttendanceLog extends Model
         return $this->belongsTo(User::class, 'recovery_approved_by');
     }
 
+    protected $appends = ['time_in_formatted', 'time_out_formatted', 'hours_worked_formatted', 'is_complete'];
+
     // Helper methods for time formatting
     public function getTimeInFormattedAttribute()
     {
@@ -98,5 +100,26 @@ class AttendanceLog extends Model
         }
 
         return number_format($this->minutes_worked / 60, 2);
+    }
+
+    /**
+     * Determine if the attendance log is fully completed.
+     * A log is complete if:
+     * 1. If AM was started, it must be ended.
+     * 2. If PM was started, it must be ended.
+     * 3. At least one shift was actually started.
+     */
+    public function getIsCompleteAttribute()
+    {
+        // 1. If morning started but didn't end
+        if ($this->am_in_time && !$this->am_out_time) return false;
+
+        // 2. If afternoon started but didn't end
+        if ($this->pm_in_time && !$this->pm_out_time) return false;
+
+        // 3. Must have at least one punch in
+        if (!$this->am_in_time && !$this->pm_in_time) return false;
+
+        return true;
     }
 }
