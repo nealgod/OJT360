@@ -554,12 +554,36 @@ bannerMessage = document.getElementById('statusMessage');
                     let capturedBlobIn = null;
                     let capturedBlobOut = null;
 
-                    async function getLocationOrNull() {
+                    let lastKnownCoords = null;
+
+                    async function getLocationOrNull(forceFresh = false) {
+                        if (lastKnownCoords && !forceFresh) return lastKnownCoords;
+                        
                         try {
-                            return await new Promise((resolve, reject) => {
-                                navigator.geolocation.getCurrentPosition((pos) => resolve(pos.coords), () => resolve(null), { enableHighAccuracy: true, timeout: 5000 });
+                            // Try High Accuracy first with a longer timeout
+                            const coords = await new Promise((resolve, reject) => {
+                                navigator.geolocation.getCurrentPosition(
+                                    (pos) => resolve(pos.coords), 
+                                    () => reject('failed'), 
+                                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+                                );
                             });
-                        } catch { return null; }
+                            lastKnownCoords = coords;
+                            return coords;
+                        } catch {
+                            // Fallback to low accuracy (Faster, works better indoors/mobile)
+                            try {
+                                const coords = await new Promise((resolve) => {
+                                    navigator.geolocation.getCurrentPosition(
+                                        (pos) => resolve(pos.coords), 
+                                        () => resolve(null), 
+                                        { enableHighAccuracy: false, timeout: 5000 }
+                                    );
+                                });
+                                if (coords) lastKnownCoords = coords;
+                                return coords;
+                            } catch { return lastKnownCoords; }
+                        }
                     }
 
 
@@ -588,6 +612,9 @@ bannerMessage = document.getElementById('statusMessage');
                                 document.getElementById('openCamIn').classList.remove('bg-gray-100');
                                 document.getElementById('openCamIn').classList.add('bg-red-100', 'text-red-800');
                                 switchCamIn.classList.remove('hidden');
+                                
+                                // Start pre-fetching location in background to warm up GPS
+                                getLocationOrNull(true); 
                             } catch (err) {
                                 console.error('Camera error:', err);
                                 showError('Failed to open camera. Please try again.');
@@ -750,6 +777,9 @@ bannerMessage = document.getElementById('statusMessage');
                                 document.getElementById('openCamOut').classList.remove('bg-gray-100');
                                 document.getElementById('openCamOut').classList.add('bg-red-100', 'text-red-800');
                                 switchCamOut.classList.remove('hidden');
+
+                                // Start pre-fetching location in background to warm up GPS
+                                getLocationOrNull(true);
                             } catch (err) {
                                 console.error('Camera error:', err);
                                 showError('Failed to open camera. Please try again.');
