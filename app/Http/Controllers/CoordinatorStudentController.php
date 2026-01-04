@@ -191,6 +191,9 @@ class CoordinatorStudentController extends Controller
                 'studentProfile.supervisor.supervisorProfile.company',
                 'studentProfile.company',
                 'acceptanceLetters.company',
+                'attendanceLogs' => function($q) {
+                    $q->where('work_date', today());
+                }
             ])
             ->get();
 
