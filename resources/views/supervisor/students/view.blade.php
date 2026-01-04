@@ -796,9 +796,9 @@
                                         </div>
 
                                         @php
-                                            $recoveryPhoto = $log->am_out_photo ?? $log->pm_out_photo;
-                                            $recoveryLat = $log->am_out_lat ?? $log->pm_out_lat ?? null;
-                                            $recoveryLng = $log->am_out_lng ?? $log->pm_out_lng ?? null;
+                                            $recoveryPhoto = $log->pm_out_photo ?? $log->am_out_photo;
+                                            $recoveryLat = $log->pm_out_lat ?? $log->am_out_lat ?? null;
+                                            $recoveryLng = $log->pm_out_lng ?? $log->am_out_lng ?? null;
                                         @endphp
                                         @if($recoveryPhoto)
                                             <div class="mb-4">
