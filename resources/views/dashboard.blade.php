@@ -1178,7 +1178,7 @@
                         <label class="block text-sm font-semibold text-gray-700 mb-1">Proof Photo <span class="text-red-500">*</span></label>
                         <div class="relative group">
                             <!-- Helper Input -->
-                            <input type="file" id="recoveryPhoto" name="photo_out" accept="image/*" capture="environment" class="hidden" />
+                            <input type="file" id="recoveryPhoto" name="photo_out" accept="image/*" class="hidden" />
                             
                             <!-- Upload Area -->
                             <div id="photoUploadArea" class="border-2 border-dashed border-gray-300 bg-gray-50 rounded-lg p-6 text-center cursor-pointer hover:bg-gray-100 hover:border-red-400 transition-all duration-200">
