@@ -13,18 +13,18 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('supervisor_profiles', function (Blueprint $table) {
-            // Defensive drop: try to drop if it exists, otherwise ignore
-            try {
+        // Try to drop foreign key first, safely
+        try {
+            Schema::table('supervisor_profiles', function (Blueprint $table) {
                 $table->dropForeign(['company_id']);
-            } catch (\Exception $e) {
-                // Key might not exist or be named differently, skip to modification
-            }
-            
-            // Make the column nullable
+            });
+        } catch (\Exception $e) {
+            // Foreign key might not exist or have a different name, proceed to column change
+        }
+
+        // Apply column changes and recreate foreign key
+        Schema::table('supervisor_profiles', function (Blueprint $table) {
             $table->unsignedBigInteger('company_id')->nullable()->change();
-            
-            // Recreate the foreign key constraint
             $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
         });
     }

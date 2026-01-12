@@ -13,14 +13,14 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('acceptance_letters', function (Blueprint $table) {
-            // Drop foreign key constraint before dropping acceptance_requests table
-            try {
+        // Try to drop foreign key constraint safely before next steps
+        try {
+            Schema::table('acceptance_letters', function (Blueprint $table) {
                 $table->dropForeign(['acceptance_request_id']);
-            } catch (\Exception $e) {
-                // Ignore if foreign key doesn't exist
-            }
-        });
+            });
+        } catch (\Exception $e) {
+            // Ignore if foreign key doesn't exist or name is incorrect
+        }
     }
 
     /**
