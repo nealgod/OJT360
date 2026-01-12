@@ -8,10 +8,12 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('placement_requests', function (Blueprint $table) {
-            $table->string('external_company_name')->nullable()->after('company_id');
-            $table->string('external_company_address')->nullable()->after('external_company_name');
-        });
+        if (Schema::hasTable('placement_requests')) {
+            Schema::table('placement_requests', function (Blueprint $table) {
+                $table->string('external_company_name')->nullable()->after('company_id');
+                $table->string('external_company_address')->nullable()->after('external_company_name');
+            });
+        }
     }
 
     public function down(): void

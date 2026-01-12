@@ -8,14 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('placement_requests', function (Blueprint $table) {
-            // Drop existing foreign key to alter column
-            $table->dropForeign('placement_requests_company_id_foreign');
-            // Make column nullable
-            $table->unsignedBigInteger('company_id')->nullable()->change();
-            // Recreate foreign key allowing null
-            $table->foreign('company_id')->references('id')->on('companies')->cascadeOnDelete();
-        });
+        // Redundant as company_id is already nullable in create migration.
     }
 
     public function down(): void

@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -10,8 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // For MySQL, we need to modify the enum column
-        DB::statement("ALTER TABLE placement_requests MODIFY COLUMN status ENUM('pending', 'approved', 'declined', 'voided') DEFAULT 'pending'");
+        if (Schema::hasTable('placement_requests')) {
+            // For MySQL, we need to modify the enum column
+            DB::statement("ALTER TABLE placement_requests MODIFY COLUMN status ENUM('pending', 'approved', 'declined', 'voided') DEFAULT 'pending'");
+        }
     }
 
     /**

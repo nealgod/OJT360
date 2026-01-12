@@ -13,11 +13,8 @@ return new class extends Migration
      */
     public function up()
     {
-        if (Schema::hasTable('placement_requests')) {
-            Schema::table('placement_requests', function (Blueprint $table) {
-                $table->timestamp('dismissed_at')->nullable();
-            });
-        }
+        Schema::dropIfExists('placement_requests');
+        Schema::dropIfExists('temp');
     }
 
     /**
@@ -27,8 +24,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::table('placement_requests', function (Blueprint $table) {
-            $table->dropColumn('dismissed_at');
-        });
+        // No need to recreate as they are deprecated
     }
 };

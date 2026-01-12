@@ -13,14 +13,8 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('placement_requests', function (Blueprint $table) {
-            // Drop the foreign key constraint first
-            $table->dropForeign(['company_id']);
-            // Modify the column to be nullable
-            $table->unsignedBigInteger('company_id')->nullable()->change();
-            // Recreate the foreign key constraint
-            $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
-        });
+        // This migration is redundant as company_id was already made nullable in a previous migration.
+        // It is kept as a stub to maintain migration history.
     }
 
     /**

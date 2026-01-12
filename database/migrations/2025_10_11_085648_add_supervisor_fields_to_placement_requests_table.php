@@ -11,10 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('placement_requests', function (Blueprint $table) {
-            $table->string('supervisor_name')->nullable()->after('contact_person');
-            $table->string('supervisor_email')->nullable()->after('supervisor_name');
-        });
+        if (Schema::hasTable('placement_requests')) {
+            Schema::table('placement_requests', function (Blueprint $table) {
+                $table->string('supervisor_name')->nullable()->after('contact_person');
+                $table->string('supervisor_email')->nullable()->after('supervisor_name');
+            });
+        }
     }
 
     /**

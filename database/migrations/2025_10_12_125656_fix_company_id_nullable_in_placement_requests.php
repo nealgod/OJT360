@@ -13,14 +13,7 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('placement_requests', function (Blueprint $table) {
-            // Drop the existing foreign key constraint
-            $table->dropForeign(['company_id']);
-            // Make the column nullable
-            $table->unsignedBigInteger('company_id')->nullable()->change();
-            // Recreate the foreign key constraint
-            $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
-        });
+        // Redundant migration stub.
     }
 
     /**

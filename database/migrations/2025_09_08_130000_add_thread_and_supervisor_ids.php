@@ -8,9 +8,11 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('placement_requests', function (Blueprint $table) {
-            $table->unsignedBigInteger('thread_id')->nullable()->after('decided_at');
-        });
+        if (Schema::hasTable('placement_requests')) {
+            Schema::table('placement_requests', function (Blueprint $table) {
+                $table->unsignedBigInteger('thread_id')->nullable()->after('decided_at');
+            });
+        }
 
         Schema::table('student_profiles', function (Blueprint $table) {
             if (! Schema::hasColumn('student_profiles', 'supervisor_id')) {
