@@ -11,24 +11,22 @@
 ```
 1. AM IN → status = 'approved' ✅
    - Student clocks in for morning
-   - Status: approved (work started)
+   - State: **In Progress** (Morning shift active)
 
 2. AM OUT → status = 'approved' (unchanged) ✅
    - Student clocks out for lunch
    - Status: approved (morning complete)
    - Minutes: AM duration calculated and saved
 
-3. PM IN → status = 'pending' ⚠️ (FIXED)
+3. PM IN → status = 'approved' ✅
    - Student clocks in for afternoon
-   - Status: pending (needs verification)
-   - Message: "Status pending verification"
-   - Reason: Supervisor should verify student returned after break
+   - State: **In Progress** (Afternoon shift active)
+   - Note: Represented as 'approved' in DB to avoid daily overhead.
 
 4. PM OUT → status = 'approved' ✅
    - Student clocks out end of day
-   - Status: approved (full day complete)
-   - Minutes: AM + PM total calculated
-   - Overtime calculated if > 8 hours
+   - State: **Completed** (Full day finalized)
+   - Finalize: Total hours and overtime calculated automatically.
 ```
 
 ### Half Day Morning Only:
@@ -48,35 +46,15 @@ Supervisor Approval → status = 'approved'
 Supervisor Rejection → status = 'flagged'
 ```
 
-## The Fix Applied
-
-**Changed in:** `app/Http/Controllers/AttendanceController.php` (line 87)
-
-**Before:**
-```php
-// PM IN
-'status' => 'approved', // Continue In Progress
-```
-
-**After:**
-```php
-// PM IN
-'status' => 'pending', // Needs verification after break
-```
+## System Philosophy
+The system prioritizes **efficiency** and **automation** for daily attendance, while maintaining **strict oversight** for exceptions (missing punches).
 
 ## Requirements & Logic
 
-### Why PM IN Should Be Pending:
-1. **Verification needed** - Gap between AM OUT and PM IN needs validation
-2. **Supervisor oversight** - Ensures student actually returned to work
-3. **Prevents abuse** - Student can't just clock PM IN without being present
-4. **Audit trail** - Supervisor can verify attendance after lunch break
-
-### Current Approval System:
-- ✅ **Recovery requests**: Supervisors can approve/reject via `SupervisorAttendanceController`
-- ⚠️ **Regular PM IN pending logs**: Currently no approval mechanism exists
-  - **Note**: You may want to add approval functionality for regular pending logs
-  - Or consider auto-approving after a certain time period
+### Why Punctual Punches are Auto-Approved:
+1. **Efficiency** – No need for supervisor to manually verify every lunch return.
+2. **Standard Workflow** – Mimics biometric systems where daily attendance is logging-only.
+3. **Manual Override** – If a student misses a punch, they use the **Recovery Flow** which DOES require manual approval.
 
 ## Code Locations
 
@@ -84,7 +62,7 @@ Supervisor Rejection → status = 'flagged'
 - `app/Http/Controllers/AttendanceController.php`
   - `timeIn()` method:
     - Line 77: AM IN → `status = 'approved'`
-    - Line 87: PM IN → `status = 'pending'` ✅ FIXED
+    - Line 87: PM IN → `status = 'approved'` (Standard)
   - `timeOut()` method:
     - Line 162-168: AM OUT → status unchanged (stays `approved`)
     - Line 194: PM OUT → `status = 'approved'`
@@ -122,30 +100,27 @@ Supervisor Rejection → status = 'flagged'
 
 The **appropriate method** is already implemented:
 
-### Auto-Approval Logic:
+### Standard Attendance Logic (Auto-Approved):
 ```php
-// PM IN → status = 'pending' (needs verification)
-// PM OUT → status = 'approved' (auto-approved)
+// PM IN  -> status = 'approved'
+// PM OUT -> status = 'approved'
 ```
 
 **How it works:**
-1. **PM IN** sets status to `pending` - flags that student returned after break
-2. **PM OUT** automatically sets status to `approved` - if student clocks out, they were present, so auto-approve
+1. **PM IN** sets status to `approved` - Meaning the student is currently **In Progress** for the afternoon.
+2. **PM OUT** keeps status `approved` - Meaning the record is now **Final/Completed**.
 
 ### Why This Method is Appropriate:
-- ✅ **No manual approval needed** - PM OUT proves attendance
-- ✅ **Automatic resolution** - Pending status resolved when day completes
-- ✅ **Simple workflow** - Student doesn't wait for supervisor
-- ✅ **Recovery still requires approval** - Only recovery requests need manual supervisor approval
+- ✅ **Simplified DB Tracking** - Use one status (`approved`) for standard, valid data.
+- ✅ **State-Based UI** - Front-end handles whether it's "Active" or "Done" based on the presence of PM OUT time.
+- ✅ **Recovery Flow** - Only missed logs deviate from the 'approved' flow, moving into `pending`.
 
 ### Code Implementation:
-- **PM IN** (line 88): `'status' => 'pending'`
-- **PM OUT** (line 195): `'status' => 'approved'` ← Auto-approves pending status
+- **PM IN** (line 88): `'status' => 'approved'`
+- **PM OUT** (line 195): `'status' => 'approved'`
 
-## Summary
-
-✅ **Fixed**: PM IN now sets status to `pending` instead of `approved`
-✅ **Method**: PM OUT automatically approves the pending status
-✅ **Result**: Status properly tracks verification need, but auto-resolves on completion
-✅ **Recovery**: Still requires manual supervisor approval (different flow)
+✅ **Status**: All standard time-ins and time-outs (AM/PM) are automatically set to `approved`.
+✅ **Workflow**: Simple logging for students; no daily approval burden for supervisors.
+✅ **Recovery**: Only missed punches (Recovery Requests) require manual supervisor approval.
+✅ **Automation**: Total minutes and overtime are calculated automatically upon PM OUT.
 

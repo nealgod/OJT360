@@ -412,12 +412,12 @@ Student enters information
         ↓
 Submits for approval
         ↓
-Status: "Pending Coordinator Approval"
+Status: "Pending Supervisor Approval"
         ↓
-Coordinator receives notification
+Supervisor receives notification
         ↓
 ┌─────────────────────────────┐
-│   Coordinator Reviews       │
+│    Supervisor Reviews       │
 │  ┌──────────┬──────────┐   │
 │  │ Approve  │  Reject  │   │
 │  └──────────┴──────────┘   │
@@ -463,7 +463,6 @@ Available Actions:
  - Assign Supervisor
  - Update Status
  - View Reports
- - Approve Attendance Recovery
 ```
 
 ### Document Review Workflow
@@ -991,5 +990,5 @@ Success    Exception
 
 ---
 
-**Last Updated**: November 27, 2025  
+**Last Updated**: January 12, 2026  
 **Version**: 1.0.0

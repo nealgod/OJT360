@@ -59,7 +59,7 @@ OJT360 streamlines the entire OJT/internship lifecycle for educational instituti
 ### ⏰ Attendance System
 - **Daily time in/out logging** - Simple one-click attendance tracking
 - **Automatic hours calculation** - Break time deduction, overtime tracking
-- **Attendance recovery** - Forgot to time out? Submit for coordinator approval
+- **Attendance recovery** - Forgot to time out? Submit for supervisor approval
 - **IP address verification** - Track location for attendance integrity
 - **Progress tracking** - Real-time hours vs required hours comparison
 - **Attendance history** - Detailed logs with date range filtering
@@ -164,7 +164,7 @@ DB_PASSWORD=
 MAIL_MAILER=smtp
 MAIL_HOST=smtp.gmail.com
 MAIL_PORT=587
-MAIL_USERNAME=your-email@gmail.com
+MAIL_USERNAME=your-email@evsu.edu.ph
 MAIL_PASSWORD=your-app-password
 MAIL_ENCRYPTION=tls
 MAIL_FROM_ADDRESS=noreply@ojt360.com
@@ -227,8 +227,8 @@ php artisan serve
 Access the application at: `http://localhost:8000`
 
 **Default Admin Credentials:**
-- Email: `admin@ojt360.com`
-- Password: `password` (change immediately after first login)
+- Email: `ojt3604dmin@gmail.com`
+- Password: `12345678`
 
 ---
 
@@ -287,7 +287,7 @@ Default break time deduction is set per acceptance letter. Configure in supervis
 - Assign supervisors to students
 - Monitor student progress
 - Review weekly reports
-- Approve attendance recovery requests
+- Monitor attendance recovery requests
 - Notify students about MOA collection
 - Set program required hours
 - Generate program reports
@@ -299,7 +299,7 @@ Default break time deduction is set per acceptance letter. Configure in supervis
 3. Students submit documents → Review & approve/reject
 4. Students get acceptance letters → Notify about MOA
 5. Activate student OJT status → Students log attendance
-6. Monitor daily: review reports, approve attendance corrections
+6. Monitor daily: review reports and student progress
 7. End of OJT: Review final evaluations
 ```
 
@@ -530,8 +530,12 @@ ojt360/
 │   └── images/
 ├── tests/                        # PHPUnit tests
 ├── README.md                     # This file
-├── SYSTEM_FLOW.md                # Detailed system workflows
-└── USER_MANUAL.md                # Complete user guide
+├── DOCUMENTATION/             # System documentation
+│   ├── SYSTEM_FLOW.md        # Detailed system workflows
+│   ├── USER_MANUAL.md        # Complete user guide
+│   ├── ADMIN_MANAGEMENT_GUIDE.md # Admin credentials guide
+│   └── ATTENDANCE_STATUS_EXPLANATION.md # Attendance logic guide
+└── app/
 ```
 
 ---
@@ -540,7 +544,7 @@ ojt360/
 
 The project includes comprehensive documentation:
 
-### 📄 [SYSTEM_FLOW.md](SYSTEM_FLOW.md)
+### 📄 [SYSTEM_FLOW.md](DOCUMENTATION/SYSTEM_FLOW.md)
 Detailed technical documentation covering:
 - System architecture diagrams
 - Authentication flows (student, coordinator, supervisor)
@@ -550,12 +554,18 @@ Detailed technical documentation covering:
 - Data flow diagrams
 - Notification system architecture
 
-### 📖 [USER_MANUAL.md](USER_MANUAL.md)
+### 📖 [USER_MANUAL.md](DOCUMENTATION/USER_MANUAL.md)
 Complete user guide for all roles:
 - Getting started & account activation
 - Step-by-step guides for each user role
 - Common tasks and troubleshooting
 - FAQ and support information
+
+### 🔐 [ADMIN_MANAGEMENT_GUIDE.md](DOCUMENTATION/ADMIN_MANAGEMENT_GUIDE.md)
+Technical guide for managing Master Admin credentials and database seeders.
+
+### ⏰ [ATTENDANCE_STATUS_EXPLANATION.md](DOCUMENTATION/ATTENDANCE_STATUS_EXPLANATION.md)
+Explanation of the 'In Progress' vs 'Completed' attendance status logic.
 
 ### 📋 README.md (This File)
 - Installation and setup
@@ -565,8 +575,8 @@ Complete user guide for all roles:
 
 **To get started:**
 1. Read this README for installation
-2. Check SYSTEM_FLOW.md to understand workflows
-3. Refer to USER_MANUAL.md for detailed user instructions
+2. Check `DOCUMENTATION/SYSTEM_FLOW.md` to understand workflows
+3. Refer to `DOCUMENTATION/USER_MANUAL.md` for detailed user instructions
 
 ---
 
@@ -734,7 +744,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 **Neal God**
 - GitHub: [@nealgod](https://github.com/nealgod)
 - Repository: [OJT360](https://github.com/nealgod/OJT360)
-- Email: neal.god@example.com
+- Email: your.email@evsu.edu.ph
 
 ---
 
@@ -751,8 +761,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ### Getting Help
 
-- **📧 Email**: support@ojt360.com
-- **📖 Documentation**: See [USER_MANUAL.md](USER_MANUAL.md) and [SYSTEM_FLOW.md](SYSTEM_FLOW.md)
+- **📖 Documentation**: See [USER_MANUAL.md](DOCUMENTATION/USER_MANUAL.md) and [SYSTEM_FLOW.md](DOCUMENTATION/SYSTEM_FLOW.md)
 - **🐛 Issues**: [GitHub Issues](https://github.com/nealgod/OJT360/issues)
 - **💬 Discussions**: [GitHub Discussions](https://github.com/nealgod/OJT360/discussions)
 
@@ -760,32 +769,6 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 - **Students**: Contact your coordinator
 - **Coordinators**: Contact system admin
 - **Supervisors**: Contact the coordinator who invited you
-- **Technical Issues**: Email support@ojt360.com
-
----
-
-## 📊 Project Status
-
-- **Version**: 1.0.0
-- **Status**: Active Development
-- **Last Updated**: November 28, 2025
-
----
-
-## 🗺️ Roadmap
-
-### Upcoming Features
-- [ ] Mobile app (React Native)
-- [ ] Advanced analytics dashboard
-- [ ] Automated report scheduling
-- [ ] Integration with Google Calendar
-- [ ] Biometric attendance integration
-- [ ] Multi-language support
-- [ ] REST API for third-party integrations
-- [ ] Real-time chat messaging
-- [ ] Document version control
-- [ ] Advanced search and filtering
-
 ---
 
 **Made with ❤️ for the OJT community**

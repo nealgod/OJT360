@@ -293,7 +293,7 @@ class AttendanceController extends Controller
                     'am_out_lng' => $request->input('lng_out'),
                     'status' => 'pending',
                     'is_recovered' => true,
-                    'recovery_reason' => $request->reason,
+                    'recovery_reason' => ($isWholeDay ? '[WD]' : '[AM]') . ' ' . $request->reason,
                     'recovery_approved' => null,
                 ];
 
@@ -375,7 +375,7 @@ class AttendanceController extends Controller
                     'overtime_minutes' => max(0, $totalMinutes - 480),
                     'status' => 'pending',
                     'is_recovered' => true,
-                    'recovery_reason' => $request->reason,
+                    'recovery_reason' => '[PM] ' . $request->reason,
                     'recovery_approved' => null,
                 ]);
                 

@@ -517,7 +517,19 @@
                                         
                                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                             @php
-                                                $isModalWholeDay = $log->pm_out_time && $log->is_recovered && ($log->pm_in_photo === $log->am_out_photo);
+                                                $reasonForTags = $log->recovery_reason ?? '';
+                                                $isModalWD = str_contains($reasonForTags, '[WD]');
+                                                $isModalAM = str_contains($reasonForTags, '[AM]');
+                                                $isModalPM = str_contains($reasonForTags, '[PM]');
+                                                
+                                                // Fallback to legacy logic for old logs
+                                                if (!$isModalWD && !$isModalAM && !$isModalPM && $log->is_recovered) {
+                                                    $isModalWD = ($log->pm_in_photo === $log->am_out_photo && $log->pm_out_time);
+                                                    $isModalAM = !$log->pm_in_time;
+                                                    $isModalPM = $log->pm_out_time;
+                                                }
+                                                
+                                                $isModalWholeDay = $isModalWD;
                                             @endphp
 
                                             <!-- AM IN -->
@@ -527,7 +539,7 @@
                                             </div>
 
                                             <!-- AM OUT -->
-                                            @php $isModalAmRec = $log->is_recovered && $log->am_out_time && ($isModalWholeDay || !$log->pm_in_time); @endphp
+                                            @php $isModalAmRec = $log->is_recovered && ($isModalAM || $isModalWD); @endphp
                                             <div class="p-2 rounded border {{ $isModalAmRec ? 'bg-blue-50 border-blue-200 ring-1 ring-blue-500/20' : 'bg-green-50 border-green-100' }}">
                                                 <span class="block text-[9px] font-bold {{ $isModalAmRec ? 'text-blue-600' : 'text-green-600' }} uppercase tracking-tight">
                                                     AM Out {{ $isModalAmRec ? '(Recovery)' : '(Regular)' }}
@@ -538,7 +550,7 @@
                                             </div>
 
                                             <!-- PM IN -->
-                                            @php $isModalPmInRec = $log->is_recovered && $isModalWholeDay; @endphp
+                                            @php $isModalPmInRec = $log->is_recovered && $isModalWD; @endphp
                                             <div class="p-2 rounded border {{ $isModalPmInRec ? 'bg-blue-50 border-blue-200 ring-1 ring-blue-500/20' : ($log->pm_in_time ? 'bg-green-50 border-green-100' : 'bg-gray-50 border-gray-100') }}">
                                                 <span class="block text-[9px] font-bold {{ $isModalPmInRec ? 'text-blue-600' : ($log->pm_in_time ? 'text-green-600' : 'text-gray-400') }} uppercase tracking-tight">
                                                     PM In {{ $isModalPmInRec ? '(Recovery)' : ($log->pm_in_time ? '(Regular)' : '') }}
@@ -549,7 +561,7 @@
                                             </div>
 
                                             <!-- PM OUT -->
-                                            @php $isModalPmOutRec = $log->is_recovered && $log->pm_out_time; @endphp
+                                            @php $isModalPmOutRec = $log->is_recovered && ($isModalPM || $isModalWD); @endphp
                                             <div class="p-2 rounded border {{ $isModalPmOutRec ? 'bg-blue-50 border-blue-200 ring-1 ring-blue-500/20' : ($log->pm_out_time ? 'bg-green-50 border-green-100' : 'bg-gray-50 border-gray-100') }}">
                                                 <span class="block text-[9px] font-bold {{ $isModalPmOutRec ? 'text-blue-600' : ($log->pm_out_time ? 'text-green-600' : 'text-gray-400') }} uppercase tracking-tight">
                                                     PM Out {{ $isModalPmOutRec ? '(Recovery)' : ($log->pm_out_time ? '(Regular)' : '') }}
@@ -567,18 +579,46 @@
                                         @endif
                                     </div>
 
+                                    @php
+                                        // Detect recovery context from tagged reason
+                                        $rawReason = $log->recovery_reason ?? '';
+                                        $displayReason = $rawReason;
+                                        $typeLabel = '';
+                                        
+                                        if (str_starts_with($rawReason, '[WD]')) {
+                                            $recoveryPhoto = $log->pm_out_photo ?? $log->am_out_photo;
+                                            $recoveryLat = $log->pm_out_lat ?? $log->am_out_lat;
+                                            $recoveryLng = $log->pm_out_lng ?? $log->am_out_lng;
+                                            $displayReason = trim(substr($rawReason, 4));
+                                            $typeLabel = 'Whole Day';
+                                        } elseif (str_starts_with($rawReason, '[AM]')) {
+                                            $recoveryPhoto = $log->am_out_photo;
+                                            $recoveryLat = $log->am_out_lat;
+                                            $recoveryLng = $log->am_out_lng;
+                                            $displayReason = trim(substr($rawReason, 4));
+                                            $typeLabel = 'Morning Shift';
+                                        } elseif (str_starts_with($rawReason, '[PM]')) {
+                                            $recoveryPhoto = $log->pm_out_photo;
+                                            $recoveryLat = $log->pm_out_lat;
+                                            $recoveryLng = $log->pm_out_lng;
+                                            $displayReason = trim(substr($rawReason, 4));
+                                            $typeLabel = 'Afternoon Shift';
+                                        } else {
+                                            // Fallback for older logs without tags
+                                            $recoveryPhoto = $log->pm_out_photo ?? $log->am_out_photo;
+                                            $recoveryLat = $log->pm_out_lat ?? $log->am_out_lat;
+                                            $recoveryLng = $log->pm_out_lng ?? $log->am_out_lng;
+                                        }
+                                    @endphp
+
                                     <div class="mb-4">
-                                        <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Reason</p>
+                                        <p class="text-[10px] font-bold text-blue-600 mb-1">
+                                            @if($typeLabel) RECOVERING: {{ strtoupper($typeLabel) }} @endif
+                                        </p>
                                         <div class="bg-gray-50 p-3 rounded-lg border border-gray-100 text-sm text-gray-700 italic border-l-2 border-l-gray-300 max-h-32 overflow-y-auto whitespace-pre-wrap break-words custom-scrollbar">
-                                            "{{ $log->recovery_reason ?? 'No reason provided.' }}"
+                                            "{{ $displayReason ?? 'No reason provided.' }}"
                                         </div>
                                     </div>
-
-                                    @php
-                                        $recoveryPhoto = $log->am_out_photo ?? $log->pm_out_photo;
-                                        $recoveryLat = $log->am_out_lat ?? $log->pm_out_lat ?? null;
-                                        $recoveryLng = $log->am_out_lng ?? $log->pm_out_lng ?? null;
-                                    @endphp
                                     @if($recoveryPhoto)
                                         <div class="mb-5">
                                             <div class="flex justify-between items-end mb-2">
@@ -790,16 +830,45 @@
                                             @endif
                                         </div>
 
-                                        <div class="bg-gray-50 rounded-lg p-3 border border-gray-200 mb-4">
-                                            <span class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Reason for Recovery</span>
-                                            <p class="text-sm text-gray-700 italic">"{{ $log->recovery_reason }}"</p>
-                                        </div>
-
                                         @php
-                                            $recoveryPhoto = $log->pm_out_photo ?? $log->am_out_photo;
-                                            $recoveryLat = $log->pm_out_lat ?? $log->am_out_lat ?? null;
-                                            $recoveryLng = $log->pm_out_lng ?? $log->am_out_lng ?? null;
+                                            $rawReason2 = $log->recovery_reason ?? '';
+                                            $displayReason2 = $rawReason2;
+                                            $typeLabel2 = '';
+                                            
+                                            if (str_starts_with($rawReason2, '[WD]')) {
+                                                $recoveryPhoto = $log->pm_out_photo ?? $log->am_out_photo;
+                                                $recoveryLat = $log->pm_out_lat ?? $log->am_out_lat;
+                                                $recoveryLng = $log->pm_out_lng ?? $log->am_out_lng;
+                                                $displayReason2 = trim(substr($rawReason2, 4));
+                                                $typeLabel2 = 'Whole Day';
+                                            } elseif (str_starts_with($rawReason2, '[AM]')) {
+                                                $recoveryPhoto = $log->am_out_photo;
+                                                $recoveryLat = $log->am_out_lat;
+                                                $recoveryLng = $log->am_out_lng;
+                                                $displayReason2 = trim(substr($rawReason2, 4));
+                                                $typeLabel2 = 'Morning Shift';
+                                            } elseif (str_starts_with($rawReason2, '[PM]')) {
+                                                $recoveryPhoto = $log->pm_out_photo;
+                                                $recoveryLat = $log->pm_out_lat;
+                                                $recoveryLng = $log->pm_out_lng;
+                                                $displayReason2 = trim(substr($rawReason2, 4));
+                                                $typeLabel2 = 'Afternoon Shift';
+                                            } else {
+                                                $recoveryPhoto = $log->pm_out_photo ?? $log->am_out_photo;
+                                                $recoveryLat = $log->pm_out_lat ?? $log->am_out_lat;
+                                                $recoveryLng = $log->pm_out_lng ?? $log->am_out_lng;
+                                            }
                                         @endphp
+
+                                        <div class="bg-gray-50 rounded-lg p-3 border border-gray-200 mb-4">
+                                            <div class="flex justify-between items-center mb-1">
+                                                <span class="block text-[10px] font-bold text-gray-500 uppercase">Reason for Recovery</span>
+                                                @if($typeLabel2)
+                                                    <span class="text-[9px] font-black bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded shadow-sm">{{ strtoupper($typeLabel2) }}</span>
+                                                @endif
+                                            </div>
+                                            <p class="text-sm text-gray-700 italic">"{{ $displayReason2 }}"</p>
+                                        </div>
                                         @if($recoveryPhoto)
                                             <div class="mb-4">
                                                 <div class="flex justify-between items-end mb-1">
