@@ -14,8 +14,10 @@ return new class extends Migration
     public function up()
     {
         Schema::table('attendance_logs', function (Blueprint $table) {
-            // Add overtime tracking column after minutes_worked
-            $table->unsignedSmallInteger('overtime_minutes')->default(0)->after('minutes_worked');
+            if (! Schema::hasColumn('attendance_logs', 'overtime_minutes')) {
+                // Add overtime tracking column after minutes_worked
+                $table->unsignedSmallInteger('overtime_minutes')->default(0)->after('minutes_worked');
+            }
         });
     }
 

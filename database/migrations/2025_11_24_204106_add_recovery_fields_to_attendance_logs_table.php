@@ -14,8 +14,12 @@ return new class extends Migration
     public function up()
     {
         Schema::table('attendance_logs', function (Blueprint $table) {
-            $table->boolean('is_recovered')->default(false)->after('status');
-            $table->text('recovery_reason')->nullable()->after('is_recovered');
+            if (! Schema::hasColumn('attendance_logs', 'is_recovered')) {
+                $table->boolean('is_recovered')->default(false)->after('status');
+            }
+            if (! Schema::hasColumn('attendance_logs', 'recovery_reason')) {
+                $table->text('recovery_reason')->nullable()->after('is_recovered');
+            }
         });
     }
 

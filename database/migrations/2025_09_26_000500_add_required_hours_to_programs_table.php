@@ -9,7 +9,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('programs', function (Blueprint $table) {
-            $table->unsignedInteger('required_hours')->nullable()->after('slug');
+            if (! Schema::hasColumn('programs', 'required_hours')) {
+                $table->unsignedInteger('required_hours')->nullable()->after('slug');
+            }
         });
     }
 

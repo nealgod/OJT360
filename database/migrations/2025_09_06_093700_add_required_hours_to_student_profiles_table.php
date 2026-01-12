@@ -14,8 +14,12 @@ return new class extends Migration
     public function up()
     {
         Schema::table('student_profiles', function (Blueprint $table) {
-            $table->integer('required_hours')->nullable()->after('ojt_status');
-            $table->integer('completed_hours')->default(0)->after('required_hours');
+            if (! Schema::hasColumn('student_profiles', 'required_hours')) {
+                $table->integer('required_hours')->nullable()->after('ojt_status');
+            }
+            if (! Schema::hasColumn('student_profiles', 'completed_hours')) {
+                $table->integer('completed_hours')->default(0)->after('required_hours');
+            }
         });
     }
 

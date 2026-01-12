@@ -13,36 +13,40 @@ return new class extends Migration
     public function up(): void
     {
         // 1. Migrate legacy data to new quad-logging fields
-        DB::table('attendance_logs')->whereNull('am_in_time')->whereNotNull('time_in')->chunkById(100, function ($logs) {
-            foreach ($logs as $log) {
-                DB::table('attendance_logs')
-                    ->where('id', $log->id)
-                    ->update([
-                        'am_in_time' => $log->time_in,
-                        'am_out_time' => $log->time_out,
-                        'am_in_photo' => $log->photo_in_path,
-                        'am_out_photo' => $log->photo_out_path,
-                        'am_in_lat' => $log->lat_in,
-                        'am_in_lng' => $log->lng_in,
-                        'am_out_lat' => $log->lat_out,
-                        'am_out_lng' => $log->lng_out,
-                    ]);
-            }
-        });
+        if (Schema::hasColumn('attendance_logs', 'time_in')) {
+            DB::table('attendance_logs')->whereNull('am_in_time')->whereNotNull('time_in')->chunkById(100, function ($logs) {
+                foreach ($logs as $log) {
+                    DB::table('attendance_logs')
+                        ->where('id', $log->id)
+                        ->update([
+                            'am_in_time' => $log->time_in,
+                            'am_out_time' => $log->time_out,
+                            'am_in_photo' => $log->photo_in_path,
+                            'am_out_photo' => $log->photo_out_path,
+                            'am_in_lat' => $log->lat_in,
+                            'am_in_lng' => $log->lng_in,
+                            'am_out_lat' => $log->lat_out,
+                            'am_out_lng' => $log->lng_out,
+                        ]);
+                }
+            });
+        }
 
         // 2. Drop legacy columns
-        Schema::table('attendance_logs', function (Blueprint $table) {
-            $table->dropColumn([
-                'time_in',
-                'time_out',
-                'photo_in_path',
-                'photo_out_path',
-                'lat_in',
-                'lng_in',
-                'lat_out',
-                'lng_out'
-            ]);
-        });
+        if (Schema::hasColumn('attendance_logs', 'time_in')) {
+            Schema::table('attendance_logs', function (Blueprint $table) {
+                $table->dropColumn([
+                    'time_in',
+                    'time_out',
+                    'photo_in_path',
+                    'photo_out_path',
+                    'lat_in',
+                    'lng_in',
+                    'lat_out',
+                    'lng_out'
+                ]);
+            });
+        }
     }
 
     /**

@@ -14,9 +14,15 @@ return new class extends Migration
     public function up()
     {
         Schema::table('attendance_logs', function (Blueprint $table) {
-            $table->boolean('recovery_approved')->nullable()->after('recovery_reason');
-            $table->timestamp('recovery_approved_at')->nullable()->after('recovery_approved');
-            $table->foreignId('recovery_approved_by')->nullable()->constrained('users')->nullOnDelete()->after('recovery_approved_at');
+            if (! Schema::hasColumn('attendance_logs', 'recovery_approved')) {
+                $table->boolean('recovery_approved')->nullable()->after('recovery_reason');
+            }
+            if (! Schema::hasColumn('attendance_logs', 'recovery_approved_at')) {
+                $table->timestamp('recovery_approved_at')->nullable()->after('recovery_approved');
+            }
+            if (! Schema::hasColumn('attendance_logs', 'recovery_approved_by')) {
+                $table->foreignId('recovery_approved_by')->nullable()->constrained('users')->nullOnDelete()->after('recovery_approved_at');
+            }
         });
     }
 

@@ -15,7 +15,11 @@ return new class extends Migration
     {
         Schema::table('acceptance_letters', function (Blueprint $table) {
             // Drop foreign key constraint before dropping acceptance_requests table
-            $table->dropForeign(['acceptance_request_id']);
+            try {
+                $table->dropForeign(['acceptance_request_id']);
+            } catch (\Exception $e) {
+                // Ignore if foreign key doesn't exist
+            }
         });
     }
 

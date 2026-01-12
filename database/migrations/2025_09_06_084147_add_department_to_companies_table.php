@@ -14,8 +14,12 @@ return new class extends Migration
     public function up()
     {
         Schema::table('companies', function (Blueprint $table) {
-            $table->string('department')->nullable()->after('name');
-            $table->foreignId('coordinator_id')->nullable()->constrained('users')->after('department');
+            if (! Schema::hasColumn('companies', 'department')) {
+                $table->string('department')->nullable()->after('name');
+            }
+            if (! Schema::hasColumn('companies', 'coordinator_id')) {
+                $table->foreignId('coordinator_id')->nullable()->constrained('users')->after('department');
+            }
         });
     }
 

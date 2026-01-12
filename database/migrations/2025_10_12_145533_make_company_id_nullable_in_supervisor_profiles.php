@@ -14,10 +14,16 @@ return new class extends Migration
     public function up()
     {
         Schema::table('supervisor_profiles', function (Blueprint $table) {
-            // Drop the foreign key constraint first
-            $table->dropForeign(['company_id']);
+            // Defensive drop: try to drop if it exists, otherwise ignore
+            try {
+                $table->dropForeign(['company_id']);
+            } catch (\Exception $e) {
+                // Key might not exist or be named differently, skip to modification
+            }
+            
             // Make the column nullable
             $table->unsignedBigInteger('company_id')->nullable()->change();
+            
             // Recreate the foreign key constraint
             $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
         });
