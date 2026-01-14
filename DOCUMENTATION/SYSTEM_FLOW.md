@@ -360,7 +360,9 @@ Green Badge    Red Badge
               & Resubmits
 ```
 
-### Attendance Logging Flow
+### Attendance Logging Flow (Quad-System)
+The system uses a high-precision "Quad-Logging" verification system for maximum accuracy.
+
 ```
 Student arrives at company
         ↓
@@ -368,65 +370,58 @@ Opens OJT360 on phone/computer
         ↓
 Goes to "Attendance" page
         ↓
-Clicks "Time In" button
+[1] MORNING PUNCH (AM IN)
+    - Captures Live Photo
+    - Captures GPS Coordinates
+    - System records am_in_time
         ↓
-System records:
- - Date: Today
- - Time: Current time
- - IP Address: For verification
+... Working (Morning Shift) ...
         ↓
-Status shows: "Timed In"
+[2] LUNCH BREAK (AM OUT)
+    - Captures Live Photo
+    - Captures GPS Coordinates
+    - System records am_out_time
+    - Banks morning minutes
         ↓
-... Student works ...
+[3] AFTERNOON RETURN (PM IN)
+    - Captures Live Photo
+    - Captures GPS Coordinates
+    - System records pm_in_time
         ↓
-Student ready to leave
+[4] END OF DAY (PM OUT)
+    - Captures Live Photo
+    - Captures GPS Coordinates
+    - System records pm_out_time
+    - Calculates Total Minutes & Overtime
         ↓
-Opens OJT360 again
-        ↓
-Clicks "Time Out" button
-        ↓
-System records:
- - Time Out: Current time
- - Calculates: Hours Worked
- - Updates: Total Hours
-        ↓
-Attendance log complete
-        ↓
-Hours added to student's total
+Day complete. Hours added to student's total.
 ```
 
 ### Attendance Recovery Flow
+If a student misses a punch (e.g., forgets to Time Out), they must use the Recovery System.
+
 ```
-Student forgot to Time Out
+Student misses a punch
         ↓
-Dashboard shows: "Incomplete Record"
+Dashboard shows: "Incomplete Record" (Missing Out)
         ↓
-Student clicks "Complete"
+Student clicks "Complete Recovery"
         ↓
-Modal appears:
- - Shows: Time In
- - Asks: What time did you leave?
- - Asks: Why forgot to time out?
+Modal options:
+ ├─ Recover Specific Punch (e.g., AM Out only)
+ └─ Whole Day Recovery (Replaces AM/PM in one click)
         ↓
-Student enters information
+[1] Student inputs missing times
+[2] Student uploads Photo Proof
+[3] Student enters Reason
         ↓
-Submits for approval
-        ↓
-Status: "Pending Supervisor Approval"
+Submit for approval
         ↓
 Supervisor receives notification
         ↓
-┌─────────────────────────────┐
-│    Supervisor Reviews       │
-│  ┌──────────┬──────────┐   │
-│  │ Approve  │  Reject  │   │
-│  └──────────┴──────────┘   │
-└─────────────────────────────┘
-     ↓              ↓
-  Approved       Rejected
-     ↓              ↓
-Hours Added    Student must
-to Total       resubmit
+Supervisor Reviews:
+ ├─ [Approve] → Time is validated and hours calculated
+ └─ [Reject]  → Record remains incomplete; student must resubmit
 ```
 
 ---

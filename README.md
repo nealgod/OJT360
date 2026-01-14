@@ -19,7 +19,7 @@
 - [System Architecture](#system-architecture)
 - [Technology Stack](#technology-stack)
 - [Documentation](#documentation)
-- [Testing](#testing)
+
 - [Support](#support)
 
 ---
@@ -240,11 +240,6 @@ Set your timezone in `config/app.php`:
 'timezone' => 'Asia/Manila',
 ```
 
-### File Upload Limits
-Configure in `.env`:
-```env
-UPLOAD_MAX_SIZE=5120  # in KB (5MB)
-```
 
 ### Email Configuration
 For Gmail, create an app-specific password:
@@ -266,13 +261,12 @@ Default break time deduction is set per acceptance letter. Configure in supervis
 - Department & program management
 - Send coordinator invitations
 - Monitor system analytics
-- Generate system-wide reports
+
 
 **Key Actions:**
 - Create coordinator invitations
 - Manage departments and programs
 - View audit logs
-- Export system data
 - Configure system settings
 
 ---
@@ -283,11 +277,9 @@ Default break time deduction is set per acceptance letter. Configure in supervis
 
 **Responsibilities:**
 - Upload class lists for student activation
-- Review and approve student documents
-- Assign supervisors to students
+- Review student documents
 - Monitor student progress
 - Review weekly reports
-- Monitor attendance recovery requests
 - Notify students about MOA collection
 - Set program required hours
 - Generate program reports
@@ -296,7 +288,7 @@ Default break time deduction is set per acceptance letter. Configure in supervis
 ```
 1. Receive invitation from Admin → Complete registration
 2. Upload class list (Excel/CSV) → Students can now activate accounts
-3. Students submit documents → Review & approve/reject
+3. Students submit documents → Review
 4. Students get acceptance letters → Notify about MOA
 5. Activate student OJT status → Students log attendance
 6. Monitor daily: review reports and student progress
@@ -317,6 +309,7 @@ Default break time deduction is set per acceptance letter. Configure in supervis
 **Responsibilities:**
 - Issue acceptance letters to students
 - Monitor student daily attendance
+- Monitor attendance recovery requests
 - Review weekly reports
 - Submit monthly evaluations
 - Submit final evaluation at OJT completion
@@ -352,8 +345,6 @@ Default break time deduction is set per acceptance letter. Configure in supervis
    - Application Letter, Resume, PDS
    - Medical Certificate, Clearances
    - Parent's Consent
-   - Wait for coordinator approval
-
 3. Get Acceptance Letter
    - Find company placement
    - Supervisor issues acceptance letter
@@ -578,62 +569,6 @@ Explanation of the 'In Progress' vs 'Completed' attendance status logic.
 2. Check `DOCUMENTATION/SYSTEM_FLOW.md` to understand workflows
 3. Refer to `DOCUMENTATION/USER_MANUAL.md` for detailed user instructions
 
----
-
-## 🧪 Testing
-
-### Run PHPUnit Tests
-```bash
-php artisan test
-```
-
-### Quick Attendance Test (via Tinker)
-Manually create attendance records for testing:
-
-```bash
-php artisan tinker
-```
-
-```php
-$email = 'student@example.com';
-$date = now()->format('Y-m-d');
-$in   = '07:00:00';
-$out  = '17:30:00';
-
-$user = App\Models\User::where('email', $email)->firstOrFail();
-$log = App\Models\AttendanceLog::firstOrCreate(
-    ['student_user_id' => $user->id, 'work_date' => \Carbon\Carbon::parse($date)],
-    ['company_id' => optional($user->studentProfile)->assigned_company_id]
-);
-$log->time_in = $in;
-$log->time_out = $out;
-
-$acceptance = App\Models\AcceptanceLetter::where('student_user_id', $user->id)
-    ->latest()
-    ->first();
-$break = $acceptance && isset($acceptance->work_schedule['break_minutes']) 
-    ? (int)$acceptance->work_schedule['break_minutes'] 
-    : 0;
-
-$tz = 'Asia/Manila';
-$timeIn = \Carbon\Carbon::parse("{$date} {$in}", $tz);
-$timeOut = \Carbon\Carbon::parse("{$date} {$out}", $tz);
-$total = max(0, $timeIn->diffInMinutes($timeOut));
-$minutes = max(0, $total - $break);
-
-$log->minutes_worked = $minutes;
-$log->save();
-```
-
-### Browser Testing
-For manual testing:
-1. Use different browsers (Chrome, Firefox, Edge)
-2. Test responsive design on mobile devices
-3. Verify email notifications in test email account
-4. Test file uploads with various file types and sizes
-
----
-
 ## 🔒 Security Features
 
 - **Email Verification** - All users must verify email addresses
@@ -665,6 +600,11 @@ For manual testing:
 - [ ] Set up monitoring and logging
 
 ### Deploy to Production Server
+
+**Important:** Ensure your web server's **Document Root** points to the `/public` directory.
+
+Run these commands after following the standard installation steps (cloning, dependencies, env setup):
+
 ```bash
 # Optimize for production
 php artisan optimize
