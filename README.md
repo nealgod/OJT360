@@ -676,18 +676,14 @@ We welcome contributions! To contribute:
 
 ---
 
-## 📄 License
 
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-
----
 
 ## 👨‍💻 Author
 
 **Neal God**
 - GitHub: [@nealgod](https://github.com/nealgod)
 - Repository: [OJT360](https://github.com/nealgod/OJT360)
-- Email: your.email@evsu.edu.ph
+- Email: gasalneal09123@gmail.com
 
 ---
 
@@ -696,7 +692,6 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 - Laravel team for the amazing framework
 - Tailwind CSS for the utility-first CSS framework
 - Alpine.js for lightweight reactivity
-- EVSU (Eastern Visayas State University) for project inspiration
 
 ---
 
@@ -714,4 +709,4 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 - **Supervisors**: Contact the coordinator who invited you
 ---
 
-**Made with ❤️ for the OJT community**
+
