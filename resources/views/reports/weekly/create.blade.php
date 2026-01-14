@@ -117,12 +117,12 @@
                                             <input type="hidden" name="entries[{{ $index }}][hours]" value="{{ $entry['hours'] }}">
                                         </div>
                                         <div class="col-span-6">
-                                            <textarea name="entries[{{ $index }}][activity]" rows="2" maxlength="50"
+                                            <textarea name="entries[{{ $index }}][activity]" rows="2" maxlength="60"
                                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-ojt-primary focus:ring-ojt-primary {{ !$entry['has_attendance'] ? 'bg-gray-100' : '' }}"
-                                                placeholder="{{ $entry['has_attendance'] ? 'Describe your tasks for this day (Max 50 chars)...' : 'No attendance record for this day' }}"
+                                                placeholder="{{ $entry['has_attendance'] ? 'Describe your tasks for this day (Max 60 chars)...' : 'No attendance record for this day' }}"
                                                 {{ !$entry['has_attendance'] ? 'readonly' : '' }}>{{ old("entries.$index.activity", $entry['activity']) }}</textarea>
                                             @if($entry['has_attendance'])
-                                                <p class="text-xs text-gray-500 mt-1 text-right">Max 50 characters</p>
+                                                <p class="text-xs text-gray-500 mt-1 text-right">Max 60 characters</p>
                                             @endif
                                         </div>
                                         <div class="col-span-3 text-right pr-4">

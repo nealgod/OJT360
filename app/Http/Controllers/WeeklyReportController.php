@@ -176,7 +176,7 @@ class WeeklyReportController extends Controller
             'problems_encountered' => ['nullable', 'string', 'max:450'],
             'entries' => ['required', 'array', 'min:1'],
             'entries.*.date' => ['required', 'date'],
-            'entries.*.activity' => ['nullable', 'string', 'max:50'],
+            'entries.*.activity' => ['nullable', 'string', 'max:60'],
             'entries.*.hours' => ['nullable', 'numeric', 'min:0', 'max:24'],
         ]);
 
