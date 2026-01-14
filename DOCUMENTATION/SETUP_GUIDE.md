@@ -4,10 +4,12 @@ This guide provides instructions for both local testing and production deploymen
 
 ---
 
-##  Turnover Package Structure
-The system is provided in two ZIP configurations:
-1. **Source Only**: For developers. Requires `composer install` and `npm install`.
-2. **Full Deployment**: Prepared for hosting. Contains all dependencies in `vendor` and `node_modules`.
+## Installation Source
+The application is deployed directly from the official repository:
+- **Repository**: [https://github.com/nealgod/OJT360](https://github.com/nealgod/OJT360)
+- **Branch**: `main` (or the specific release tag)
+
+*Note: This guide assumes you are pulling the latest code directly from GitHub.*
 
 ---
 
@@ -34,10 +36,10 @@ The system is provided in two ZIP configurations:
 
 ##  Local Setup (Development)
 
-### 1. Extract & Navigate
+### 1. Clone & Navigate
 ```bash
-# Extract to your development directory (e.g., C:\xampp\htdocs\ojt360)
-cd ojt360
+git clone https://github.com/nealgod/OJT360.git
+cd OJT360
 ```
 
 ### 2. Install Dependencies
@@ -68,19 +70,23 @@ php artisan serve
 
 ##  Production Deployment (Hosting)
 
-### 1. Upload & Extract
-- Upload the **`OJT360_Full_Deployment.zip`** to your server's root or `public_html`.
-- Extract all contents.
-- **Zero-Manual-Setup**: No need to move files between folders. The system is configured as a standard Laravel application. Simply point your domain's **Document Root** to the `/public` directory.
+### 1. Get the Code
+- **Clone from GitHub**:
+  ```bash
+  git clone https://github.com/nealgod/OJT360.git
+  ```
+- **Document Root**: **IMPORTANT:** Point your domain's Document Root to the `/public` directory (e.g., `/home/user/public_html/OJT360/public`).
 
 ### 2. Database Creation
 - Create a MySQL Database via your Control Panel (cPanel/Namecheap).
 - Create a Database User and assign it to the database with all privileges.
 
-### 3. Import Schema (Optional)
-- **Note**: If you have SSH access, you can simply run `php artisan migrate --seed` for a clean install.
-- Otherwise, go to phpMyAdmin and import `ojt360.sql`.
-- **Note**: The schema contains exactly **29 tables**.
+### 3. Database Migration
+- Run the standard migration command to build the schema:
+  ```bash
+  php artisan migrate --seed
+  ```
+- *Note: This will automatically create all 29 tables and active the system.*
 
 ### 4. Environment Configuration
 Edit the `.env` file with your production details:

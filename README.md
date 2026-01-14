@@ -558,6 +558,9 @@ Technical guide for managing Master Admin credentials and database seeders.
 ### ⏰ [ATTENDANCE_STATUS_EXPLANATION.md](DOCUMENTATION/ATTENDANCE_STATUS_EXPLANATION.md)
 Explanation of the 'In Progress' vs 'Completed' attendance status logic.
 
+### 🛠️ [SETUP_GUIDE.md](DOCUMENTATION/SETUP_GUIDE.md)
+Detailed hosting, turnover, and production deployment instructions.
+
 ### 📋 README.md (This File)
 - Installation and setup
 - System overview
