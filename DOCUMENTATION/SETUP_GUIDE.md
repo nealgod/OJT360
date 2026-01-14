@@ -124,6 +124,10 @@ chmod -R 775 storage bootstrap/cache
 # Link the storage directory
 php artisan storage:link
 
+# Build Frontend Assets (Critical for CSS/JS)
+npm install
+npm run build
+
 # Optimization & Caching
 php artisan config:cache
 php artisan route:cache
@@ -161,7 +165,7 @@ RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 | 500 Internals | Permission or .env | Ensure `storage` and `bootstrap/cache` are 775. Check DB credentials. |
 | Migration Error | Production DB State | Safety wrappers handle most cases. Run `migrate` again. |
 | Missing Photos | Storage Link | Re-run `php artisan storage:link`. |
-| CSS/JS Not Loading | Build Missing | Ensure `public/build` exists or run `npm run build`. |
+| CSS/JS Not Loading | Build Missing | Run `npm install && npm run build` on the server. |
 
 ---
 
