@@ -70,10 +70,16 @@ php artisan serve
 
 ##  Production Deployment (Hosting)
 
-### 1. Get the Code
+### 1. Get the Code & Dependencies
 - **Clone from GitHub**:
   ```bash
   git clone https://github.com/nealgod/OJT360.git
+  cd OJT360
+  ```
+- **Install PHP Dependencies (CRITICAL)**:
+  You *must* run this command immediately to install the backend libraries.
+  ```bash
+  composer install --optimize-autoloader --no-dev
   ```
 - **Document Root**: **IMPORTANT:** Point your domain's Document Root to the `/public` directory (e.g., `/home/user/public_html/OJT360/public`).
 
@@ -81,15 +87,14 @@ php artisan serve
 - Create a MySQL Database via your Control Panel (cPanel/Namecheap).
 - Create a Database User and assign it to the database with all privileges.
 
-### 3. Database Migration
-- Run the standard migration command to build the schema:
-  ```bash
-  php artisan migrate --seed
-  ```
-- *Note: This will automatically create all 29 tables and active the system.*
-
-### 4. Environment Configuration
-Edit the `.env` file with your production details:
+### 3. Environment Configuration
+FIRST, you must configure the application so it knows which database to connect to.
+1. Copy the example environment file:
+   ```bash
+   cp .env.example .env
+   php artisan key:generate
+   ```
+3. Edit the `.env` file with your production details:
 
 ```ini
 APP_NAME=OJT360
@@ -112,12 +117,16 @@ MAIL_FROM_ADDRESS="noreply@your-domain.com"
 MAIL_FROM_NAME="${APP_NAME}"
 ```
 
+### 4. Database Migration
+Once the `.env` is set up, run the migration to build the schema:
+```bash
+php artisan migrate --seed
+```
+- *Note: This will automatically create all 29 tables and activate the system.*
+
 ### 5. Post-Installation Optimization
 Run these commands via SSH to ensure the system is locked down and optimized:
 ```bash
-# Generate the application key (if not already set)
-php artisan key:generate
-
 # Set Directory Permissions (Important for Shared Hosting)
 chmod -R 775 storage bootstrap/cache
 
@@ -166,6 +175,7 @@ RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 | Migration Error | Production DB State | Safety wrappers handle most cases. Run `migrate` again. |
 | Missing Photos | Storage Link | Re-run `php artisan storage:link`. |
 | CSS/JS Not Loading | Build Missing | Run `npm install && npm run build` on the server. |
+| Installation Fails | PHP Version Mismatch | Run `composer update` (only if `composer install` fails). |
 
 ---
 

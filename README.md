@@ -586,40 +586,49 @@ Detailed hosting, turnover, and production deployment instructions.
 
 ---
 
-## 🚀 Deployment
+## 🚀 Deployment (Production)
 
-### Production Checklist
-- [ ] Set `APP_ENV=production` in `.env`
-- [ ] Set `APP_DEBUG=false` in `.env`
-- [ ] Configure production database
-- [ ] Set up proper mail server (SMTP)
-- [ ] Run `php artisan config:cache`
-- [ ] Run `php artisan route:cache`
-- [ ] Run `php artisan view:cache`
-- [ ] Run `npm run build` for production assets
-- [ ] Configure SSL certificate
-- [ ] Set proper file permissions (755 for directories, 644 for files)
-- [ ] Configure backup strategy
-- [ ] Set up monitoring and logging
+**For detailed, step-by-step production instructions, PLEASE READ: [SETUP_GUIDE.md](DOCUMENTATION/SETUP_GUIDE.md)**
 
-### Deploy to Production Server
+### Quick Production Summary
+Follow this exact order to avoid errors:
+
+1.  **Get Code**:
+    ```bash
+    git clone https://github.com/nealgod/OJT360.git
+    cd OJT360
+    ```
+2.  **Install PHP Dependencies** (CRITICAL):
+    ```bash
+    composer install --optimize-autoloader --no-dev
+    ```
+3.  **Environment Setup**:
+    ```bash
+    cp .env.example .env
+    php artisan key:generate
+    ```
+4.  **Configure Database**:
+    - Edit `.env` and set `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`.
+    - Set `APP_ENV=production` and `APP_DEBUG=false`.
+5.  **Migrate Database**:
+    - *Only run this AFTER editing the .env file!*
+    ```bash
+    php artisan migrate --seed
+    ```
+6.  **Build Assets**:
+    ```bash
+    npm install
+    npm run build
+    ```
+7.  **Final Optimization**:
+    ```bash
+    php artisan storage:link
+    php artisan config:cache
+    php artisan route:cache
+    php artisan view:cache
+    ```
 
 **Important:** Ensure your web server's **Document Root** points to the `/public` directory.
-
-Run these commands after following the standard installation steps (cloning, dependencies, env setup):
-
-```bash
-# Optimize for production
-php artisan optimize
-
-# Build assets
-npm run build
-
-# Clear and cache everything
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-```
 
 ---
 
