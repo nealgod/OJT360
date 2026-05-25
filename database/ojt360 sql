@@ -1,0 +1,1338 @@
+-- phpMyAdmin SQL Dump
+-- version 5.2.1
+-- https://www.phpmyadmin.net/
+--
+-- Host: 127.0.0.1
+-- Generation Time: May 25, 2026 at 12:14 PM
+-- Server version: 10.4.32-MariaDB
+-- PHP Version: 8.0.30
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
+SET time_zone = "+00:00";
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+
+--
+-- Database: `ojt360`
+--
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `acceptance_letters`
+--
+
+CREATE TABLE `acceptance_letters` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `acceptance_request_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `student_user_id` bigint(20) UNSIGNED NOT NULL,
+  `supervisor_user_id` bigint(20) UNSIGNED NOT NULL,
+  `company_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `job_title` varchar(191) NOT NULL,
+  `department` varchar(191) DEFAULT NULL,
+  `immediate_supervisor` varchar(191) NOT NULL,
+  `start_date` date NOT NULL,
+  `end_date` date DEFAULT NULL,
+  `total_hours` int(11) NOT NULL,
+  `work_schedule` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`work_schedule`)),
+  `signature_type` enum('typed','uploaded','drawn') NOT NULL,
+  `signature_data` text DEFAULT NULL,
+  `additional_notes` text DEFAULT NULL,
+  `letter_path` varchar(191) NOT NULL,
+  `document_id` varchar(191) NOT NULL,
+  `generated_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `application_letters`
+--
+
+CREATE TABLE `application_letters` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `user_id` bigint(20) UNSIGNED NOT NULL,
+  `content` text NOT NULL,
+  `submitted_to_documents` tinyint(1) NOT NULL DEFAULT 0,
+  `submitted_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `attendance_logs`
+--
+
+CREATE TABLE `attendance_logs` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `student_user_id` bigint(20) UNSIGNED NOT NULL,
+  `company_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `work_date` date NOT NULL,
+  `am_in_time` time DEFAULT NULL,
+  `am_out_time` time DEFAULT NULL,
+  `pm_in_time` time DEFAULT NULL,
+  `pm_out_time` time DEFAULT NULL,
+  `minutes_worked` smallint(5) UNSIGNED NOT NULL DEFAULT 0,
+  `overtime_minutes` smallint(5) UNSIGNED NOT NULL DEFAULT 0,
+  `status` enum('pending','approved','flagged') NOT NULL DEFAULT 'pending',
+  `am_in_lat` decimal(11,8) DEFAULT NULL,
+  `am_in_lng` decimal(11,8) DEFAULT NULL,
+  `am_out_lat` decimal(11,8) DEFAULT NULL,
+  `am_out_lng` decimal(11,8) DEFAULT NULL,
+  `pm_in_lat` decimal(11,8) DEFAULT NULL,
+  `pm_in_lng` decimal(11,8) DEFAULT NULL,
+  `pm_out_lat` decimal(11,8) DEFAULT NULL,
+  `pm_out_lng` decimal(11,8) DEFAULT NULL,
+  `am_in_photo` varchar(191) DEFAULT NULL,
+  `am_out_photo` varchar(191) DEFAULT NULL,
+  `pm_in_photo` varchar(191) DEFAULT NULL,
+  `pm_out_photo` varchar(191) DEFAULT NULL,
+  `is_recovered` tinyint(1) NOT NULL DEFAULT 0,
+  `recovery_reason` text DEFAULT NULL,
+  `recovery_approved` tinyint(1) DEFAULT NULL,
+  `recovery_approved_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `recovery_approved_by` bigint(20) UNSIGNED DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `audit_logs`
+--
+
+CREATE TABLE `audit_logs` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `user_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `action` varchar(191) NOT NULL,
+  `model_type` varchar(191) DEFAULT NULL,
+  `model_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `description` text NOT NULL,
+  `old_values` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`old_values`)),
+  `new_values` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`new_values`)),
+  `ip_address` varchar(45) DEFAULT NULL,
+  `user_agent` varchar(191) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `companies`
+--
+
+CREATE TABLE `companies` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `name` varchar(191) NOT NULL,
+  `department` varchar(191) DEFAULT NULL,
+  `address` text NOT NULL,
+  `contact_person` varchar(191) DEFAULT NULL,
+  `contact_email` varchar(191) DEFAULT NULL,
+  `contact_phone` varchar(191) DEFAULT NULL,
+  `status` enum('active','inactive') NOT NULL DEFAULT 'active',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `coordinator_id` bigint(20) UNSIGNED DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `companies`
+--
+
+INSERT INTO `companies` (`id`, `name`, `department`, `address`, `contact_person`, `contact_email`, `contact_phone`, `status`, `created_at`, `updated_at`, `coordinator_id`) VALUES
+(1, 'Mac Builders', 'Department of Computer Studies', 'Purok 8, Brgy Linao, Ormoc City, Leyte 6541 Philippines', NULL, NULL, NULL, 'active', '2026-05-25 10:14:37', '2026-05-25 10:14:37', NULL),
+(2, 'Planet PC', 'Department of Computer Studies', 'Real St, Ormoc City, Leyte 6541 Philippines', NULL, NULL, NULL, 'active', '2026-05-25 10:14:37', '2026-05-25 10:14:37', NULL),
+(3, 'E-Garage', 'Department of Computer Studies', '12J Navarro Str., Ormoc City, Philippines', NULL, NULL, NULL, 'active', '2026-05-25 10:14:37', '2026-05-25 10:14:37', NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `coordinator_invitations`
+--
+
+CREATE TABLE `coordinator_invitations` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `email` varchar(191) NOT NULL,
+  `token` varchar(191) NOT NULL,
+  `department_id` bigint(20) UNSIGNED NOT NULL,
+  `program_id` bigint(20) UNSIGNED NOT NULL,
+  `expires_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `coordinator_profiles`
+--
+
+CREATE TABLE `coordinator_profiles` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `user_id` bigint(20) UNSIGNED NOT NULL,
+  `employee_id` varchar(191) DEFAULT NULL,
+  `department_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `program_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `department` varchar(191) DEFAULT NULL,
+  `phone` varchar(191) DEFAULT NULL,
+  `profile_image` varchar(191) DEFAULT NULL,
+  `managed_departments` text DEFAULT NULL,
+  `status` enum('active','inactive') NOT NULL DEFAULT 'active',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `departments`
+--
+
+CREATE TABLE `departments` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `name` varchar(191) NOT NULL,
+  `slug` varchar(191) NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `departments`
+--
+
+INSERT INTO `departments` (`id`, `name`, `slug`, `created_at`, `updated_at`) VALUES
+(1, 'Department of Computer Studies', 'department-of-computer-studies', '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(2, 'Department of Teacher Education', 'department-of-teacher-education', '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(3, 'Department of Business Management', 'department-of-business-management', '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(4, 'Department of Engineering', 'department-of-engineering', '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(5, 'Department of Industrial Technology', 'department-of-industrial-technology', '2026-05-25 10:14:37', '2026-05-25 10:14:37');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `document_requirements`
+--
+
+CREATE TABLE `document_requirements` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `name` varchar(191) NOT NULL,
+  `description` text DEFAULT NULL,
+  `type` enum('pre_placement','post_placement','ongoing') NOT NULL,
+  `is_required` tinyint(1) NOT NULL DEFAULT 1,
+  `file_types` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`file_types`)),
+  `max_file_size_mb` int(11) NOT NULL DEFAULT 10,
+  `max_files_per_submission` int(11) DEFAULT 1,
+  `instructions` text DEFAULT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `display_order` int(11) NOT NULL DEFAULT 999,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `document_requirements`
+--
+
+INSERT INTO `document_requirements` (`id`, `name`, `description`, `type`, `is_required`, `file_types`, `max_file_size_mb`, `max_files_per_submission`, `instructions`, `is_active`, `display_order`, `created_at`, `updated_at`) VALUES
+(1, 'Copy of Certificate of Registration', 'Current semester certificate of registration', 'pre_placement', 1, '[\"pdf\",\"jpg\",\"jpeg\",\"png\"]', 5, 1, 'Submit a clear copy of your current semester certificate of registration.', 1, 999, '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(2, 'Copy of Report of Grades', 'Report of grades with notation \"qualified to enroll in OJT/Practicum/Internship course\"', 'pre_placement', 1, '[\"pdf\",\"jpg\",\"jpeg\",\"png\"]', 5, 1, 'Submit your report of grades with the required notation from your academic advisor.', 1, 999, '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(3, 'Application Letter', 'Submit your application letter addressed to the company/organization where you will do your OJT.', 'pre_placement', 1, '[\"pdf\",\"doc\",\"docx\"]', 5, 1, 'Your application letter should be professionally written and addressed to the company where you will conduct your OJT.', 1, 1, '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(4, 'Personal Data Sheet (PDS) / Resume', 'Submit your Personal Data Sheet (PDS) or Resume with complete personal and educational information.', 'pre_placement', 1, '[\"pdf\",\"doc\",\"docx\"]', 5, 1, 'Your PDS/Resume should include your complete personal information, educational background, skills, and any relevant experience.', 1, 2, '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(5, 'Medical Certificate', 'Medical clearance from a licensed physician', 'pre_placement', 1, '[\"pdf\",\"jpg\",\"jpeg\",\"png\"]', 5, 1, 'Medical certificate must be dated within 6 months and issued by a licensed physician.', 1, 999, '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(6, 'Notarized Parent\'s Consent Form', 'Notarized consent form from parent or guardian', 'pre_placement', 1, '[\"pdf\",\"jpg\",\"jpeg\",\"png\"]', 5, 1, 'Submit a notarized consent form from your parent or guardian. The form must be properly notarized.', 1, 999, '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(7, 'Insurance Certificate', 'Proof of insurance coverage (SSS, PhilHealth, or private insurance)', 'pre_placement', 1, '[\"pdf\",\"jpg\",\"jpeg\",\"png\"]', 3, 1, 'Submit a copy of your insurance certificate or card.', 1, 999, '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(8, 'Certificates of Participation/Attendance', 'Certificates from required pre-deployment activities (Anti-Sexual Harassment, Food and Sanitation, etc.)', 'pre_placement', 1, '[\"pdf\",\"jpg\",\"jpeg\",\"png\"]', 5, 1, 'Submit certificates from all required seminars and training sessions.', 1, 999, '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(9, 'Letter of Acceptance', 'Letter of acceptance from training company', 'pre_placement', 1, '[\"pdf\",\"jpg\",\"jpeg\",\"png\"]', 3, 1, 'Submit your letter of acceptance from the training company.', 1, 999, '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(10, 'Recommendation', 'Recommendation letter from faculty or previous employer', 'pre_placement', 1, '[\"pdf\",\"jpg\",\"jpeg\",\"png\"]', 3, 1, 'Submit a recommendation letter from a faculty member or previous employer.', 1, 999, '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(11, 'Company Profile', 'Profile of the training company', 'post_placement', 1, '[\"pdf\",\"doc\",\"docx\"]', 5, 1, 'Submit a company profile or brochure of your training company.', 1, 999, '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(12, 'Weekly Accomplishment Report', 'Weekly reports of accomplishments during OJT (one per week, up to 4 per month)', 'post_placement', 1, '[\"pdf\",\"doc\",\"docx\"]', 5, 50, 'Submit your weekly accomplishment reports. You can submit up to 4 reports (one per week for a month).', 1, 999, '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(13, 'OJT Learning Experience Journal', 'Personal journal documenting learning experiences', 'post_placement', 1, '[\"pdf\",\"doc\",\"docx\"]', 5, 1, 'Submit your learning experience journal documenting your OJT journey.', 1, 999, '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(14, 'Personal Data Sheet or Resume', 'Updated PDS or resume after OJT', 'post_placement', 1, '[\"pdf\",\"doc\",\"docx\"]', 3, 1, 'Submit your updated resume or PDS reflecting your OJT experience.', 1, 999, '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(15, 'Application Letter', 'Application letter for OJT (post-placement copy)', 'post_placement', 1, '[\"pdf\",\"doc\",\"docx\"]', 3, 1, 'Submit a copy of your application letter for OJT.', 1, 999, '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(16, 'Letter of Acceptance (Post-placement)', 'Letter of acceptance from training company (final copy)', 'post_placement', 0, '[\"pdf\",\"jpg\",\"jpeg\",\"png\"]', 3, 1, 'Submit the final letter of acceptance from your training company.', 1, 999, '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(17, 'Recommendation Letter', 'Recommendation letter from supervisor or company', 'post_placement', 1, '[\"pdf\",\"jpg\",\"jpeg\",\"png\"]', 3, 1, 'Submit a recommendation letter from your supervisor or training company.', 1, 999, '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(18, 'Certificate of Completion (Photocopy)', 'Photocopy of certificate of completion from company', 'post_placement', 1, '[\"pdf\",\"jpg\",\"jpeg\",\"png\"]', 5, 1, 'Submit a clear photocopy of your certificate of completion.', 1, 999, '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(19, 'Supervisor\'s Evaluation Form', 'Sealed evaluation form from supervisor in signed envelope', 'post_placement', 1, '[\"pdf\",\"jpg\",\"jpeg\",\"png\"]', 5, 1, 'Submit the supervisor\'s evaluation form sealed in a long mailing envelope with signature across the tab.', 1, 999, '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(20, 'Authenticated Copy of DTR', 'Authenticated Daily Time Record', 'post_placement', 1, '[\"pdf\",\"jpg\",\"jpeg\",\"png\"]', 5, 10, 'Submit an authenticated copy of your Daily Time Record.', 1, 999, '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(21, 'Photo Documentation', 'Photos documenting OJT activities and workplace', 'post_placement', 1, '[\"pdf\",\"jpg\",\"jpeg\",\"png\",\"zip\"]', 10, 50, 'Submit photos documenting your OJT activities, workplace, and key moments. You can upload multiple photos.', 1, 999, '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(22, 'Other Documents Not Specified', 'Any other documents required by the school', 'post_placement', 0, '[\"pdf\",\"doc\",\"docx\",\"jpg\",\"jpeg\",\"png\"]', 10, 5, 'Submit any other documents that may be required by your school.', 1, 999, '2026-05-25 10:14:37', '2026-05-25 10:14:37');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `enrollment_whitelists`
+--
+
+CREATE TABLE `enrollment_whitelists` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `student_id` varchar(191) NOT NULL,
+  `name` varchar(191) NOT NULL,
+  `contact_number` varchar(191) DEFAULT NULL,
+  `program_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `email` varchar(191) NOT NULL,
+  `department_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `status` enum('pending','activated','archived') NOT NULL DEFAULT 'pending',
+  `notes` varchar(191) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `failed_jobs`
+--
+
+CREATE TABLE `failed_jobs` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `uuid` varchar(191) NOT NULL,
+  `connection` text NOT NULL,
+  `queue` text NOT NULL,
+  `payload` longtext NOT NULL,
+  `exception` longtext NOT NULL,
+  `failed_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `final_evaluations`
+--
+
+CREATE TABLE `final_evaluations` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `student_user_id` bigint(20) UNSIGNED NOT NULL,
+  `supervisor_user_id` bigint(20) UNSIGNED NOT NULL,
+  `coordinator_user_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `control_number` varchar(191) NOT NULL,
+  `revision_number` int(11) NOT NULL DEFAULT 1,
+  `student_name` varchar(191) NOT NULL,
+  `student_id` varchar(191) NOT NULL,
+  `course` varchar(191) DEFAULT NULL,
+  `department` varchar(191) DEFAULT NULL,
+  `hte_name` varchar(191) NOT NULL,
+  `hte_address` text DEFAULT NULL,
+  `internship_start_date` date DEFAULT NULL,
+  `internship_end_date` date DEFAULT NULL,
+  `total_hours_rendered` decimal(8,2) DEFAULT NULL,
+  `rating_quality_thoroughness` decimal(5,2) DEFAULT NULL,
+  `rating_dependability` decimal(5,2) DEFAULT NULL,
+  `rating_quality_completion` decimal(5,2) DEFAULT NULL,
+  `rating_attendance` decimal(5,2) DEFAULT NULL,
+  `rating_cooperation` decimal(5,2) DEFAULT NULL,
+  `rating_judgement` decimal(5,2) DEFAULT NULL,
+  `rating_personality` decimal(5,2) DEFAULT NULL,
+  `total_rating` decimal(5,2) DEFAULT NULL,
+  `comments_recommendations` text DEFAULT NULL,
+  `supervisor_name` varchar(191) NOT NULL,
+  `supervisor_signature_date` date DEFAULT NULL,
+  `student_confirmed` tinyint(1) NOT NULL DEFAULT 0,
+  `student_signature_date` date DEFAULT NULL,
+  `status` enum('draft','submitted','reviewed') NOT NULL DEFAULT 'draft',
+  `submitted_at` timestamp NULL DEFAULT NULL,
+  `reviewed_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `jobs`
+--
+
+CREATE TABLE `jobs` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `queue` varchar(191) NOT NULL,
+  `payload` longtext NOT NULL,
+  `attempts` tinyint(3) UNSIGNED NOT NULL,
+  `reserved_at` int(10) UNSIGNED DEFAULT NULL,
+  `available_at` int(10) UNSIGNED NOT NULL,
+  `created_at` int(10) UNSIGNED NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `messages`
+--
+
+CREATE TABLE `messages` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `sender_id` bigint(20) UNSIGNED NOT NULL,
+  `recipient_id` bigint(20) UNSIGNED NOT NULL,
+  `subject` varchar(191) NOT NULL,
+  `message` text NOT NULL,
+  `is_read` tinyint(1) NOT NULL DEFAULT 0,
+  `read_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `migrations`
+--
+
+CREATE TABLE `migrations` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `migration` varchar(191) NOT NULL,
+  `batch` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `migrations`
+--
+
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
+(1, '2014_10_12_000000_create_users_table', 1),
+(2, '2014_10_12_100000_create_password_resets_table', 1),
+(3, '2019_08_19_000000_create_failed_jobs_table', 1),
+(4, '2019_12_14_000001_create_personal_access_tokens_table', 1),
+(5, '2025_01_16_000001_create_document_requirements_table', 1),
+(6, '2025_01_16_000002_create_student_document_submissions_table', 1),
+(7, '2025_09_06_073907_create_companies_table', 1),
+(8, '2025_09_06_073914_create_student_profiles_table', 1),
+(9, '2025_09_06_073921_create_coordinator_profiles_table', 1),
+(10, '2025_09_06_073929_create_supervisor_profiles_table', 1),
+(11, '2025_09_06_084147_add_department_to_companies_table', 1),
+(12, '2025_09_06_093150_create_notifications_table', 1),
+(13, '2025_09_06_093700_add_required_hours_to_student_profiles_table', 1),
+(14, '2025_09_08_000001_add_must_change_password_to_users_table', 1),
+(15, '2025_09_08_100000_create_departments_table', 1),
+(16, '2025_09_08_100100_create_programs_table', 1),
+(17, '2025_09_08_100200_alter_coordinator_profiles_add_fk', 1),
+(18, '2025_09_08_110000_alter_coordinator_profiles_department_nullable', 1),
+(19, '2025_09_08_120000_create_placement_requests_table', 1),
+(20, '2025_09_08_121000_add_external_company_to_placement_requests', 1),
+(21, '2025_09_08_122000_make_company_nullable_on_placement_requests', 1),
+(22, '2025_09_08_130000_add_thread_and_supervisor_ids', 1),
+(23, '2025_09_08_130100_create_attendance_logs_table', 1),
+(24, '2025_09_08_131000_add_geo_to_attendance_logs', 1),
+(25, '2025_09_26_000500_add_required_hours_to_programs_table', 1),
+(26, '2025_10_11_085648_add_supervisor_fields_to_placement_requests_table', 1),
+(27, '2025_10_12_124753_add_dismissed_at_to_placement_requests_table', 1),
+(28, '2025_10_12_125656_fix_company_id_nullable_in_placement_requests', 1),
+(29, '2025_10_12_145259_ensure_company_id_nullable_in_placement_requests', 1),
+(30, '2025_10_12_145533_make_company_id_nullable_in_supervisor_profiles', 1),
+(31, '2025_10_12_154420_make_contact_email_nullable_in_companies_table', 1),
+(32, '2025_10_12_184548_add_voided_status_to_placement_requests_table', 1),
+(33, '2025_10_13_032346_create_messages_table', 1),
+(34, '2025_10_13_130000_add_schedule_to_placement_requests', 1),
+(35, '2025_10_13_131000_add_position_to_placement_requests', 1),
+(36, '2025_10_13_140000_make_role_required_on_users', 1),
+(37, '2025_10_16_000001_create_supervisor_assignment_requests', 1),
+(38, '2025_10_21_082811_recreate_student_document_submissions_table', 1),
+(39, '2025_10_27_072726_add_max_files_to_document_requirements_table', 1),
+(40, '2025_10_28_000001_create_enrollment_whitelists_table', 1),
+(41, '2025_10_29_000000_create_student_verifications_table', 1),
+(42, '2025_10_30_000000_create_coordinator_invitations_table', 1),
+(43, '2025_11_13_000001_add_address_to_student_profiles_table', 1),
+(44, '2025_11_13_134005_create_resumes_table', 1),
+(45, '2025_11_13_144427_add_profile_image_to_resumes_table', 1),
+(46, '2025_11_14_234548_create_student_application_materials_table', 1),
+(47, '2025_11_14_234622_create_acceptance_requests_table', 1),
+(48, '2025_11_14_234701_create_acceptance_letters_table', 1),
+(49, '2025_11_17_154135_add_display_order_to_document_requirements_table', 1),
+(50, '2025_11_17_160343_create_supervisor_registrations_table', 1),
+(51, '2025_11_17_180432_remove_acceptance_request_foreign_key_from_acceptance_letters', 1),
+(52, '2025_11_17_180500_drop_acceptance_requests_table', 1),
+(53, '2025_11_17_210000_add_preplacement_status_to_student_profiles_table', 1),
+(54, '2025_11_18_204400_create_application_letters_table', 1),
+(55, '2025_11_18_211636_add_submitted_fields_to_resumes_and_application_letters', 1),
+(56, '2025_11_18_add_break_minutes_to_existing_acceptance_letters', 1),
+(57, '2025_11_19_220840_drop_student_application_materials_table', 1),
+(58, '2025_11_19_220901_drop_supervisor_assignment_requests_table', 1),
+(59, '2025_11_20_000000_create_weekly_reports_table', 1),
+(60, '2025_11_20_150000_add_program_id_to_student_profiles_table', 1),
+(61, '2025_11_20_211510_remove_unused_fields_from_weekly_reports_table', 1),
+(62, '2025_11_20_221613_drop_daily_reports_table', 1),
+(63, '2025_11_21_085655_add_coordinator_to_weekly_reports_table', 1),
+(64, '2025_11_21_090000_add_course_details_to_student_profiles_table', 1),
+(65, '2025_11_21_202219_create_monthly_evaluations_table', 1),
+(66, '2025_11_24_143929_create_final_evaluations_table', 1),
+(67, '2025_11_24_204106_add_recovery_fields_to_attendance_logs_table', 1),
+(68, '2025_11_24_210147_add_recovery_approval_to_attendance_logs_table', 1),
+(69, '2025_11_24_223908_create_audit_logs_table', 1),
+(70, '2025_11_26_000001_update_pre_placement_max_files', 1),
+(71, '2025_11_26_020000_update_post_placement_documents', 1),
+(72, '2025_11_27_025550_make_contact_fields_nullable_in_companies_table', 1),
+(73, '2025_12_03_100423_create_sessions_table', 1),
+(74, '2025_12_03_100613_create_jobs_table', 1),
+(75, '2025_12_11_add_overtime_to_attendance_logs', 1),
+(76, '2025_12_18_000000_update_attendance_logs_for_quad_system', 1),
+(77, '2025_12_18_193319_migrate_legacy_attendance_data', 1),
+(78, '2026_01_12_194731_drop_placement_requests_table_final', 1);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `monthly_evaluations`
+--
+
+CREATE TABLE `monthly_evaluations` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `student_user_id` bigint(20) UNSIGNED NOT NULL,
+  `supervisor_user_id` bigint(20) UNSIGNED NOT NULL,
+  `coordinator_user_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `evaluation_month` int(11) NOT NULL,
+  `evaluation_year` int(11) NOT NULL,
+  `month_number` int(11) NOT NULL,
+  `student_name` varchar(191) NOT NULL,
+  `hte_name` varchar(191) NOT NULL,
+  `hte_address` text DEFAULT NULL,
+  `work_assignment` text DEFAULT NULL,
+  `work_schedule` varchar(191) DEFAULT NULL,
+  `supervisor_name` varchar(191) NOT NULL,
+  `rating_row_1` tinyint(4) DEFAULT NULL,
+  `rating_row_2` tinyint(4) DEFAULT NULL,
+  `rating_row_3` tinyint(4) DEFAULT NULL,
+  `rating_row_4` tinyint(4) DEFAULT NULL,
+  `rating_row_5` tinyint(4) DEFAULT NULL,
+  `rating_row_6` tinyint(4) DEFAULT NULL,
+  `rating_row_7` tinyint(4) DEFAULT NULL,
+  `rating_row_8` tinyint(4) DEFAULT NULL,
+  `rating_row_9` tinyint(4) DEFAULT NULL,
+  `rating_row_10` tinyint(4) DEFAULT NULL,
+  `rating_row_11` tinyint(4) DEFAULT NULL,
+  `rating_row_12` tinyint(4) DEFAULT NULL,
+  `rating_row_13` tinyint(4) DEFAULT NULL,
+  `rating_row_14` tinyint(4) DEFAULT NULL,
+  `rating_row_15` tinyint(4) DEFAULT NULL,
+  `rating_row_16` tinyint(4) DEFAULT NULL,
+  `rating_row_17` tinyint(4) DEFAULT NULL,
+  `rating_row_18` tinyint(4) DEFAULT NULL,
+  `rating_row_19` tinyint(4) DEFAULT NULL,
+  `rating_row_20` tinyint(4) DEFAULT NULL,
+  `comments_recommendations` text DEFAULT NULL,
+  `status` enum('draft','submitted','reviewed') NOT NULL DEFAULT 'draft',
+  `submitted_at` timestamp NULL DEFAULT NULL,
+  `reviewed_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `notifications`
+--
+
+CREATE TABLE `notifications` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `user_id` bigint(20) UNSIGNED NOT NULL,
+  `type` varchar(191) NOT NULL,
+  `title` varchar(191) NOT NULL,
+  `message` text NOT NULL,
+  `data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`data`)),
+  `read` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `password_resets`
+--
+
+CREATE TABLE `password_resets` (
+  `email` varchar(191) NOT NULL,
+  `token` varchar(191) NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `personal_access_tokens`
+--
+
+CREATE TABLE `personal_access_tokens` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `tokenable_type` varchar(191) NOT NULL,
+  `tokenable_id` bigint(20) UNSIGNED NOT NULL,
+  `name` varchar(191) NOT NULL,
+  `token` varchar(64) NOT NULL,
+  `abilities` text DEFAULT NULL,
+  `last_used_at` timestamp NULL DEFAULT NULL,
+  `expires_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `programs`
+--
+
+CREATE TABLE `programs` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `department_id` bigint(20) UNSIGNED NOT NULL,
+  `name` varchar(191) NOT NULL,
+  `slug` varchar(191) NOT NULL,
+  `required_hours` int(10) UNSIGNED DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `programs`
+--
+
+INSERT INTO `programs` (`id`, `department_id`, `name`, `slug`, `required_hours`, `created_at`, `updated_at`) VALUES
+(1, 1, 'Bachelor of Science in Information Technology (BSIT)', 'bachelor-of-science-in-information-technology-bsit', 486, '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(2, 2, 'Bachelor of Elementary Education (BEED)', 'bachelor-of-elementary-education-beed', 500, '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(3, 2, 'Bachelor of Secondary Education (BSEd) major in Mathematics', 'bachelor-of-secondary-education-bsed-major-in-mathematics', 500, '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(4, 2, 'Bachelor of Secondary Education (BSEd) major in Science', 'bachelor-of-secondary-education-bsed-major-in-science', 500, '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(5, 2, 'Bachelor of Physical Education (BPEd)', 'bachelor-of-physical-education-bped', 500, '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(6, 2, 'Bachelor of Technical-Vocational Teacher Education (BTVTEd)', 'bachelor-of-technical-vocational-teacher-education-btvted', 500, '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(7, 2, 'Diploma in Teaching Secondary (DTS)', 'diploma-in-teaching-secondary-dts', 500, '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(8, 3, 'Bachelor of Science in Hospitality Management (BSHM)', 'bachelor-of-science-in-hospitality-management-bshm', 480, '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(9, 4, 'Bachelor of Science in Civil Engineering (BSCE)', 'bachelor-of-science-in-civil-engineering-bsce', 520, '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(10, 4, 'Bachelor of Science in Electrical Engineering (BSEE)', 'bachelor-of-science-in-electrical-engineering-bsee', 520, '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(11, 4, 'Bachelor of Science in Mechanical Engineering (BSME)', 'bachelor-of-science-in-mechanical-engineering-bsme', 520, '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(12, 5, 'Bachelor of Industrial Technology (BIT) major in Culinary Arts (CA)', 'bachelor-of-industrial-technology-bit-major-in-culinary-arts-ca', 480, '2026-05-25 10:14:37', '2026-05-25 10:14:37'),
+(13, 5, 'Bachelor of Industrial Technology (BIT) major in Electronics (ET)', 'bachelor-of-industrial-technology-bit-major-in-electronics-et', 480, '2026-05-25 10:14:37', '2026-05-25 10:14:37');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `resumes`
+--
+
+CREATE TABLE `resumes` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `user_id` bigint(20) UNSIGNED NOT NULL,
+  `personal_info` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`personal_info`)),
+  `objective` text DEFAULT NULL,
+  `education` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`education`)),
+  `work_experience` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`work_experience`)),
+  `skills` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`skills`)),
+  `certifications` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`certifications`)),
+  `references` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`references`)),
+  `template_path` varchar(191) NOT NULL DEFAULT 'resume-templates/template.pdf',
+  `profile_image` varchar(191) DEFAULT NULL,
+  `submitted_to_documents` tinyint(1) NOT NULL DEFAULT 0,
+  `submitted_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `sessions`
+--
+
+CREATE TABLE `sessions` (
+  `id` varchar(191) NOT NULL,
+  `user_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `ip_address` varchar(45) DEFAULT NULL,
+  `user_agent` text DEFAULT NULL,
+  `payload` longtext NOT NULL,
+  `last_activity` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `student_document_submissions`
+--
+
+CREATE TABLE `student_document_submissions` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `student_user_id` bigint(20) UNSIGNED NOT NULL,
+  `document_requirement_id` bigint(20) UNSIGNED NOT NULL,
+  `file_path` varchar(191) NOT NULL,
+  `original_filename` varchar(191) NOT NULL,
+  `file_size` varchar(191) NOT NULL,
+  `mime_type` varchar(191) NOT NULL,
+  `status` enum('submitted','under_review','approved','rejected') NOT NULL DEFAULT 'submitted',
+  `feedback` text DEFAULT NULL,
+  `reviewed_by` bigint(20) UNSIGNED DEFAULT NULL,
+  `reviewed_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `student_profiles`
+--
+
+CREATE TABLE `student_profiles` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `user_id` bigint(20) UNSIGNED NOT NULL,
+  `student_id` varchar(191) NOT NULL,
+  `course` varchar(191) NOT NULL,
+  `year_level` varchar(191) DEFAULT NULL,
+  `section` varchar(10) DEFAULT NULL,
+  `course_section_code` varchar(191) DEFAULT NULL,
+  `department` varchar(191) NOT NULL,
+  `program_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `phone` varchar(191) DEFAULT NULL,
+  `address` varchar(191) DEFAULT NULL,
+  `profile_image` varchar(191) DEFAULT NULL,
+  `ojt_status` enum('pending','active','completed') NOT NULL DEFAULT 'pending',
+  `preplacement_complete` tinyint(1) NOT NULL DEFAULT 0,
+  `preplacement_completed_at` timestamp NULL DEFAULT NULL,
+  `required_hours` int(11) DEFAULT NULL,
+  `completed_hours` int(11) NOT NULL DEFAULT 0,
+  `assigned_company_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `supervisor_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `student_verifications`
+--
+
+CREATE TABLE `student_verifications` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `student_id` varchar(191) NOT NULL,
+  `token` varchar(191) NOT NULL,
+  `expires_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `supervisor_profiles`
+--
+
+CREATE TABLE `supervisor_profiles` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `user_id` bigint(20) UNSIGNED NOT NULL,
+  `company_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `employee_id` varchar(191) DEFAULT NULL,
+  `position` varchar(191) DEFAULT NULL,
+  `phone` varchar(191) DEFAULT NULL,
+  `profile_image` varchar(191) DEFAULT NULL,
+  `evaluation_permissions` text DEFAULT NULL,
+  `status` enum('active','inactive') NOT NULL DEFAULT 'active',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `supervisor_registrations`
+--
+
+CREATE TABLE `supervisor_registrations` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `email` varchar(191) NOT NULL,
+  `token` varchar(191) NOT NULL,
+  `expires_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `verified_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `users`
+--
+
+CREATE TABLE `users` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `name` varchar(191) NOT NULL,
+  `email` varchar(191) NOT NULL,
+  `role` varchar(191) NOT NULL DEFAULT 'intern',
+  `email_verified_at` timestamp NULL DEFAULT NULL,
+  `password` varchar(191) NOT NULL,
+  `remember_token` varchar(100) DEFAULT NULL,
+  `must_change_password` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `users`
+--
+
+INSERT INTO `users` (`id`, `name`, `email`, `role`, `email_verified_at`, `password`, `remember_token`, `must_change_password`, `created_at`, `updated_at`) VALUES
+(1, 'OJT360 Admin', 'ojt3604dmin@gmail.com', 'admin', '2026-05-25 10:14:37', '$2y$10$74sTLqzFMm3yx47ppuAdter8Y8kOYZToDxICDFY9pPo42y.8O7qMC', NULL, 0, '2026-05-25 10:14:37', '2026-05-25 10:14:37');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `weekly_reports`
+--
+
+CREATE TABLE `weekly_reports` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `student_user_id` bigint(20) UNSIGNED NOT NULL,
+  `coordinator_user_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `week_start_date` date NOT NULL,
+  `week_end_date` date NOT NULL,
+  `week_number` int(11) NOT NULL DEFAULT 1,
+  `days_present` int(11) NOT NULL DEFAULT 0,
+  `days_absent` int(11) NOT NULL DEFAULT 0,
+  `days_late` int(11) NOT NULL DEFAULT 0,
+  `total_hours` decimal(6,2) NOT NULL DEFAULT 0.00,
+  `entries` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`entries`)),
+  `problems_encountered` text DEFAULT NULL,
+  `supervisor_feedback` text DEFAULT NULL,
+  `supervisor_rating` enum('excellent','good','satisfactory','needs_improvement') DEFAULT NULL,
+  `supervisor_reviewed_at` timestamp NULL DEFAULT NULL,
+  `coordinator_feedback` text DEFAULT NULL,
+  `coordinator_reviewed_at` timestamp NULL DEFAULT NULL,
+  `status` enum('draft','submitted','reviewed') NOT NULL DEFAULT 'draft',
+  `submitted_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `acceptance_letters`
+--
+ALTER TABLE `acceptance_letters`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `acceptance_letters_document_id_unique` (`document_id`),
+  ADD KEY `acceptance_letters_acceptance_request_id_foreign` (`acceptance_request_id`),
+  ADD KEY `acceptance_letters_company_id_foreign` (`company_id`),
+  ADD KEY `acceptance_letters_student_user_id_index` (`student_user_id`),
+  ADD KEY `acceptance_letters_supervisor_user_id_index` (`supervisor_user_id`),
+  ADD KEY `acceptance_letters_document_id_index` (`document_id`);
+
+--
+-- Indexes for table `application_letters`
+--
+ALTER TABLE `application_letters`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `application_letters_user_id_foreign` (`user_id`);
+
+--
+-- Indexes for table `attendance_logs`
+--
+ALTER TABLE `attendance_logs`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `attendance_logs_student_user_id_work_date_unique` (`student_user_id`,`work_date`),
+  ADD KEY `attendance_logs_company_id_foreign` (`company_id`),
+  ADD KEY `attendance_logs_recovery_approved_by_foreign` (`recovery_approved_by`);
+
+--
+-- Indexes for table `audit_logs`
+--
+ALTER TABLE `audit_logs`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `audit_logs_user_id_created_at_index` (`user_id`,`created_at`),
+  ADD KEY `audit_logs_model_type_model_id_index` (`model_type`,`model_id`);
+
+--
+-- Indexes for table `companies`
+--
+ALTER TABLE `companies`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `companies_coordinator_id_foreign` (`coordinator_id`);
+
+--
+-- Indexes for table `coordinator_invitations`
+--
+ALTER TABLE `coordinator_invitations`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `coordinator_invitations_token_unique` (`token`),
+  ADD KEY `coordinator_invitations_email_index` (`email`);
+
+--
+-- Indexes for table `coordinator_profiles`
+--
+ALTER TABLE `coordinator_profiles`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `coordinator_profiles_employee_id_unique` (`employee_id`),
+  ADD KEY `coordinator_profiles_user_id_foreign` (`user_id`),
+  ADD KEY `coordinator_profiles_department_id_foreign` (`department_id`),
+  ADD KEY `coordinator_profiles_program_id_foreign` (`program_id`);
+
+--
+-- Indexes for table `departments`
+--
+ALTER TABLE `departments`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `departments_name_unique` (`name`),
+  ADD UNIQUE KEY `departments_slug_unique` (`slug`);
+
+--
+-- Indexes for table `document_requirements`
+--
+ALTER TABLE `document_requirements`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `enrollment_whitelists`
+--
+ALTER TABLE `enrollment_whitelists`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `enrollment_whitelists_student_id_unique` (`student_id`),
+  ADD KEY `enrollment_whitelists_student_id_index` (`student_id`),
+  ADD KEY `enrollment_whitelists_program_id_index` (`program_id`),
+  ADD KEY `enrollment_whitelists_email_index` (`email`),
+  ADD KEY `enrollment_whitelists_department_id_index` (`department_id`),
+  ADD KEY `enrollment_whitelists_status_index` (`status`);
+
+--
+-- Indexes for table `failed_jobs`
+--
+ALTER TABLE `failed_jobs`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `failed_jobs_uuid_unique` (`uuid`);
+
+--
+-- Indexes for table `final_evaluations`
+--
+ALTER TABLE `final_evaluations`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `final_evaluations_student_user_id_unique` (`student_user_id`),
+  ADD UNIQUE KEY `final_evaluations_control_number_unique` (`control_number`),
+  ADD KEY `final_evaluations_supervisor_user_id_foreign` (`supervisor_user_id`),
+  ADD KEY `final_evaluations_coordinator_user_id_foreign` (`coordinator_user_id`);
+
+--
+-- Indexes for table `jobs`
+--
+ALTER TABLE `jobs`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `jobs_queue_index` (`queue`);
+
+--
+-- Indexes for table `messages`
+--
+ALTER TABLE `messages`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `messages_recipient_id_is_read_index` (`recipient_id`,`is_read`),
+  ADD KEY `messages_sender_id_created_at_index` (`sender_id`,`created_at`);
+
+--
+-- Indexes for table `migrations`
+--
+ALTER TABLE `migrations`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `monthly_evaluations`
+--
+ALTER TABLE `monthly_evaluations`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_student_month` (`student_user_id`,`evaluation_year`,`evaluation_month`),
+  ADD KEY `monthly_evaluations_supervisor_user_id_index` (`supervisor_user_id`),
+  ADD KEY `monthly_evaluations_coordinator_user_id_index` (`coordinator_user_id`),
+  ADD KEY `monthly_evaluations_status_index` (`status`);
+
+--
+-- Indexes for table `notifications`
+--
+ALTER TABLE `notifications`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `notifications_user_id_foreign` (`user_id`);
+
+--
+-- Indexes for table `password_resets`
+--
+ALTER TABLE `password_resets`
+  ADD PRIMARY KEY (`email`);
+
+--
+-- Indexes for table `personal_access_tokens`
+--
+ALTER TABLE `personal_access_tokens`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `personal_access_tokens_token_unique` (`token`),
+  ADD KEY `personal_access_tokens_tokenable_type_tokenable_id_index` (`tokenable_type`,`tokenable_id`);
+
+--
+-- Indexes for table `programs`
+--
+ALTER TABLE `programs`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `programs_department_id_name_unique` (`department_id`,`name`),
+  ADD UNIQUE KEY `programs_department_id_slug_unique` (`department_id`,`slug`);
+
+--
+-- Indexes for table `resumes`
+--
+ALTER TABLE `resumes`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `resumes_user_id_foreign` (`user_id`);
+
+--
+-- Indexes for table `sessions`
+--
+ALTER TABLE `sessions`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `sessions_user_id_index` (`user_id`),
+  ADD KEY `sessions_last_activity_index` (`last_activity`);
+
+--
+-- Indexes for table `student_document_submissions`
+--
+ALTER TABLE `student_document_submissions`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `student_document_submissions_student_user_id_foreign` (`student_user_id`),
+  ADD KEY `student_document_submissions_document_requirement_id_foreign` (`document_requirement_id`),
+  ADD KEY `student_document_submissions_reviewed_by_foreign` (`reviewed_by`);
+
+--
+-- Indexes for table `student_profiles`
+--
+ALTER TABLE `student_profiles`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `student_profiles_student_id_unique` (`student_id`),
+  ADD KEY `student_profiles_user_id_foreign` (`user_id`),
+  ADD KEY `student_profiles_assigned_company_id_foreign` (`assigned_company_id`),
+  ADD KEY `student_profiles_supervisor_id_foreign` (`supervisor_id`),
+  ADD KEY `student_profiles_program_id_foreign` (`program_id`);
+
+--
+-- Indexes for table `student_verifications`
+--
+ALTER TABLE `student_verifications`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `student_verifications_token_unique` (`token`),
+  ADD KEY `student_verifications_student_id_index` (`student_id`);
+
+--
+-- Indexes for table `supervisor_profiles`
+--
+ALTER TABLE `supervisor_profiles`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `supervisor_profiles_user_id_foreign` (`user_id`),
+  ADD KEY `supervisor_profiles_company_id_foreign` (`company_id`);
+
+--
+-- Indexes for table `supervisor_registrations`
+--
+ALTER TABLE `supervisor_registrations`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `supervisor_registrations_email_unique` (`email`),
+  ADD UNIQUE KEY `supervisor_registrations_token_unique` (`token`);
+
+--
+-- Indexes for table `users`
+--
+ALTER TABLE `users`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `users_email_unique` (`email`);
+
+--
+-- Indexes for table `weekly_reports`
+--
+ALTER TABLE `weekly_reports`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `weekly_reports_student_user_id_week_start_date_unique` (`student_user_id`,`week_start_date`),
+  ADD KEY `weekly_reports_coordinator_user_id_index` (`coordinator_user_id`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `acceptance_letters`
+--
+ALTER TABLE `acceptance_letters`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `application_letters`
+--
+ALTER TABLE `application_letters`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `attendance_logs`
+--
+ALTER TABLE `attendance_logs`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `audit_logs`
+--
+ALTER TABLE `audit_logs`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `companies`
+--
+ALTER TABLE `companies`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT for table `coordinator_invitations`
+--
+ALTER TABLE `coordinator_invitations`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `coordinator_profiles`
+--
+ALTER TABLE `coordinator_profiles`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `departments`
+--
+ALTER TABLE `departments`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
+-- AUTO_INCREMENT for table `document_requirements`
+--
+ALTER TABLE `document_requirements`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+
+--
+-- AUTO_INCREMENT for table `enrollment_whitelists`
+--
+ALTER TABLE `enrollment_whitelists`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `failed_jobs`
+--
+ALTER TABLE `failed_jobs`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `final_evaluations`
+--
+ALTER TABLE `final_evaluations`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `jobs`
+--
+ALTER TABLE `jobs`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `messages`
+--
+ALTER TABLE `messages`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `migrations`
+--
+ALTER TABLE `migrations`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=79;
+
+--
+-- AUTO_INCREMENT for table `monthly_evaluations`
+--
+ALTER TABLE `monthly_evaluations`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `notifications`
+--
+ALTER TABLE `notifications`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `personal_access_tokens`
+--
+ALTER TABLE `personal_access_tokens`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `programs`
+--
+ALTER TABLE `programs`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+
+--
+-- AUTO_INCREMENT for table `resumes`
+--
+ALTER TABLE `resumes`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `student_document_submissions`
+--
+ALTER TABLE `student_document_submissions`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `student_profiles`
+--
+ALTER TABLE `student_profiles`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `student_verifications`
+--
+ALTER TABLE `student_verifications`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `supervisor_profiles`
+--
+ALTER TABLE `supervisor_profiles`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `supervisor_registrations`
+--
+ALTER TABLE `supervisor_registrations`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `users`
+--
+ALTER TABLE `users`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT for table `weekly_reports`
+--
+ALTER TABLE `weekly_reports`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `acceptance_letters`
+--
+ALTER TABLE `acceptance_letters`
+  ADD CONSTRAINT `acceptance_letters_company_id_foreign` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `acceptance_letters_student_user_id_foreign` FOREIGN KEY (`student_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `acceptance_letters_supervisor_user_id_foreign` FOREIGN KEY (`supervisor_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `application_letters`
+--
+ALTER TABLE `application_letters`
+  ADD CONSTRAINT `application_letters_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `attendance_logs`
+--
+ALTER TABLE `attendance_logs`
+  ADD CONSTRAINT `attendance_logs_company_id_foreign` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `attendance_logs_recovery_approved_by_foreign` FOREIGN KEY (`recovery_approved_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `attendance_logs_student_user_id_foreign` FOREIGN KEY (`student_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `audit_logs`
+--
+ALTER TABLE `audit_logs`
+  ADD CONSTRAINT `audit_logs_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL;
+
+--
+-- Constraints for table `companies`
+--
+ALTER TABLE `companies`
+  ADD CONSTRAINT `companies_coordinator_id_foreign` FOREIGN KEY (`coordinator_id`) REFERENCES `users` (`id`);
+
+--
+-- Constraints for table `coordinator_profiles`
+--
+ALTER TABLE `coordinator_profiles`
+  ADD CONSTRAINT `coordinator_profiles_department_id_foreign` FOREIGN KEY (`department_id`) REFERENCES `departments` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `coordinator_profiles_program_id_foreign` FOREIGN KEY (`program_id`) REFERENCES `programs` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `coordinator_profiles_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `final_evaluations`
+--
+ALTER TABLE `final_evaluations`
+  ADD CONSTRAINT `final_evaluations_coordinator_user_id_foreign` FOREIGN KEY (`coordinator_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `final_evaluations_student_user_id_foreign` FOREIGN KEY (`student_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `final_evaluations_supervisor_user_id_foreign` FOREIGN KEY (`supervisor_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `messages`
+--
+ALTER TABLE `messages`
+  ADD CONSTRAINT `messages_recipient_id_foreign` FOREIGN KEY (`recipient_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `messages_sender_id_foreign` FOREIGN KEY (`sender_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `monthly_evaluations`
+--
+ALTER TABLE `monthly_evaluations`
+  ADD CONSTRAINT `monthly_evaluations_coordinator_user_id_foreign` FOREIGN KEY (`coordinator_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `monthly_evaluations_student_user_id_foreign` FOREIGN KEY (`student_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `monthly_evaluations_supervisor_user_id_foreign` FOREIGN KEY (`supervisor_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `notifications`
+--
+ALTER TABLE `notifications`
+  ADD CONSTRAINT `notifications_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `programs`
+--
+ALTER TABLE `programs`
+  ADD CONSTRAINT `programs_department_id_foreign` FOREIGN KEY (`department_id`) REFERENCES `departments` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `resumes`
+--
+ALTER TABLE `resumes`
+  ADD CONSTRAINT `resumes_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `student_document_submissions`
+--
+ALTER TABLE `student_document_submissions`
+  ADD CONSTRAINT `student_document_submissions_document_requirement_id_foreign` FOREIGN KEY (`document_requirement_id`) REFERENCES `document_requirements` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `student_document_submissions_reviewed_by_foreign` FOREIGN KEY (`reviewed_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `student_document_submissions_student_user_id_foreign` FOREIGN KEY (`student_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `student_profiles`
+--
+ALTER TABLE `student_profiles`
+  ADD CONSTRAINT `student_profiles_assigned_company_id_foreign` FOREIGN KEY (`assigned_company_id`) REFERENCES `companies` (`id`),
+  ADD CONSTRAINT `student_profiles_program_id_foreign` FOREIGN KEY (`program_id`) REFERENCES `programs` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `student_profiles_supervisor_id_foreign` FOREIGN KEY (`supervisor_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `student_profiles_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `supervisor_profiles`
+--
+ALTER TABLE `supervisor_profiles`
+  ADD CONSTRAINT `supervisor_profiles_company_id_foreign` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `supervisor_profiles_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `weekly_reports`
+--
+ALTER TABLE `weekly_reports`
+  ADD CONSTRAINT `weekly_reports_coordinator_user_id_foreign` FOREIGN KEY (`coordinator_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `weekly_reports_student_user_id_foreign` FOREIGN KEY (`student_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
